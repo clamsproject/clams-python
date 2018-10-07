@@ -5,6 +5,10 @@ class AnnotationTypes(object):
     BD = "bar-detection"
     TD = "tone-detection"
     ND = "noise-detection"
+    # TODO linguistic annotations to leverage on the LAPPS/LIF vocab
+    Sentences = "segment-sentences"
+    Paragraphs = "segment-paragraphs"
+    Tokens = "segment-tokens"
 
 
 class MediaTypes(object):

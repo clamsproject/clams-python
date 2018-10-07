@@ -109,7 +109,7 @@ class View(MmifObject):
         self.annotations = []
 
     def new_contain(self, at_type):
-        new_contain = Contain(at_type)
+        new_contain = Contain()
         self.contains[at_type] = new_contain
         return new_contain
 
@@ -121,9 +121,8 @@ class View(MmifObject):
 
 class Contain(MmifObject):
 
-    def __init__(self, at_type):
+    def __init__(self):
         super().__init__()
-        self.at_type = at_type
         self.producer = ''
         self.gen_time = None     # datetime.datetime
 
