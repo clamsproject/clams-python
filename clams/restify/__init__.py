@@ -1,6 +1,5 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
-from clams import serializer
 
 
 class Restifier(object):
