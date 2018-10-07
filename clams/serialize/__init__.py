@@ -37,7 +37,7 @@ class Mmif(MmifObject):
         super().__init__(mmif_json)
 
     def deserialize(self, mmif):
-        in_json = mmif.loads(mmif)
+        in_json = json.loads(mmif)
 
         # TODO (krim @ 10/3/2018): more robust json parsing
         self.context = in_json["context"]
@@ -62,8 +62,8 @@ class Mmif(MmifObject):
 
     def get_medium_location(self, md_type):
         for medium in self.media:
-            if medium.mdtype == md_type:
-                return medium.location
+            if medium["type"] == md_type:
+                return medium["location"]
         raise Exception("{} type media not found".format(md_type))
 
 
@@ -71,7 +71,7 @@ class Medium(MmifObject):
 
     def __init__(self, id, md_type='', uri=''):
         self.id = id
-        self.mdtype = md_type
+        self.type = md_type
         self.location = uri
         self.metadata = {}
 
