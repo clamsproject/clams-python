@@ -5,6 +5,7 @@ class AnnotationTypes(object):
     BD = "bar-detection"
     TD = "tone-detection"
     ND = "noise-detection"
+    OCR = "raw-ocr-output"
     # TODO linguistic annotations to leverage on the LAPPS/LIF vocab
     Sentences = "segment-sentences"
     Paragraphs = "segment-paragraphs"
