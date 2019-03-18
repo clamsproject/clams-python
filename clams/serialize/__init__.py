@@ -24,6 +24,8 @@ class MmifObjectEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'serialize'):
             return obj.serialize()
+        elif hasattr(obj, '__str__'):
+            return str(obj)
         else:
             return json.JSONEncoder.default(self, obj)
 
