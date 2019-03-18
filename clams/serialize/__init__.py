@@ -29,6 +29,12 @@ class MmifObjectEncoder(json.JSONEncoder):
 
 
 class Mmif(MmifObject):
+    context: str
+    metadata: dict
+    media: list
+    contains: dict
+    views: list
+
     def __init__(self, mmif_json):
         self.context = ''
         self.metadata = {}
@@ -78,6 +84,10 @@ class Mmif(MmifObject):
 
 
 class Medium(MmifObject):
+    id: str
+    type: str
+    location: str
+    metadata: dict
 
     def __init__(self, id, md_type='', uri=''):
         self.id = id
@@ -93,6 +103,11 @@ class Medium(MmifObject):
 
 
 class Annotation(MmifObject):
+    start: int
+    end: int
+    feature: dict
+    id: str
+    attype: str
 
     def __init__(self, id, at_type=''):
         # TODO (krim @ 10/4/2018): try deserialize "id", then if fails defaults to 0s
@@ -111,6 +126,9 @@ class Annotation(MmifObject):
 
 
 class View(MmifObject):
+    id: str
+    contains: dict
+    annotation: list
 
     def __init__(self, id="UNIDENTIFIED"):
         super().__init__()
@@ -131,6 +149,8 @@ class View(MmifObject):
 
 
 class Contain(MmifObject):
+    producer: str
+    gen_time: str
 
     def __init__(self):
         super().__init__()
