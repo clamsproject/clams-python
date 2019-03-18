@@ -1,3 +1,4 @@
+import datetime
 import json
 
 
@@ -32,7 +33,7 @@ class Mmif(MmifObject):
         self.context = ''
         self.metadata = {}
         self.media = []
-        self.contains = []
+        self.contains = {}
         self.views = []
         super().__init__(mmif_json)
 
@@ -65,6 +66,15 @@ class Mmif(MmifObject):
             if medium["type"] == md_type:
                 return medium["location"]
         raise Exception("{} type media not found".format(md_type))
+
+    def get_view_by_id(self, id):
+        for view in self.views:
+            if view.id == id:
+                return view
+        raise Exception("{} view not found".format(id))
+
+    def get_view_contains(self, attype):
+        return self.get_view_by_id(self.contains[attype])
 
 
 class Medium(MmifObject):
@@ -108,8 +118,9 @@ class View(MmifObject):
         self.contains = {}
         self.annotations = []
 
-    def new_contain(self, at_type):
+    def new_contain(self, at_type, producer=""):
         new_contain = Contain()
+        new_contain.gen_time = datetime.datetime.utcnow().isoformat()
         self.contains[at_type] = new_contain
         return new_contain
 
