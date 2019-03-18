@@ -3,6 +3,7 @@ class AnnotationTypes(object):
     FA = "vanilla-forced-alignment"
     FFA = "filtered-forced-alignment"
     BD = "bar-detection"
+    SD = "slate-detection"
     TD = "tone-detection"
     ND = "noise-detection"
     OCR = "raw-ocr-output"

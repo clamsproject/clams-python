@@ -41,6 +41,7 @@ class Mmif(MmifObject):
 
         # TODO (krim @ 10/3/2018): more robust json parsing
         self.context = in_json["context"]
+        self.contains = in_json["contains"]
         self.metadata = in_json["metadata"]
         self.media = in_json["media"]
         self.views = in_json["views"]
@@ -68,7 +69,7 @@ class Mmif(MmifObject):
 
     def get_view_by_id(self, id):
         for view in self.views:
-            if view.id == id:
+            if view["id"] == id:
                 return view
         raise Exception("{} view not found".format(id))
 
