@@ -1,3 +1,4 @@
+import datetime
 import json
 
 
@@ -23,11 +24,19 @@ class MmifObjectEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'serialize'):
             return obj.serialize()
+        elif hasattr(obj, '__str__'):
+            return str(obj)
         else:
             return json.JSONEncoder.default(self, obj)
 
 
 class Mmif(MmifObject):
+    context: str
+    metadata: dict
+    media: list
+    contains: dict
+    views: list
+
     def __init__(self, mmif_json):
         self.context = ''
         self.metadata = {}
@@ -69,7 +78,7 @@ class Mmif(MmifObject):
 
     def get_view_by_id(self, id):
         for view in self.views:
-            if view["id"] == id:
+            if view.id == id:
                 return view
         raise Exception("{} view not found".format(id))
 
@@ -78,6 +87,10 @@ class Mmif(MmifObject):
 
 
 class Medium(MmifObject):
+    id: str
+    type: str
+    location: str
+    metadata: dict
 
     def __init__(self, id, md_type='', uri=''):
         self.id = id
@@ -93,6 +106,11 @@ class Medium(MmifObject):
 
 
 class Annotation(MmifObject):
+    start: int
+    end: int
+    feature: dict
+    id: str
+    attype: str
 
     def __init__(self, id, at_type=''):
         # TODO (krim @ 10/4/2018): try deserialize "id", then if fails defaults to 0s
@@ -111,6 +129,9 @@ class Annotation(MmifObject):
 
 
 class View(MmifObject):
+    id: str
+    contains: dict
+    annotation: list
 
     def __init__(self, id="UNIDENTIFIED"):
         super().__init__()
@@ -118,8 +139,9 @@ class View(MmifObject):
         self.contains = {}
         self.annotations = []
 
-    def new_contain(self, at_type):
+    def new_contain(self, at_type, producer=""):
         new_contain = Contain()
+        new_contain.gen_time = datetime.datetime.utcnow().isoformat()
         self.contains[at_type] = new_contain
         return new_contain
 
@@ -130,6 +152,8 @@ class View(MmifObject):
 
 
 class Contain(MmifObject):
+    producer: str
+    gen_time: str
 
     def __init__(self):
         super().__init__()
