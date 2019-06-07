@@ -9,7 +9,7 @@ class Restifier(object):
         self.import_name = app_instance.__class__.__name__
         self.flask_app = Flask(self.import_name)
         # TODO setters for these flask params
-        self.host = '127.0.0.1'
+        self.host = '0.0.0.0'
         self.port = 5000
         self.debug = True
         api = Api(self.flask_app)
