@@ -1,6 +1,8 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
 
+from clams import Mmif
+
 
 class Restifier(object):
     def __init__(self, app_instance):
@@ -32,8 +34,8 @@ class ClamsRestfulApi(Resource):
         return self.cla.appmetadata()
 
     def post(self):
-        return self.cla.sniff(serializer.Mmif(request.form['data']))
+        return self.cla.sniff(Mmif(request.form['data']))
 
     def put(self):
-        return self.cla.annotate(serializer.Mmif(request.form['data']))
+        return self.cla.annotate(Mmif(request.form['data']))
 
