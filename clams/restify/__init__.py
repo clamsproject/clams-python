@@ -1,5 +1,6 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
+import json
 
 from clams import Mmif
 
@@ -37,5 +38,5 @@ class ClamsRestfulApi(Resource):
         return self.cla.sniff(Mmif(request.form['data']))
 
     def put(self):
-        return self.cla.annotate(Mmif(request.form['data']))
+        return str(self.cla.annotate(Mmif(json.dumps(request.get_json()))))
 
