@@ -35,8 +35,16 @@ class ClamsRestfulApi(Resource):
         return self.cla.appmetadata()
 
     def post(self):
-        return self.cla.sniff(Mmif(request.form['data']))
+        if request.is_json:
+            return self.cla.sniff(Mmif(request.get_json()))
+        else:
+            # this happens when HTTP header doesn't specify a MIME type
+            return self.cla.sniff(Mmif(json.dumps(json.loads(request.get_data()))))
 
     def put(self):
-        return str(self.cla.annotate(Mmif(json.dumps(request.get_json()))))
+        if request.is_json:
+            return self.cla.annotate(Mmif(request.get_json()))
+        else:
+            # this happens when HTTP header doesn't specify a MIME type
+            return self.cla.annotate(Mmif(json.dumps(json.loads(request.get_data()))))
 
