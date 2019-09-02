@@ -9,6 +9,7 @@ class AnnotationTypes(object):
     OCR = "raw-ocr-output"
     TBOX = "text-box"
     FACE = "face-box"
+    SCD = "scene-detection"
     # TODO linguistic annotations to leverage on the LAPPS/LIF vocab
     Sentences = "segment-sentences"
     Paragraphs = "segment-paragraphs"
