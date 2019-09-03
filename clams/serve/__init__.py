@@ -18,7 +18,6 @@ class ClamsApp(ABC):
         raise NotImplementedError()
 
 
-@DeprecationWarning
 class ClamApp(ClamsApp, ABC):
     """ Equivalent to `ClamsApp`. This class is only for backward compatibility. Use `ClamsApp` instead. """
     pass
