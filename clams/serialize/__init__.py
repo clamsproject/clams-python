@@ -37,7 +37,7 @@ class Mmif(MmifObject):
     contains: dict
     views: list
 
-    def __init__(self, mmif_json):
+    def __init__(self, mmif_json=None):
         self.context = ''
         self.metadata = {}
         self.media = []
@@ -45,11 +45,16 @@ class Mmif(MmifObject):
         self.views = []
         super().__init__(mmif_json)
 
+    def serialize(self):
+        d = self.__dict__.copy()
+        d['@context'] = d.pop('context')
+        return d
+
     def deserialize(self, mmif):
         in_json = json.loads(mmif)
 
         # TODO (krim @ 10/3/2018): more robust json parsing
-        self.context = in_json["context"]
+        self.context = in_json["@context"]
         self.contains = in_json["contains"]
         self.metadata = in_json["metadata"]
         self.media = in_json["media"]
@@ -139,6 +144,9 @@ class View(MmifObject):
         self.contains = {}
         self.annotations = []
 
+    def deserialize(self, view):
+        pass
+
     def new_contain(self, at_type, producer=""):
         new_contain = Contain()
         new_contain.gen_time = datetime.datetime.utcnow().isoformat()
@@ -159,4 +167,7 @@ class Contain(MmifObject):
         super().__init__()
         self.producer = ''
         self.gen_time = None     # datetime.datetime
+
+    def deserialize(self, mmif):
+        pass
 
