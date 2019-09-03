@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class ClamApp(ABC):
+class ClamsApp(ABC):
     def __init__(self):
         super().__init__()
 
@@ -16,4 +16,11 @@ class ClamApp(ABC):
     @abstractmethod
     def annotate(self, mmif):
         raise NotImplementedError()
+
+
+@DeprecationWarning
+class ClamApp(ClamsApp, ABC):
+    """ Equivalent to `ClamsApp`. This class is only for backward compatibility. Use `ClamsApp` instead. """
+    pass
+
 

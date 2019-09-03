@@ -38,7 +38,7 @@ Use classes in `clams.serialize` package. `clams.Mmif`, `clams.Annotation`, and 
 
 ### CLAMS App
 
-When using the SDK to build a app for CLAMS instance, an app must inherit `clams.ClamApp` abstract class and implement three methods
+When using the SDK to build a app for CLAMS instance, an app must inherit `clams.ClamsApp` abstract class and implement three methods
 
 1. `appmetadata`: returns string of app metadata. An app metadata is a JSON-LD string that contains information about the app - name, vendor, functionality, etc. CLAMS app metadata is part of MMIF and more details can be found in [MMIF documentation](https://mmif.clams.ai). Will be mapped to `GET` HTTP API. 
 1. `sniff`: return True if input MMIF data can be handled by the app. Will be mapped to `POST` HTTP API. 
@@ -49,10 +49,10 @@ When using the SDK to build a app for CLAMS instance, an app must inherit `clams
 To be integrated with the workflow engine (Galaxy), an app needs to serve as a webapp. This is supported in the SDK via `clams.restify.Restifier` class. Thus the main entry point python script should initiate the app, wrap it in a flask web app, and finally start the flask app. Here's an example: 
 
 ``` python
-from clams.serve import ClamApp
+from clams.serve import ClamsApp
 from clams.restify import Restifier
 
-class AnApp(ClamApp):
+class AnApp(ClamsApp):
     # Implements an app that does this and that. 
     # Must implement `appmetadata`, `sniff`, `annotate` methods
 
