@@ -1,6 +1,5 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
-import json
 
 from clams import Mmif
 
@@ -24,6 +23,9 @@ class Restifier(object):
                            port=self.port,
                            debug=self.debug)
 
+    def test_client(self):
+        return self.flask_app.test_client()
+
 
 class ClamsRestfulApi(Resource):
 
@@ -35,16 +37,8 @@ class ClamsRestfulApi(Resource):
         return self.cla.appmetadata()
 
     def post(self):
-        if request.is_json:
-            return self.cla.sniff(Mmif(request.get_json()))
-        else:
-            # this happens when HTTP header doesn't specify a MIME type
-            return self.cla.sniff(Mmif(json.dumps(json.loads(request.get_data()))))
+        return str(self.cla.sniff(Mmif(request.get_data())))
 
     def put(self):
-        if request.is_json:
-            return self.cla.annotate(Mmif(request.get_json()))
-        else:
-            # this happens when HTTP header doesn't specify a MIME type
-            return self.cla.annotate(Mmif(json.dumps(json.loads(request.get_data()))))
+        return str(self.cla.annotate(Mmif(request.get_data())))
 
