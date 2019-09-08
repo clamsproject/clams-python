@@ -20,3 +20,4 @@ class MediaTypes(object):
     V = "audio-video"
     A = "audio-only"
     T = "text"
+    I = "image"
