@@ -9,12 +9,11 @@ class AnnotationTypes(object):
     OCR = "raw-ocr-output"
     TBOX = "text-box"
     FACE = "face-box"
-    SCD = "scene-detection"
+    SHOT = "shot-detection"
     # TODO linguistic annotations to leverage on the LAPPS/LIF vocab
     Sentences = "segment-sentences"
     Paragraphs = "segment-paragraphs"
     Tokens = "segment-tokens"
-
 
 class MediaTypes(object):
     V = "audio-video"
