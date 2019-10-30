@@ -53,11 +53,12 @@ class Mmif(MmifObject):
     def deserialize(self, mmif):
         in_json = json.loads(mmif)
 
+        # TODO (krim @ 10/3/2018): more robust json parsing
         self.context = in_json["@context"]
         self.contains = in_json["contains"]
         self.metadata = in_json["metadata"]
         self.media = in_json["media"]
-        self.views = [View(view_str) for view_str in in_json["views"]]
+        self.views = in_json["views"]
 
     def new_view_id(self):
         return 'v_' + str(len(self.views))
@@ -67,18 +68,18 @@ class Mmif(MmifObject):
         self.views.append(new_view)
         return new_view
 
-    # TODO (krim @ 9/29/19): any tool that calls this needs to be updated
     def add_media(self, medium):
-        if not self.get_medium_location(medium):
+        try:
+            self.get_medium_location(medium)
+        # TODO (krim @ 10/7/2018): if get_m_location returns, raise "already exists" error
+        except Exception:
             self.media.append(medium)
-        else:
-            raise Exception(f"'{medium.type}' type media is already specified.")
 
     def get_medium_location(self, md_type):
         for medium in self.media:
             if medium["type"] == md_type:
                 return medium["location"]
-        raise Exception(f"'{md_type}' type media not found.")
+        raise Exception("{} type media not found".format(md_type))
 
     def get_view_by_id(self, id):
         for view in self.views:
@@ -96,18 +97,13 @@ class Medium(MmifObject):
     location: str
     metadata: dict
 
-    def __init__(self, medium_str=None):
-        self.id = None
-        self.type = None
-        self.location = None
+    def __init__(self, id, md_type='', uri=''):
+        self.id = id
+        self.type = md_type
+        self.location = uri
         self.metadata = {}
-        super().__init__(medium_str)
 
-    def deserialize(self, medium_str):
-        self.id = medium_str['id']
-        self.type = medium_str['type']
-        self.location = medium_str['location']
-        self.metadata = medium_str['metadata']
+    def deserialize(self, mmif):
         pass
 
     def add_metadata(self, name, value):
@@ -121,20 +117,17 @@ class Annotation(MmifObject):
     id: str
     attype: str
 
-    def __init__(self, ann_str=None):
-        self.id = None
+    def __init__(self, id, at_type=''):
+        # TODO (krim @ 10/4/2018): try deserialize "id", then if fails defaults to 0s
+        super().__init__()
         self.start = 0
         self.end = 0
-        self.attype = None
-        self.feature = None
-        super().__init__(ann_str)
+        self.feature = {}
+        self.id = id
+        self.attype = at_type
 
-    def deserialize(self, ann_str):
-        self.id = ann_str["id"]
-        self.start = ann_str["start"]
-        self.end = ann_str["end"]
-        self.attype = ann_str["attype"]
-        self.feature = ann_str["feature"]
+    def deserialize(self, mmif):
+        pass
 
     def add_feature(self, name, value):
         self.feature[name] = value
@@ -143,18 +136,16 @@ class Annotation(MmifObject):
 class View(MmifObject):
     id: str
     contains: dict
-    annotations: list
+    annotation: list
 
-    def __init__(self, view_str=None):
-        self.id = None
+    def __init__(self, id="UNIDENTIFIED"):
+        super().__init__()
+        self.id = id
         self.contains = {}
         self.annotations = []
-        super().__init__(view_str)
 
     def deserialize(self, view):
-        self.id = view["id"]
-        self.contains.update({k: Contain(v) for k, v in view["contains"].items()})
-        self.annotations = [Annotation(ann) for ann in view["annotations"]]
+        pass
 
     def new_contain(self, at_type, producer=""):
         new_contain = Contain()
@@ -162,10 +153,8 @@ class View(MmifObject):
         self.contains[at_type] = new_contain
         return new_contain
 
-    def new_annotation(self, aid, attype):
-        new_annotation = Annotation()
-        new_annotation.id = aid
-        new_annotation.attype = attype
+    def new_annotation(self, aid):
+        new_annotation = Annotation(aid)
         self.annotations.append(new_annotation)
         return new_annotation
 
@@ -174,12 +163,11 @@ class Contain(MmifObject):
     producer: str
     gen_time: str
 
-    def __init__(self, contain_str=None):
+    def __init__(self):
+        super().__init__()
         self.producer = ''
         self.gen_time = None     # datetime.datetime
-        super().__init__(contain_str)
 
-    def deserialize(self, contain_str):
-        self.producer = contain_str["producer"]
-        self.gen_time = contain_str["gen_time"]
+    def deserialize(self, mmif):
+        pass
 
