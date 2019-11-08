@@ -83,7 +83,7 @@ class Mmif(MmifObject):
 
     def get_view_by_id(self, id):
         for view in self.views:
-            if view['id'] == id:
+            if view.id == id:
                 return view
         raise Exception("{} view not found".format(id))
 
