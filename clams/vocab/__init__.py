@@ -2,7 +2,7 @@
 class AnnotationTypes(object):
     FA = "https://vocab.clams.ai/attype/forced-alignment"
     # FFA = "filtered-forced-alignment"
-    BD = "bhttps://vocab.clams.ai/attype/ar-detection"
+    BD = "https://vocab.clams.ai/attype/bar-detection"
     SD = "https://vocab.clams.ai/attype/slate-detection"
     TD = "https://vocab.clams.ai/attype/tone-detection"
     ND = "https://vocab.clams.ai/attype/noise-detection"
