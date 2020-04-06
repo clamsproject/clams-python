@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, Response
 from flask_restful import Resource, Api
 
 from clams import Mmif
@@ -33,12 +33,16 @@ class ClamsRestfulApi(Resource):
         super().__init__()
         self.cla = cla_instance
 
+    @staticmethod
+    def json_to_response(json_str):
+        return Response(response=json_str, status=200, mimetype='application/json')
+
     def get(self):
-        return self.cla.appmetadata()
+        return self.json_to_response(self.cla.appmetadata())
 
     def post(self):
-        return str(self.cla.sniff(Mmif(request.get_data())))
+        return self.json_to_response(str(self.cla.sniff(Mmif(request.get_data()))))
 
     def put(self):
-        return str(self.cla.annotate(Mmif(request.get_data())))
+        return self.json_to_response(str(self.cla.annotate(Mmif(request.get_data()))))
 
