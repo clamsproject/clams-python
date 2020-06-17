@@ -1,7 +1,7 @@
-from clams.serialize import *
 from clams.serve import *
 from clams.restify import Restifier
-from clams.vocab import *
+from mmif.serialize import *
+from mmif.vocab import *
 
 
 
