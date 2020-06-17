@@ -3,9 +3,12 @@ import setuptools
 with open('README.md') as readme:
     long_desc = readme.read()
 
+with open('requirements.txt') as requirements:
+    requires = requirements.readlines()
+
 setuptools.setup(
     name="clams-python", 
-    version="0.0.1",
+    version="0.0.2",
     author="Brandeis Lab for Linguistics and Computation", 
     author_email="admin@clams.al",
     description="A collection of APIs to develop CLAMS app for python", 
@@ -20,6 +23,7 @@ setuptools.setup(
     'License :: OSI Approved :: Apache Software License',
     'Programming Language :: Python :: 3 :: Only',
     ],
+    install_requires=requires,
     python_requires='>=3.6',
     packages=setuptools.find_packages() 
 )
