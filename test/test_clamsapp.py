@@ -13,23 +13,20 @@ class ExampleInputMMIF(object):
 
     @staticmethod
     def get_mmif():
-        mmif = Mmif()
-        mmif.context = "mmif-prototype-0.0.1.jsonld"
-        mmif.metadata = {}
-        mmif.media = [Medium(0, MediaTypes.V, "/dummy/dir/dummy.file.mp4")]
-        mmif.contains = {}
-        mmif.views = []
+        mmif = Mmif(validate=False)
+        mmif._context = "mmif-prototype-0.0.1.jsonld"
+        mmif.add_medium(Medium({'id': 'm1', 'type': MediaTypes.V, 'location': "/dummy/dir/dummy.file.mp4"}))
         return str(mmif)
 
 
 class TestSerialization(unittest.TestCase):
 
     def setUp(self):
-        self.mmif = Mmif(ExampleInputMMIF.get_mmif())
+        self.mmif = Mmif(ExampleInputMMIF.get_mmif(), validate=False)
 
     def test_view_is_empty(self):
-        self.assertEqual(self.mmif.contains, 0)
-        self.assertEqual(self.mmif.views, 0)
+        self.assertEqual(len(self.mmif.views), 0)
+
 
 class ExampleClamsApp(clams.serve.ClamsApp):
 
@@ -45,13 +42,14 @@ class ExampleClamsApp(clams.serve.ClamsApp):
 
     def annotate(self, mmif):
         if type(mmif) is not Mmif:
-            mmif = Mmif(mmif)
+            mmif = Mmif(mmif, validate=False)
         new_view = mmif.new_view()
-        new_view.new_contain(dummy_attype, "dummy-producer")
-        ann = new_view.new_annotation(1)
+        new_view.new_contain(dummy_attype, {"producer": "dummy-producer"})
+        ann = new_view.new_annotation(dummy_attype, 'a1')
         ann.attype = dummy_attype
-        ann.add_feature("f1", "hello_world")
+        ann.add_property("f1", "hello_world")
         return mmif
+
 
 class TestClamsApp(unittest.TestCase):
     def setUp(self):
@@ -98,3 +96,5 @@ class TestRestifier(unittest.TestCase):
         self.assertIsNotNone(put)
 
 
+if __name__ == '__main__':
+    unittest.main()
