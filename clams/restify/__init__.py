@@ -1,7 +1,7 @@
 from flask import Flask, request, Response
 from flask_restful import Resource, Api
 
-from clams import Mmif
+from mmif import Mmif
 
 
 class Restifier(object):
