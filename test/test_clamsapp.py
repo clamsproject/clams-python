@@ -15,7 +15,7 @@ class ExampleInputMMIF(object):
     def get_mmif():
         mmif = Mmif(validate=False)
         mmif._context = "mmif-prototype-0.0.1.jsonld"
-        mmif.add_medium(Medium({'id': 'm1', 'type': MediaTypes.V, 'location': "/dummy/dir/dummy.file.mp4"}))
+        mmif.add_medium(Medium({'id': 'm1', 'type': MediaTypes.V.value, 'location': "/dummy/dir/dummy.file.mp4"}))
         return str(mmif)
 
 
