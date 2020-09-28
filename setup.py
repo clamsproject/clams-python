@@ -1,5 +1,8 @@
 import setuptools
 
+with open("VERSION", 'r') as version_f: 
+    version = version_f.read().strip()
+
 with open('README.md') as readme:
     long_desc = readme.read()
 
@@ -8,7 +11,7 @@ with open('requirements.txt') as requirements:
 
 setuptools.setup(
     name="clams-python", 
-    version="0.0.2",
+    version=version,
     author="Brandeis Lab for Linguistics and Computation", 
     author_email="admin@clams.al",
     description="A collection of APIs to develop CLAMS app for python", 
