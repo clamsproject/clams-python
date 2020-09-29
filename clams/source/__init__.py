@@ -1,5 +1,6 @@
 import json
-from typing import Union, List, Optional
+import itertools
+from typing import Union, Generator, List, Optional, Iterable
 
 from mmif import Mmif, Document
 from mmif.serialize.mmif import MmifMetadata
@@ -90,3 +91,73 @@ class PipelineSource:
         source.freeze_documents()
         self.prime()
         return source
+
+    def __call__(
+            self,
+            documents: Optional[List[DOC]] = None,
+            metadata: Optional[METADATA] = None
+    ) -> Mmif:
+        """
+        Callable API that produces a new MMIF object from
+        this pipeline source given a list of documents and
+        a metadata object.
+
+        Call with no parameters to produce the default MMIF
+        object from ``self.mmif_start``.
+
+        :param documents: a list of additional documents to add
+        :param metadata: additional metadata fields to add
+        :return: the produced MMIF object
+        """
+        if documents is None:
+            documents = []
+        if metadata is None:
+            metadata = {}
+
+        if isinstance(documents, str):
+            documents = json.loads(documents)
+        if isinstance(metadata, MmifMetadata):
+            metadata = metadata.serialize()
+        if isinstance(metadata, str):
+            metadata = json.loads(metadata)
+
+        for document in documents:
+            self.add_document(document)
+        for key, value in metadata.items():
+            self.change_metadata(key, value)
+        return self.produce()
+
+    def from_data(
+            self,
+            doc_lists: Iterable[List[DOC]],
+            metadata_objs: Optional[Iterable[Optional[METADATA]]] = None
+    ) -> Generator[Mmif, None, None]:
+        """
+        Provided with an iterable of document lists and an
+        optional iterable of metadata objects, generates
+        MMIF objects produced from that data.
+
+        ``doc_lists`` and ``metadata_objs`` should be matched pairwise,
+        so that if they are zipped together, each pair defines
+        a single MMIF object from this pipeline source.
+
+        :param doc_lists: an iterable of document lists to generate MMIF from
+        :param metadata_objs: an iterable of metadata objects paired with the document lists
+        :return: a generator of produced MMIF files from the data
+        """
+        if metadata_objs is None:
+            metadata_objs = itertools.repeat(None)
+        for documents, metadata in zip(doc_lists, metadata_objs):
+            yield self(documents, metadata)
+
+    def __iter__(self):
+        """
+        Endlessly produces MMIF directly from ``self.mmif_start``.
+
+        If called after adding documents or changing metadata,
+        these changes are discarded, as the pipeline source
+        gets re-primed.
+        """
+        self.prime()
+        while True:
+            yield self.produce()
