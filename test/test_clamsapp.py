@@ -1,21 +1,24 @@
 import json
 import unittest
 from builtins import object
+from typing import Union
 
 import clams.restify
 import clams.serve
-from clams import Mmif, Medium, MediaTypes
+from clams import Mmif, Document, DocumentTypes, AnnotationTypes
 
-dummy_attype = "http://clams.ai/vocab/dummy"
+
+AT_TYPE = AnnotationTypes.TimeFrame
 
 
 class ExampleInputMMIF(object):
 
     @staticmethod
     def get_mmif():
-        mmif = Mmif(validate=False)
-        mmif._context = "mmif-prototype-0.0.1.jsonld"
-        mmif.add_medium(Medium({'id': 'm1', 'type': MediaTypes.V.value, 'location': "/dummy/dir/dummy.file.mp4"}))
+        mmif = Mmif(validate=False, frozen=False)
+        mmif.add_document(Document({'@type': DocumentTypes.VideoDocument.value,
+                                    'properties':
+                                        {'id': 'm1', 'location': "/dummy/dir/dummy.file.mp4"}}))
         return str(mmif)
 
 
@@ -31,22 +34,21 @@ class TestSerialization(unittest.TestCase):
 class ExampleClamsApp(clams.serve.ClamsApp):
 
     def appmetadata(self):
-        return  {"name": "Tesseract OCR",
-                 "description": "A dummy tool for testing",
-                 "vendor": "Team CLAMS",
-                 "requires": [],
-                 "produces": [dummy_attype]}
+        return {"name": "Tesseract OCR",
+                "description": "A dummy tool for testing",
+                "vendor": "Team CLAMS",
+                "requires": [],
+                "produces": [AT_TYPE]}
 
     def sniff(self, mmif):
         return True
 
-    def annotate(self, mmif):
+    def annotate(self, mmif: Union[str, dict, Mmif]):
         if type(mmif) is not Mmif:
             mmif = Mmif(mmif, validate=False)
         new_view = mmif.new_view()
-        new_view.new_contain(dummy_attype, {"producer": "dummy-producer"})
-        ann = new_view.new_annotation(dummy_attype, 'a1')
-        ann.attype = dummy_attype
+        new_view.new_contain(AT_TYPE, {"producer": "dummy-producer"})
+        ann = new_view.new_annotation('a1', AT_TYPE)
         ann.add_property("f1", "hello_world")
         return mmif
 
