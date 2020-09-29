@@ -1,4 +1,5 @@
-from typing import Union
+import json
+from typing import Union, List, Optional
 
 from mmif import Mmif, Document
 from mmif.serialize.mmif import MmifMetadata
@@ -21,11 +22,28 @@ class PipelineSource:
 
     The same PipelineSource object can be used repeatedly
     to generate multiple MMIF objects.
+
+    :param common_documents_json:
+        JSON doc_lists for any documents that should be common
+        to all MMIF objects produced by this pipeline.
+
+    :param common_metadata_json:
+        JSON doc_lists for metadata that should be common to
+        all MMIF objects produced by this pipeline.
     """
     mmif: Mmif
 
-    def __init__(self) -> None:
-        self.mmif_start: dict = {"documents": [], "views": []}
+    def __init__(
+            self,
+            common_documents_json: Optional[List[DOC_JSON]] = None,
+            common_metadata_json: Optional[METADATA_JSON] = None
+    ) -> None:
+        self.mmif_start: dict = {"documents": [json.loads(document)
+                                               if isinstance(document, str)
+                                               else document
+                                               for document in common_documents_json],
+                                 "views": [],
+                                 "metadata": common_metadata_json}
         self.prime()
 
     def add_document(self, document: Union[str, dict, Document]) -> None:
@@ -40,6 +58,15 @@ class PipelineSource:
         if isinstance(document, (str, dict)):
             document = Document(document)
         self.mmif.add_document(document)
+
+    def change_metadata(self, key: str, value):
+        """
+        Adds or changes a metadata entry in the working source MMIF.
+
+        :param key: the desired key of the metadata property
+        :param value: the desired value of the metadata property
+        """
+        self.mmif.metadata[key] = value
 
     def prime(self) -> None:
         """
