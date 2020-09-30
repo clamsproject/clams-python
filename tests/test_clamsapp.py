@@ -1,57 +1,56 @@
-import json
 import unittest
 from builtins import object
+from typing import Union
 
 import clams.restify
 import clams.serve
-from clams import Mmif, Medium, MediaTypes
+from mmif import Mmif, Document, DocumentTypes, AnnotationTypes
 
-dummy_attype = "http://clams.ai/vocab/dummy"
+
+AT_TYPE = AnnotationTypes.TimeFrame
 
 
 class ExampleInputMMIF(object):
 
     @staticmethod
     def get_mmif():
-        mmif = Mmif()
-        mmif.context = "mmif-prototype-0.0.1.jsonld"
-        mmif.metadata = {}
-        mmif.media = [Medium(0, MediaTypes.V, "/dummy/dir/dummy.file.mp4")]
-        mmif.contains = {}
-        mmif.views = []
+        mmif = Mmif(validate=False, frozen=False)
+        mmif.add_document(Document({'@type': DocumentTypes.VideoDocument.value,
+                                    'properties':
+                                        {'id': 'm1', 'location': "/dummy/dir/dummy.file.mp4"}}))
         return str(mmif)
 
 
 class TestSerialization(unittest.TestCase):
 
     def setUp(self):
-        self.mmif = Mmif(ExampleInputMMIF.get_mmif())
+        self.mmif = Mmif(ExampleInputMMIF.get_mmif(), validate=False)
 
     def test_view_is_empty(self):
-        self.assertEqual(self.mmif.contains, 0)
-        self.assertEqual(self.mmif.views, 0)
+        self.assertEqual(len(self.mmif.views), 0)
+
 
 class ExampleClamsApp(clams.serve.ClamsApp):
 
     def appmetadata(self):
-        return  {"name": "Tesseract OCR",
-                 "description": "A dummy tool for testing",
-                 "vendor": "Team CLAMS",
-                 "requires": [],
-                 "produces": [dummy_attype]}
+        return {"name": "Tesseract OCR",
+                "description": "A dummy tool for testing",
+                "vendor": "Team CLAMS",
+                "requires": [],
+                "produces": [AT_TYPE]}
 
     def sniff(self, mmif):
         return True
 
-    def annotate(self, mmif):
+    def annotate(self, mmif: Union[str, dict, Mmif]):
         if type(mmif) is not Mmif:
-            mmif = Mmif(mmif)
+            mmif = Mmif(mmif, validate=False)
         new_view = mmif.new_view()
-        new_view.new_contain(dummy_attype, "dummy-producer")
-        ann = new_view.new_annotation(1)
-        ann.attype = dummy_attype
-        ann.add_feature("f1", "hello_world")
+        new_view.new_contain(AT_TYPE, {"producer": "dummy-producer"})
+        ann = new_view.new_annotation('a1', AT_TYPE)
+        ann.add_property("f1", "hello_world")
         return mmif
+
 
 class TestClamsApp(unittest.TestCase):
     def setUp(self):
@@ -98,3 +97,5 @@ class TestRestifier(unittest.TestCase):
         self.assertIsNotNone(put)
 
 
+if __name__ == '__main__':
+    unittest.main()

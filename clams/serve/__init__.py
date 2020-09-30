@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 
 
+__all__ = ['ClamsApp', 'ClamApp']
+
+
 class ClamsApp(ABC):
     def __init__(self):
         super().__init__()
