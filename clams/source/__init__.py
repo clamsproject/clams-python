@@ -117,7 +117,7 @@ class PipelineSource:
         if isinstance(documents, str):
             documents = json.loads(documents)
         if isinstance(metadata, MmifMetadata):
-            metadata = metadata.serialize()
+            metadata = metadata.serialize() # pytype: disable=attribute-error # bug in pytype? (https://github.com/google/pytype/issues/533)
         if isinstance(metadata, str):
             metadata = json.loads(metadata)
 
