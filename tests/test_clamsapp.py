@@ -1,11 +1,10 @@
-import json
 import unittest
 from builtins import object
 from typing import Union
 
 import clams.restify
 import clams.serve
-from clams import Mmif, Document, DocumentTypes, AnnotationTypes
+from mmif import Mmif, Document, DocumentTypes, AnnotationTypes
 
 
 AT_TYPE = AnnotationTypes.TimeFrame
