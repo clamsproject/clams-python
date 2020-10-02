@@ -39,6 +39,10 @@ class PipelineSource:
             common_documents_json: Optional[List[DOC_JSON]] = None,
             common_metadata_json: Optional[METADATA_JSON] = None
     ) -> None:
+        if common_documents_json is None:
+            common_documents_json = []
+        if common_metadata_json is None:
+            common_metadata_json = dict()
         self.mmif_start: dict = {"documents": [json.loads(document)
                                                if isinstance(document, str)
                                                else document
