@@ -2,7 +2,7 @@ import json
 import itertools
 from typing import Union, Generator, List, Optional, Iterable
 
-from mmif import Mmif, Document
+from mmif import Mmif, Document, __specver__
 from mmif.serialize.mmif import MmifMetadata
 
 
@@ -39,12 +39,19 @@ class PipelineSource:
             common_documents_json: Optional[List[DOC_JSON]] = None,
             common_metadata_json: Optional[METADATA_JSON] = None
     ) -> None:
+        if common_documents_json is None:
+            common_documents_json = []
+        if common_metadata_json is None:
+            common_metadata_json = dict()
         self.mmif_start: dict = {"documents": [json.loads(document)
                                                if isinstance(document, str)
                                                else document
                                                for document in common_documents_json],
                                  "views": [],
-                                 "metadata": common_metadata_json}
+                                 "metadata": {
+                                     "mmif": f"http://mmif.clams.ai/{__specver__}",
+                                     **common_metadata_json
+                                 }}
         self.prime()
 
     def add_document(self, document: Union[str, dict, Document]) -> None:
