@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-__all__ = ['ClamsApp', 'ClamApp']
+__all__ = ['ClamsApp']
 
 
 class ClamsApp(ABC):
@@ -19,10 +19,3 @@ class ClamsApp(ABC):
     @abstractmethod
     def annotate(self, mmif) -> str:
         raise NotImplementedError()
-
-
-class ClamApp(ClamsApp, ABC):
-    """ Equivalent to `ClamsApp`. This class is only for backward compatibility. Use `ClamsApp` instead. """
-    pass
-
-
