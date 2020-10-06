@@ -28,5 +28,10 @@ setuptools.setup(
     ],
     install_requires=requires,
     python_requires='>=3.6',
-    packages=setuptools.find_packages() 
+    packages=setuptools.find_packages(),
+    entry_points={
+        'console_scripts': [
+            'clams = clams.__init__:cli',
+        ],
+    },
 )

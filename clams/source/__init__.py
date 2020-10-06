@@ -2,8 +2,10 @@ import json
 import itertools
 from typing import Union, Generator, List, Optional, Iterable
 
-from mmif import Mmif, Document, __specver__
+from mmif import Mmif, Document, DocumentTypes, __specver__
 from mmif.serialize.mmif import MmifMetadata
+
+from ..utils import Cli
 
 
 __all__ = ['PipelineSource']
@@ -168,3 +170,55 @@ class PipelineSource:
         self.prime()
         while True:
             yield self.produce()
+
+
+class SourceCli(Cli):
+    """
+    Arguments to ``clams source`` should be colon-joined pairs
+    of MIME types and filepaths. The output will be a MMIF file
+    containing a document for each of those filepaths, with the
+    appropriate ``@type`` and MIME type, printed to the standard
+    output.
+
+    Top-level MIME types should be one of ``audio``, ``video``,
+    ``text``, and ``image``. Subtypes, such as ``video/mpeg``,
+    are permitted.
+
+    For example: ::
+
+        $ clams source video/mpeg:/var/archive/video-002.mp4 text:/var/archive/transcript-002.txt
+
+    """
+    def run(self):
+        from string import Template
+        at_types = {
+            'video': DocumentTypes.VideoDocument,
+            'audio': DocumentTypes.AudioDocument,
+            'text': DocumentTypes.TextDocument,
+            'image': DocumentTypes.ImageDocument
+        }
+        template = Template('''{
+          "@type": "${at_type}",
+          "properties": {
+            "id": "${aid}",
+            "mime": "${mime}",
+            "location": "${location}" }
+        }''')
+        pl = PipelineSource()
+
+        for doc_id, arg in enumerate(self.args, start=1):
+            result = arg.split(':', maxsplit=1)
+            if len(result) == 2 and result[0].split('/', maxsplit=1)[0] in at_types:
+                mime, location = result
+            else:
+                raise ValueError(
+                    f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source'
+                )
+            doc = template.substitute(
+                at_type=at_types[mime.split('/', maxsplit=1)[0]].value,
+                aid=f'd{doc_id}',
+                mime=mime,
+                location=location
+            )
+            pl.add_document(doc)
+        print(pl.produce().serialize(pretty=True))
