@@ -13,7 +13,7 @@ setuptools.setup(
     name="clams-python", 
     version=version,
     author="Brandeis Lab for Linguistics and Computation", 
-    author_email="admin@clams.al",
+    author_email="admin@clams.ai",
     description="A collection of APIs to develop CLAMS app for python", 
     long_description=long_desc,
     long_description_content_type="text/markdown",
