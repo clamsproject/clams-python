@@ -18,13 +18,13 @@ class ExampleInputMMIF(object):
         mmif.add_document(Document({'@type': DocumentTypes.VideoDocument.value,
                                     'properties':
                                         {'id': 'm1', 'location': "/dummy/dir/dummy.file.mp4"}}))
-        return str(mmif)
+        return mmif.serialize()
 
 
 class TestSerialization(unittest.TestCase):
 
     def setUp(self):
-        self.mmif = Mmif(ExampleInputMMIF.get_mmif(), validate=False)
+        self.mmif = Mmif(ExampleInputMMIF.get_mmif())
 
     def test_view_is_empty(self):
         self.assertEqual(len(self.mmif.views), 0)
@@ -37,7 +37,7 @@ class ExampleClamsApp(clams.serve.ClamsApp):
                 "description": "A dummy tool for testing",
                 "vendor": "Team CLAMS",
                 "requires": [],
-                "produces": [AT_TYPE]}
+                "produces": [AT_TYPE.value]}
 
     def sniff(self, mmif):
         return True
@@ -49,7 +49,7 @@ class ExampleClamsApp(clams.serve.ClamsApp):
         new_view.new_contain(AT_TYPE, {"producer": "dummy-producer"})
         ann = new_view.new_annotation('a1', AT_TYPE)
         ann.add_property("f1", "hello_world")
-        return mmif
+        return mmif.serialize()
 
 
 class TestClamsApp(unittest.TestCase):

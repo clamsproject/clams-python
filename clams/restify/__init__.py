@@ -34,6 +34,8 @@ class ClamsRestfulApi(Resource):
 
     @staticmethod
     def json_to_response(json_str: str, status=200):
+        if not isinstance(json_str, str):
+            json_str = str(json_str)
         return Response(response=json_str, status=status, mimetype='application/json')
 
     def get(self):

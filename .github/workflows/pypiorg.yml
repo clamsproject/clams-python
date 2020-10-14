@@ -18,8 +18,10 @@ jobs:
     - name: build a sdist
       run: |
         pip install -r requirements.dev
+        pip install -r requirements.txt
         echo "${{ github.ref }}" | cut -d/ -f3 > VERSION
         python setup.py sdist
+        python -m pytest --doctest-modules --cov=clams/ --cov-report=xml
     - name: upload to the official pypi
       run: |
         twine upload -u __token__ -p ${{ secrets.PYPITOKEN }} dist/clams-python-`cat VERSION`.tar.gz 

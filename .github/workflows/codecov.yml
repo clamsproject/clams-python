@@ -1,7 +1,7 @@
 name: test and send code coverage to codecov.io
 on: [push]
 jobs:
-  run:
+  test-and-codecov:
     runs-on: ubuntu-latest
     env:
       OS: linux
