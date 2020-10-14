@@ -27,10 +27,10 @@ develop: devversion package test
 	twine upload --repository-url http://morbius.cs-i.brandeis.edu:8081/repository/pypi-develop/ \
 		-u clamsuploader -p $$CLAMSUPLOADERPASSWORD dist/$(sdistname)-`cat VERSION`.tar.gz
 
-publish: distclean version package test 
-	twine upload -u __token__ -p $$PYPITOKEN dist/$(sdistname)-`cat VERSION`.tar.gz ; \
-	twine upload --repository-url http://morbius.cs-i.brandeis.edu:8081/repository/pypi-develop/ \
-		-u clamsuploader -p $$CLAMSUPLOADERPASSWORD dist/$(sdistname)-`cat VERSION`.tar.gz
+publish: clean version package test 
+	test `git branch --show-current` = "master"
+	@git tag `cat VERSION` 
+	@git push origin `cat VERSION`
 
 package: VERSION
 	pip install -r requirements.dev
