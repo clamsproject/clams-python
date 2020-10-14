@@ -20,6 +20,7 @@ jobs:
         pip install -r requirements.dev
         echo "${{ github.ref }}" | cut -d/ -f3 > VERSION
         python setup.py sdist
+        python -m pytest --doctest-modules --cov=clams/ --cov-report=xml
     - name: upload to the official pypi
       run: |
         twine upload -u __token__ -p ${{ secrets.PYPITOKEN }} dist/clams-python-`cat VERSION`.tar.gz 
