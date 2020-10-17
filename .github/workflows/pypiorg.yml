@@ -15,16 +15,19 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.6
+    - name: set VERSION value
+      run: |
+        echo "VERSION=$(echo "${{ github.ref }}" | cut -d/ -f3)" >> $GITHUB_ENV
     - name: build a sdist
       run: |
         pip install -r requirements.dev
         pip install -r requirements.txt
-        echo "${{ github.ref }}" | cut -d/ -f3 > VERSION
+        echo ${{ env.VERSION }} > VERSION
         python setup.py sdist
         python -m pytest --doctest-modules --cov=clams/ --cov-report=xml
     - name: upload to the official pypi
       run: |
-        twine upload -u __token__ -p ${{ secrets.PYPITOKEN }} dist/clams-python-`cat VERSION`.tar.gz 
+        twine upload -u __token__ -p ${{ secrets.PYPITOKEN }} dist/clams-python-${{ env.VERSION }}.tar.gz 
     - name: upload to the brandeis pypi
       run: |
-        twine upload --repository-url http://morbius.cs-i.brandeis.edu:8081/repository/pypi-develop/ -u clamsuploader -p ${{ secrets.CLAMSUPLOADERPASSWORD }} dist/clams-python-`cat VERSION`.tar.gz
+        twine upload --repository-url http://morbius.cs-i.brandeis.edu:8081/repository/pypi-develop/ -u clamsuploader -p ${{ secrets.CLAMSUPLOADERPASSWORD }} dist/clams-python-${{ env.VERSION }}.tar.gz
