@@ -207,6 +207,9 @@ class SourceCli(Cli):
         pl = PipelineSource()
 
         for doc_id, arg in enumerate(self.args, start=1):
+            arg = arg.strip()
+            if len(arg) < 1:
+                continue
             result = arg.split(':', maxsplit=1)
             if len(result) == 2 and result[0].split('/', maxsplit=1)[0] in at_types:
                 mime, location = result

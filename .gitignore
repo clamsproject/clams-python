@@ -1,3 +1,10 @@
+# python test files 
+.coverage
+.pytype
+
+# build time temp files
+VERSION*
+clams/ver
 # linux
 *~
 .directory # KDE directory preferences
