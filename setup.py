@@ -1,5 +1,9 @@
 #! /usr/bin/env python3
 
+import os
+from os import path
+import shutil
+
 import setuptools
 
 with open("VERSION", 'r') as version_f: 
@@ -10,6 +14,13 @@ with open('README.md') as readme:
 
 with open('requirements.txt') as requirements:
     requires = requirements.readlines()
+
+ver_pack_dir = path.join('clams', 'ver')
+shutil.rmtree(ver_pack_dir, ignore_errors=True)
+os.makedirs(ver_pack_dir, exist_ok=True)
+init_mod = open(path.join(ver_pack_dir, '__init__.py'), 'w')
+init_mod.write(f'__version__ = "{version}"')
+init_mod.close()
 
 setuptools.setup(
     name="clams-python", 
