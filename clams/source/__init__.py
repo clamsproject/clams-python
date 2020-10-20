@@ -215,7 +215,7 @@ class SourceCli(Cli):
                 mime, location = result
             else:
                 raise ValueError(
-                    f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source: provided '
+                    f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source'
                 )
             doc = template.substitute(
                 at_type=at_types[mime.split('/', maxsplit=1)[0]].value,
