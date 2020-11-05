@@ -49,5 +49,11 @@ class ClamsRestfulApi(Resource):
             return Response(status=406, response=str(e))
 
     def put(self):
-        return self.json_to_response(self.cla.annotate(Mmif(request.get_data())))
+        try:
+            return self.json_to_response(self.cla.annotate(Mmif(request.get_data())))
+        # TODO (krim @ 11/5/20): we can return more specific http codes based on actual error
+        # e.g. MMIF syntax error -> 400, Document file not found -> 404, unknown Document file format -> 415
+        # processing takes too long time -> 408,
+        except Exception as e:
+            return Response(status=400, response=str(e))
 
