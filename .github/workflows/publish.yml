@@ -1,0 +1,63 @@
+name: upload pypi distribution and docker image
+on: 
+  push: 
+    tags: '[0-9]+.[0-9]+.[0-9]+'
+jobs:
+  sdist-and-upload:
+    runs-on: ubuntu-latest
+    env:
+      OS: linux
+      PYTHON: '3.6'
+    steps:
+    - name: checkout the repo 
+      uses: actions/checkout@v2
+    - name: setup python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+    - name: set VERSION value
+      run: |
+        echo "VERSION=$(echo "${{ github.ref }}" | cut -d/ -f3)" >> $GITHUB_ENV
+    - name: build a sdist
+      run: |
+        pip install -r requirements.dev
+        pip install -r requirements.txt
+        echo ${{ env.VERSION }} > VERSION
+        python setup.py sdist
+        python -m pytest --doctest-modules --cov=clams/ --cov-report=xml
+    - name: upload to the official pypi
+      run: |
+        twine upload -u __token__ -p ${{ secrets.PYPITOKEN }} dist/clams-python-${{ env.VERSION }}.tar.gz 
+    - name: upload to the brandeis pypi
+      run: |
+        twine upload --repository-url http://morbius.cs-i.brandeis.edu:8081/repository/pypi-develop/ -u clamsuploader -p ${{ secrets.CLAMSUPLOADERPASSWORD }} dist/clams-python-${{ env.VERSION }}.tar.gz
+    - name: just in case, wait for a few secs for the pypi dist gets available
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '10s'
+    - name: set up QEMU
+      uses: docker/setup-qemu-action@v1
+    - name: set up docker buildx
+      uses: docker/setup-buildx-action@v1
+    - name: docker hub login
+      uses: docker/login-action@v1
+      with:
+        username: clamsbot
+        password: ${{ secrets.DOCKERHUB_CLAMSBOT_TOKEN }}
+    - name: generate tags for the docker image
+      id: docker_tags
+      uses: Surgo/docker-smart-tag-action@v1
+      with:
+        docker_image: clamsproject/clams-python
+    - name: build docker image and push to the hub using the tags
+      id: docker_build
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        context: docker
+        file: ./docker/Dockerfile
+        tags: ${{ steps.docker_tags.outputs.tag }}
+        build-args: |
+          clams_version=${{ env.VERSION }}
+
+

@@ -5,15 +5,14 @@ from mmif import Mmif
 
 
 class Restifier(object):
-    def __init__(self, app_instance):
+    def __init__(self, app_instance, loopback=False, port=5000, debug=True):
         super().__init__()
         self.cla = app_instance
         self.import_name = app_instance.__class__.__name__
         self.flask_app = Flask(self.import_name)
-        # TODO setters for these flask params
-        self.host = '0.0.0.0'
-        self.port = 5000
-        self.debug = True
+        self.host = 'localhost' if loopback else '0.0.0.0'
+        self.port = port
+        self.debug = debug
         api = Api(self.flask_app)
         api.add_resource(ClamsRestfulApi, '/',
                          resource_class_args=[self.cla])
@@ -34,15 +33,21 @@ class ClamsRestfulApi(Resource):
         self.cla = cla_instance
 
     @staticmethod
-    def json_to_response(json_str):
-        return Response(response=json_str, status=200, mimetype='application/json')
+    def json_to_response(json_str: str, status=200):
+        if not isinstance(json_str, str):
+            json_str = str(json_str)
+        return Response(response=json_str, status=status, mimetype='application/json')
 
     def get(self):
         return self.json_to_response(self.cla.appmetadata())
 
     def post(self):
-        return self.json_to_response(str(self.cla.sniff(Mmif(request.get_data()))))
+        try:
+            accept = self.cla.sniff(Mmif(request.get_data()))
+            return Response(status=200) if accept else Response(status=406)
+        except Exception as e:
+            return Response(status=406, response=str(e))
 
     def put(self):
-        return self.json_to_response(str(self.cla.annotate(Mmif(request.get_data()))))
+        return self.json_to_response(self.cla.annotate(Mmif(request.get_data())))
 

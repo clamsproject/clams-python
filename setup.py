@@ -1,3 +1,9 @@
+#! /usr/bin/env python3
+
+import os
+from os import path
+import shutil
+
 import setuptools
 
 with open("VERSION", 'r') as version_f: 
@@ -9,11 +15,18 @@ with open('README.md') as readme:
 with open('requirements.txt') as requirements:
     requires = requirements.readlines()
 
+ver_pack_dir = path.join('clams', 'ver')
+shutil.rmtree(ver_pack_dir, ignore_errors=True)
+os.makedirs(ver_pack_dir, exist_ok=True)
+init_mod = open(path.join(ver_pack_dir, '__init__.py'), 'w')
+init_mod.write(f'__version__ = "{version}"')
+init_mod.close()
+
 setuptools.setup(
     name="clams-python", 
     version=version,
     author="Brandeis Lab for Linguistics and Computation", 
-    author_email="admin@clams.al",
+    author_email="admin@clams.ai",
     description="A collection of APIs to develop CLAMS app for python", 
     long_description=long_desc,
     long_description_content_type="text/markdown",
@@ -28,5 +41,10 @@ setuptools.setup(
     ],
     install_requires=requires,
     python_requires='>=3.6',
-    packages=setuptools.find_packages() 
+    packages=setuptools.find_packages(),
+    entry_points={
+        'console_scripts': [
+            'clams = clams.__init__:cli',
+        ],
+    },
 )

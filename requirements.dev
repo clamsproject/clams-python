@@ -1,0 +1,4 @@
+pytype 
+pytest
+pytest-cov
+twine
