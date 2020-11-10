@@ -2,3 +2,6 @@ pytype
 pytest
 pytest-cov
 twine
+sphinx
+sphinx-rtd-theme
+autodoc

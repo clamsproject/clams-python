@@ -12,7 +12,7 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join('.', 'sphinx')))
+sys.path.insert(0, os.path.abspath(os.path.join('.', 'docs','_source')))
 
 
 # -- Project information -----------------------------------------------------
@@ -20,10 +20,6 @@ sys.path.insert(0, os.path.abspath(os.path.join('.', 'sphinx')))
 project = 'clams_python'
 copyright = '2020, Brandeis LLC'
 author = 'Brandeis LLC'
-
-# The full version, including alpha/beta/rc tags
-with open('VERSION') as V:
-    release = V.read().strip()
 
 
 # -- General configuration ---------------------------------------------------
