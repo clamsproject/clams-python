@@ -6,6 +6,7 @@
 Welcome to clams-python's documentation!
 ========================================
 
+.. mdinclude:: ../../README.md
 
 .. toctree::
    :maxdepth: 5
