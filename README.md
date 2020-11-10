@@ -12,7 +12,7 @@
 1. a base class to start developing a CLAMS app
 1. a flask-based wrapper to run a Python CLAMS app as a HTTP web app
 
-## Documentation
+## For more ...
 For user manuals and Python API documentation, take a look at [the SDK website](https://www.clams.ai.clams-python).
 
-For MMIF-specific Python API documentation, take a look at the [`mmif-python` website](https://www.clams.ai/mmif-python).
+For MMIF-specific Python API documentation, take a look at the [mmif-python website](https://www.clams.ai/mmif-python).

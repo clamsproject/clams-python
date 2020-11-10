@@ -1,9 +1,11 @@
 clams package
 =============
+API documentation
 
 .. toctree::
    :maxdepth: 4
 
-   clams.restify
-   clams.serve
-   clams.source
+   autodoc/clams.restify
+   autodoc/clams.serve
+   autodoc/clams.source
+   autodoc/clams.utils
