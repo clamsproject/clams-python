@@ -52,11 +52,11 @@ setuptools.setup(
     cmdclass=cmdclass,
     command_options={
         'build_sphinx': {
-            'source_dir': ('setup.py', 'docs/_source'),
+            'source_dir': ('setup.py', 'documentation'),
             'project': ('setup.py', name),
             'version': ('setup.py', version),
             #  'release': ('setup.py', release),
-            'build_dir': ('setup.py', 'docs/_build'),
+            'build_dir': ('setup.py', 'documentation/_build'),
             'builder': ('setup.py', 'html'),
             }
         },
