@@ -30,7 +30,7 @@ The Example: Kaldi
 A sample Kaldi transcript
 -------------------------
 
-.. code:: json
+.. code:: javascript
 
    {
      "words": [
@@ -59,7 +59,7 @@ A sample Kaldi transcript
 
 First, the front matter:
 
-.. code:: json
+.. code:: javascript
 
    {
      "id": "v_0",
@@ -79,7 +79,7 @@ First, the front matter:
 
 Then, the first two annotations:
 
-.. code:: json
+.. code:: javascript
 
    {
      "@type": "http://mmif.clams.ai/0.2.1/vocabulary/TextDocument",
@@ -101,7 +101,7 @@ Then, the first two annotations:
 
 Then, three annotations for each word:
 
-.. code:: json
+.. code:: javascript
 
    {
      "@type": "http://vocab.lappsgrid.org/Token",
