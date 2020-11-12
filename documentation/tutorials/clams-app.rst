@@ -82,7 +82,7 @@ Then, the first two annotations:
 .. code:: json
 
    {
-     "@type": "http://mmif.clams.ai/HEAD/vocabulary/TextDocument",
+     "@type": "http://mmif.clams.ai/0.2.1/vocabulary/TextDocument",
      "properties": {
        "text": {
          "@value": "ah oh yeah"
@@ -91,7 +91,7 @@ Then, the first two annotations:
      }
    },
    {
-     "@type": "http://mmif.clams.ai/HEAD/vocabulary/Alignment",
+     "@type": "http://mmif.clams.ai/0.2.1/vocabulary/Alignment",
      "properties": {
        "source": "d1",
        "target": "td1",
@@ -114,7 +114,7 @@ Then, three annotations for each word:
      }
    },
    {
-     "@type": "http://mmif.clams.ai/HEAD/vocabulary/TimeFrame",
+     "@type": "http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame",
      "properties": {
        "frameType": "speech",
        "start": 70,
@@ -123,7 +123,7 @@ Then, three annotations for each word:
      }
    },
    {
-     "@type": "http://mmif.clams.ai/HEAD/vocabulary/Alignment",
+     "@type": "http://mmif.clams.ai/0.2.1/vocabulary/Alignment",
      "properties": {
        "source": "tf1",
        "target": "t1",
@@ -141,7 +141,7 @@ Then, three annotations for each word:
      }
    },
    {
-     "@type": "http://mmif.clams.ai/HEAD/vocabulary/TimeFrame",
+     "@type": "http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame",
      "properties": {
        "frameType": "speech",
        "start": 2660,
@@ -150,7 +150,7 @@ Then, three annotations for each word:
      }
    },
    {
-     "@type": "http://mmif.clams.ai/HEAD/vocabulary/Alignment",
+     "@type": "http://mmif.clams.ai/0.2.1/vocabulary/Alignment",
      "properties": {
        "source": "tf2",
        "target": "t2",
@@ -168,7 +168,7 @@ Then, three annotations for each word:
      }
    },
    {
-     "@type": "http://mmif.clams.ai/HEAD/vocabulary/TimeFrame",
+     "@type": "http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame",
      "properties": {
        "frameType": "speech",
        "start": 8590,
@@ -177,7 +177,7 @@ Then, three annotations for each word:
      }
    },
    {
-     "@type": "http://mmif.clams.ai/HEAD/vocabulary/Alignment",
+     "@type": "http://mmif.clams.ai/0.2.1/vocabulary/Alignment",
      "properties": {
        "source": "tf3",
        "target": "t3",
@@ -200,7 +200,7 @@ Three steps:
 
 .. _header-n59:
 
- 1. Setting up a CLAMS app in Python
+1. Setting up a CLAMS app in Python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Each CLAMS app should be a subclass of the ``ClamsApp`` class in the
@@ -473,8 +473,8 @@ properties by using the ``id`` property of an ``Annotation`` object.
 
 .. _header-n323:
 
-Flask app
-^^^^^^^^^
+1.4 Flask app
+^^^^^^^^^^^^^
 
 We use the CLAMS RESTful API:
 
@@ -561,8 +561,8 @@ app’s output.
 
 .. _header-n372:
 
-Making a Docker container
-~~~~~~~~~~~~~~~~~~~~~~~~~
+3. Making a Docker container
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 CLAMS apps will generally run as Flask servers in Docker containers.
 
