@@ -6,6 +6,16 @@ import shutil
 
 import setuptools
 
+name = "clams-python"
+cmdclass = {}
+
+try:
+    from sphinx.setup_command import BuildDoc
+    cmdclass['build_sphinx'] = BuildDoc
+except ImportError:
+    print('WARNING: _source not available, not building docs')
+
+
 with open("VERSION", 'r') as version_f: 
     version = version_f.read().strip()
 
@@ -39,6 +49,17 @@ setuptools.setup(
     'License :: OSI Approved :: Apache Software License',
     'Programming Language :: Python :: 3 :: Only',
     ],
+    cmdclass=cmdclass,
+    command_options={
+        'build_sphinx': {
+            'source_dir': ('setup.py', 'documentation'),
+            'project': ('setup.py', name),
+            'version': ('setup.py', version),
+            #  'release': ('setup.py', release),
+            'build_dir': ('setup.py', 'documentation/_build'),
+            'builder': ('setup.py', 'html'),
+            }
+        },
     install_requires=requires,
     python_requires='>=3.6',
     packages=setuptools.find_packages(),

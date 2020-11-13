@@ -78,3 +78,8 @@ gdrive_shared*/
 # ctag generated file
 tags
 .tags
+
+# sphinx
+documentation/_build/
+# docs will be auto compiled and pushed by github actions
+docs/
