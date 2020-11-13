@@ -1,8 +1,8 @@
 .. _header-n0:
 .. _tutorial:
 
-Tutorial: writing a CLAMS app 
-==============================
+Tutorial: writing a CLAMS app
+=============================
 
 A short demonstration of how to wrap an existing processing tool as a
 CLAMS application

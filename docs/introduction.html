@@ -195,14 +195,14 @@
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install clams-python
 </pre></div>
 </div>
-<p>Note that installing <cite>clams-python</cite> will also install <cite>mmif-python</cite> PyPI package, which is a companion python library related to the MMIF data format.</p>
+<p>Note that installing <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> will also install <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> PyPI package, which is a companion python library related to the MMIF data format.</p>
 </div>
 <div class="section" id="i-o-specification">
 <h2>I/O Specification<a class="headerlink" href="#i-o-specification" title="Permalink to this headline">¶</a></h2>
 <p>A CLAMS app must be able to take a MMIF json as input as well as to return a MMIF json as output. MMIF is a JSON(-LD)-based open source data format. For more details and discussions, please visit the <a class="reference external" href="https://mmif.clams.ai">MMIF website</a> and the <a class="reference external" href="https://github.com/clamsproject/mmif/issues">issue tracker</a>.</p>
 <div class="section" id="mmif-package">
 <h3><code class="docutils literal notranslate"><span class="pre">mmif</span></code> package<a class="headerlink" href="#mmif-package" title="Permalink to this headline">¶</a></h3>
-<p><cite>mmif-python</cite> PyPI package comes together with the installation of <cite>clams-python</cite>, and with it, you can use <cite>mmif</cite> python package.</p>
+<p><code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> PyPI package comes together with the installation of <code class="docutils literal notranslate"><span class="pre">clams-python</span></code>, and with it, you can use <code class="docutils literal notranslate"><span class="pre">mmif</span></code> python package.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mmif</span>
 <span class="kn">from</span> <span class="nn">mmif.serialize</span> <span class="kn">import</span> <span class="n">Mmif</span>
 <span class="n">new_mmif</span> <span class="o">=</span> <span class="n">Mmif</span><span class="p">()</span>
@@ -213,12 +213,12 @@
 </div>
 <div class="section" id="note-on-versions">
 <h3>Note on versions<a class="headerlink" href="#note-on-versions" title="Permalink to this headline">¶</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">clams-python</span></code> is under active development, so is <cite>mmif-python</cite>, which is a separate PyPI distribution package providing Python classes and methods to handle MMIF json string. Because of this rapid version cycles, it is often the case that a MMIF file of a certain version does not work with CLAMS SDK that is based on a different version of <cite>mmif-python</cite> from the version of the MMIF file. In every MMIF files, there must be the MMIF version encoded at the top of the file. Please keep in mind the versions you’re using and be careful not to mix and match different versions. To see the MMIF specification version supported by the installed <cite>mmif-python</cite> package, look at <code class="docutils literal notranslate"><span class="pre">mmif.__specver__</span></code> variable.</p>
+<p><code class="docutils literal notranslate"><span class="pre">clams-python</span></code> is under active development, so is <cite>mmif-python</cite>, which is a separate PyPI distribution package providing Python classes and methods to handle MMIF json string. Because of this rapid version cycles, it is often the case that a MMIF file of a certain version does not work with CLAMS SDK that is based on a different version of <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> from the version of the MMIF file. In every MMIF files, there must be the MMIF version encoded at the top of the file. Please keep in mind the versions you’re using and be careful not to mix and match different versions. To see the MMIF specification version supported by the installed <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> package, look at <code class="docutils literal notranslate"><span class="pre">mmif.__specver__</span></code> variable.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mmif</span>
 <span class="n">mmif</span><span class="o">.</span><span class="n">__specver__</span>
 </pre></div>
 </div>
-<p>For more information on the relation between <cite>mmif-python</cite> versions and MMIF specification versions, please take time to read our decision on the subject <a class="reference external" href="https://mmif.clams.ai/versioning/">here</a>.</p>
+<p>For more information on the relation between <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> versions and MMIF specification versions, please take time to read our decision on the subject <a class="reference external" href="https://mmif.clams.ai/versioning/">here</a>.</p>
 </div>
 </div>
 <div class="section" id="clams-app-api">
