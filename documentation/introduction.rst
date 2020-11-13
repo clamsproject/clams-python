@@ -33,9 +33,9 @@ I/O Specification
 A CLAMS app must be able to take a MMIF json as input as well as to return a MMIF json as output. MMIF is a JSON(-LD)-based open source data format. For more details and discussions, please visit the `MMIF website <https://mmif.clams.ai>`_ and the `issue tracker <https://github.com/clamsproject/mmif/issues>`_. 
 
 
-``mmif`` packge
-^^^^^^^^^^^^^^^
-`mmif-python` PyPI package comes together with the installation of `clams-python`, and with it, you can use `mmif` python packge. 
+``mmif`` package
+^^^^^^^^^^^^^^^^^
+`mmif-python` PyPI package comes together with the installation of `clams-python`, and with it, you can use `mmif` python package. 
 
 .. code-block:: python 
 
@@ -65,7 +65,7 @@ A CLAMS Python app is a python class that implements and exposes three core meth
 * ``sniff()``: Takes a MMIF as the only input and returns True if the app can process input MMIF.
 * ``annotate()``: Takes a MMIF as the only input and processes the MMIF input, then returns serialized MMIF :class:`str`.
 
-We provide a tutorial for writing with a real world example at <:ref:`tutorials_clams-app`>. We highly recommend you to go through it. 
+We provide a tutorial for writing with a real world example at <:ref:`tutorial`>. We highly recommend you to go through it. 
 
 Note on App metadata
 ^^^^^^^^^^^^^^^^^^^^^
@@ -98,4 +98,18 @@ Dockerization
 In addition to the HTTP service, a CLAMS app is expected to be containerized. Concretely, the appliance maker expects a CLAMS app to have a ``Dockerfile`` at the project root. Independently from being compatible with the CLAMS appliance, containerization of your app is recommended especially when your app processes video streams and dependent on complicated system-level video processing libraries (e.g. `OpenCV <https://opencv.org/>`_, `FFmpeg <https://ffmpeg.org/>`_). 
 
 Refer to the `official documentation <https://docs.docker.com/engine/reference/builder/>`_ to learn how to write a ``Dockerfile``. To integrate to the CLAMS appliance, a dockerized CLAMS app must automatically start itself as a webapp when instantiated as a container, and listen to ``5000`` port in the container. 
+
+We have a `public docker hub <https://hub.docker.com/orgs/clamsproject/repositories>`_, and publishing Debian-based base images to help developers write ``Dockerfile`` and save build time to install common libraries. At the moment we have a basic image with Python 3.6 and ``clams-python`` installed. We will publish more images built with commonly used video and audio processing libraries. 
+
+CLAMS appliance integration 
+----------------------------
+
+Finally, here are requirements for an app to be appliance compatible. 
+
+#. App code is hosted on a public git repository. 
+#. App is dockerized
+#. The app docker image will automatically start the app as a webapp, and listen to port 5000. 
+#. ``Dockerfile`` for the dockerization is placed in the root of the git repository
+
+To learn how to deploy your app on an appliance instance, please refer to the `appliance documentation <https://appliance.clams.ai/>`_. 
 
