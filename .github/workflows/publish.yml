@@ -31,6 +31,7 @@ jobs:
         python setup.py build_sphinx -a
         mv documentation/_build/html docs
         echo 'sdk.clams.ai' > docs/CNAME
+        touch docs/.nojekyll
     - name: configure clamsbot git user
       run: |
         git config --local user.email "admin@clams.ai"
