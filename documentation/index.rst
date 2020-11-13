@@ -5,10 +5,11 @@ Welcome to CLAMS Python SDK documentation!
 
 .. toctree::
   :maxdepth: 2
-  :caption: Getting started:
+  :caption: Contents
 
   introduction
   appdirectory
+  tutorial
 
 .. toctree::
   :maxdepth: 1

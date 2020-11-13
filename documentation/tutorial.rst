@@ -1,4 +1,5 @@
 .. _header-n0:
+.. _tutorials_clams-app:
 
 Wrapping a tool as a CLAMS app
 ==============================
