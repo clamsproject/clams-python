@@ -13,7 +13,7 @@ try:
     from sphinx.setup_command import BuildDoc
     cmdclass['build_sphinx'] = BuildDoc
 except ImportError:
-    print('WARNING: _source not available, not building docs')
+    print('WARNING: sphinx not available, not building docs')
 
 
 with open("VERSION", 'r') as version_f: 

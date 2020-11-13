@@ -6,13 +6,13 @@
 [CLAMS project](https://www.clams.ai) aims at free and open-source software platform for computational analysis and metadata generation applications for multimedia material. To achieve interoperability between various computational applications developed be different vendors, which is absolutely necessary for piping applications together supported by user-friendly workflow engines, we are also developing JSON(-LD)-based MultiMedia Interchange Format ([MMIF](https://mmif.clams.ai))
 
 ## clams-python
-`clams-python` is a Python implementation of CLAMS SDK. `clams-python` supports; 
+`clams-python` is a Python implementation of the CLAMS SDK. `clams-python` supports; 
 
 1. handling MMIF files for input and output specification for CLAMS apps
 1. a base class to start developing a CLAMS app
 1. a flask-based wrapper to run a Python CLAMS app as a HTTP web app
 
 ## For more ...
-For user manuals and Python API documentation, take a look at [the SDK website](https://www.clams.ai.clams-python).
+For user manuals and Python API documentation, take a look at [the SDK website](https://www.clams.ai/clams-python).
 
 For MMIF-specific Python API documentation, take a look at the [mmif-python website](https://www.clams.ai/mmif-python).
