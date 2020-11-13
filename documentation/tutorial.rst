@@ -1,7 +1,7 @@
 .. _header-n0:
-.. _tutorials_clams-app:
+.. _tutorial:
 
-Wrapping a tool as a CLAMS app
+Tutorial: writing a CLAMS app 
 ==============================
 
 A short demonstration of how to wrap an existing processing tool as a

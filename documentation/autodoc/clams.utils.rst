@@ -1,4 +1,4 @@
-clams.source package
+clams.utils package
 ====================
 
 Module contents
