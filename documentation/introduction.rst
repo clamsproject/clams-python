@@ -25,7 +25,7 @@ Installation
 
     pip install clams-python
 
-Note that installing `clams-python` will also install `mmif-python` PyPI package, which is a companion python library related to the MMIF data format. 
+Note that installing ``clams-python`` will also install ``mmif-python`` PyPI package, which is a companion python library related to the MMIF data format.
 
 I/O Specification 
 ------------------
@@ -35,7 +35,7 @@ A CLAMS app must be able to take a MMIF json as input as well as to return a MMI
 
 ``mmif`` package
 ^^^^^^^^^^^^^^^^^
-`mmif-python` PyPI package comes together with the installation of `clams-python`, and with it, you can use `mmif` python package. 
+``mmif-python`` PyPI package comes together with the installation of ``clams-python``, and with it, you can use ``mmif`` python package.
 
 .. code-block:: python 
 
@@ -48,14 +48,14 @@ Because API's of the ``mmf`` package is well documented in the `mmif-python webs
 
 Note on versions
 ^^^^^^^^^^^^^^^^
-``clams-python`` is under active development, so is `mmif-python`, which is a separate PyPI distribution package providing Python classes and methods to handle MMIF json string. Because of this rapid version cycles, it is often the case that a MMIF file of a certain version does not work with CLAMS SDK that is based on a different version of `mmif-python` from the version of the MMIF file. In every MMIF files, there must be the MMIF version encoded at the top of the file. Please keep in mind the versions you're using and be careful not to mix and match different versions. To see the MMIF specification version supported by the installed `mmif-python` package, look at ``mmif.__specver__`` variable. 
+``clams-python`` is under active development, so is `mmif-python`, which is a separate PyPI distribution package providing Python classes and methods to handle MMIF json string. Because of this rapid version cycles, it is often the case that a MMIF file of a certain version does not work with CLAMS SDK that is based on a different version of ``mmif-python`` from the version of the MMIF file. In every MMIF files, there must be the MMIF version encoded at the top of the file. Please keep in mind the versions you're using and be careful not to mix and match different versions. To see the MMIF specification version supported by the installed ``mmif-python`` package, look at ``mmif.__specver__`` variable.
 
 .. code-block:: python
 
     import mmif
     mmif.__specver__
 
-For more information on the relation between `mmif-python` versions and MMIF specification versions, please take time to read our decision on the subject `here <https://mmif.clams.ai/versioning/>`_.
+For more information on the relation between ``mmif-python`` versions and MMIF specification versions, please take time to read our decision on the subject `here <https://mmif.clams.ai/versioning/>`_.
 
 CLAMS App API
 -------------
