@@ -35,6 +35,7 @@ publish: clean version package test
 
 docs:
 	pip install -r requirements.dev
+	rm -rf documentation/_build
 	python3 setup.py build_sphinx -a
 	rm -rf docs
 	mv documentation/_build/html docs
