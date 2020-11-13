@@ -1,4 +1,5 @@
 .. _header-n0:
+.. _tutorial:
 
 Tutorial: writing a CLAMS app
 =============================
