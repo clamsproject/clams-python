@@ -25,6 +25,26 @@ jobs:
         echo ${{ env.VERSION }} > VERSION
         python setup.py sdist
         python -m pytest --doctest-modules --cov=clams/ --cov-report=xml
+    - name: build HTML documentation 
+      run: |
+        pip install -r requirements.dev
+        python setup build_sphinx -a
+        mv documentation/_build/html docs
+        echo 'sdk.clams.ai' > docs/CNAME
+    - name: configure clamsbot git user
+      run: |
+        git config --local user.email "admin@clams.ai"
+        git config --local user.name "clams-bot"
+    - name: commit the built documentation 
+      run: |
+        git add docs
+        git add -u docs
+        git commit -m 'adding HTML documentation for publication'
+    - name: push the documentation commit
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GH_CLAMSBOT_TOKEN }}
+        branch: master
     - name: upload to the official pypi
       run: |
         twine upload -u __token__ -p ${{ secrets.PYPITOKEN }} dist/clams-python-${{ env.VERSION }}.tar.gz 
