@@ -78,3 +78,6 @@ gdrive_shared*/
 # ctag generated file
 tags
 .tags
+
+# sphinx
+documentation/_build/

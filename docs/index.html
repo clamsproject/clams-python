@@ -1,0 +1,284 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome to CLAMS Python SDK documentation! &mdash; clams-python  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Getting started" href="introduction.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home" alt="Documentation Home"> clams-python
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appdirectory.html">CLAMS app directory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial: writing a CLAMS app</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">clams package</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">clams-python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Welcome to CLAMS Python SDK documentation!</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="welcome-to-clams-python-sdk-documentation">
+<h1>Welcome to CLAMS Python SDK documentation!<a class="headerlink" href="#welcome-to-clams-python-sdk-documentation" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="clams-sdk-for-python">
+<h1>CLAMS sdk for python<a class="headerlink" href="#clams-sdk-for-python" title="Permalink to this headline">¶</a></h1>
+<p><strong>NOTE</strong> that this project is in pre-alpha stage and being actively developed. Nothing is guaranteed to reliably work for the moment and developers need to be very careful when using APIs implemented here. Please use <a class="reference external" href="https://github.com/clamsproject/clams-python/issues">the issue track</a> to report bugs and malfunctions, or send us pull requests for even more contribution.</p>
+<div class="section" id="clams-project">
+<h2>CLAMS project<a class="headerlink" href="#clams-project" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://www.clams.ai">CLAMS project</a> aims at free and open-source software platform for computational analysis and metadata generation applications for multimedia material. To achieve interoperability between various computational applications developed be different vendors, which is absolutely necessary for piping applications together supported by user-friendly workflow engines, we are also developing JSON(-LD)-based MultiMedia Interchange Format (<a class="reference external" href="https://mmif.clams.ai">MMIF</a>)</p>
+</div>
+<div class="section" id="clams-python">
+<h2>clams-python<a class="headerlink" href="#clams-python" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">clams-python</span></code> is a Python implementation of the CLAMS SDK. <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> supports;</p>
+<ol class="arabic simple">
+<li><p>handling MMIF files for input and output specification for CLAMS apps</p></li>
+<li><p>a base class to start developing a CLAMS app</p></li>
+<li><p>a flask-based wrapper to run a Python CLAMS app as a HTTP web app</p></li>
+</ol>
+</div>
+<div class="section" id="for-more">
+<h2>For more …<a class="headerlink" href="#for-more" title="Permalink to this headline">¶</a></h2>
+<p>For user manuals and Python API documentation, take a look at <a class="reference external" href="https://www.clams.ai/clams-python">the SDK website</a>.</p>
+<p>For MMIF-specific Python API documentation, take a look at the <a class="reference external" href="https://www.clams.ai/mmif-python">mmif-python website</a>.</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#i-o-specification">I/O Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#clams-app-api">CLAMS App API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#http-webapp">HTTP webapp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#dockerization">Dockerization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#clams-appliance-integration">CLAMS appliance integration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="appdirectory.html">CLAMS app directory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial: writing a CLAMS app</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#the-example-kaldi">The Example: Kaldi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#a-sample-kaldi-transcript">A sample Kaldi transcript</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#translated-into-a-mmif-view">…translated into a MMIF view</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#so-how-do-we-generate-this">So, how do we generate this?</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">API documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">clams package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.restify.html">clams.restify package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.serve.html">clams.serve package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.source.html">clams.source package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.utils.html">clams.utils package</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="introduction.html" class="btn btn-neutral float-right" title="Getting started" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Brandeis LLC
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

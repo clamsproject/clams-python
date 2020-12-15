@@ -16,6 +16,7 @@ testcaches = .hypothesis .pytest_cache .pytype coverage.xml htmlcov .coverage
 .PHONY: test
 .PHONY: develop
 .PHONY: publish
+.PHONY: docs
 .PHONY: package
 .PHONY: devversion
 
@@ -32,8 +33,15 @@ publish: clean version package test
 	@git tag `cat VERSION` 
 	@git push origin `cat VERSION`
 
-package: VERSION
+docs: package
 	pip install -r requirements.dev
+	rm -rf documentation/_build docs
+	python3 setup.py build_sphinx -a
+	mv documentation/_build/html docs
+	echo 'sdk.clams.ai' > docs/CNAME
+	touch docs/.nojekyll
+
+package: VERSION 
 	python3 setup.py sdist
 
 build: $(artifact)
