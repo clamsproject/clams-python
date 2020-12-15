@@ -1,11 +1,10 @@
+import argparse
 import json
 import itertools
 from typing import Union, Generator, List, Optional, Iterable
 
 from mmif import Mmif, Document, DocumentTypes, __specver__
 from mmif.serialize.mmif import MmifMetadata
-
-from ..utils import Cli
 
 
 __all__ = ['PipelineSource']
@@ -172,56 +171,60 @@ class PipelineSource:
             yield self.produce()
 
 
-class SourceCli(Cli):
-    """
-    Arguments to ``clams source`` should be colon-joined pairs
-    of MIME types and filepaths. The output will be a MMIF file
-    containing a document for each of those filepaths, with the
-    appropriate ``@type`` and MIME type, printed to the standard
-    output.
+def prep_argparser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'documents',
+        default='',
+        action='store',
+        nargs='+',
+        help="This list of documents should be colon-joined pairs of document types and file paths. A document type "
+             "can be one of ``audio``, ``video``, ``text``, ``image``, or a MIME type string (such as video/mp4). The "
+             "output will be a MMIF file containing a document for each of those file paths, with the appropriate "
+             "``@type`` and MIME type (if given), printed to the standard output. "
+    )
+    return parser
 
-    Top-level MIME types should be one of ``audio``, ``video``,
-    ``text``, and ``image``. Subtypes, such as ``video/mpeg``,
-    are permitted.
 
-    For example: ::
-
-        $ clams source video/mpeg:/var/archive/video-002.mp4 text:/var/archive/transcript-002.txt
-
-    """
-    def run(self):
-        from string import Template
-        at_types = {
-            'video': DocumentTypes.VideoDocument,
-            'audio': DocumentTypes.AudioDocument,
-            'text': DocumentTypes.TextDocument,
-            'image': DocumentTypes.ImageDocument
-        }
-        template = Template('''{
+def generate_source_mmif(source_docs):
+    from string import Template
+    at_types = {
+        'video': DocumentTypes.VideoDocument,
+        'audio': DocumentTypes.AudioDocument,
+        'text': DocumentTypes.TextDocument,
+        'image': DocumentTypes.ImageDocument
+    }
+    template = Template('''{
           "@type": "${at_type}",
           "properties": {
             "id": "${aid}",
             "mime": "${mime}",
             "location": "${location}" }
         }''')
-        pl = PipelineSource()
+    pl = PipelineSource()
 
-        for doc_id, arg in enumerate(self.args, start=1):
-            arg = arg.strip()
-            if len(arg) < 1:
-                continue
-            result = arg.split(':', maxsplit=1)
-            if len(result) == 2 and result[0].split('/', maxsplit=1)[0] in at_types:
-                mime, location = result
-            else:
-                raise ValueError(
-                    f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source'
-                )
-            doc = template.substitute(
-                at_type=at_types[mime.split('/', maxsplit=1)[0]].value,
-                aid=f'd{doc_id}',
-                mime=mime,
-                location=location
+    for doc_id, arg in enumerate(source_docs, start=1):
+        arg = arg.strip()
+        if len(arg) < 1:
+            continue
+        result = arg.split(':', maxsplit=1)
+        if len(result) == 2 and result[0].split('/', maxsplit=1)[0] in at_types:
+            mime, location = result
+        else:
+            raise ValueError(
+                f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source'
             )
-            pl.add_document(doc)
-        print(pl.produce().serialize(pretty=True))
+        doc = template.substitute(
+            at_type=at_types[mime.split('/', maxsplit=1)[0]].value,
+            aid=f'd{doc_id}',
+            mime=mime,
+            location=location
+        )
+        pl.add_document(doc)
+    return pl.produce().serialize(pretty=True)
+
+
+if __name__ == '__main__':
+    parser = prep_argparser()
+    args = parser.parse_args()
+    print(generate_source_mmif(args.documents))
