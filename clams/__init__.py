@@ -8,7 +8,7 @@ from clams.ver import __version__
 __all__ = ['Restifier', 'PipelineSource'] + serve_all
 
 
-def cli():
+def prep_argparser():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -18,6 +18,11 @@ def cli():
     )
     subparsers = parser.add_subparsers()
     subparsers._name_parser_map['source'] = source.prep_argparser()
+    return parser
+
+
+def cli():
+    parser = prep_argparser()
     args = parser.parse_args()
 
     if args.documents:
