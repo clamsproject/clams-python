@@ -1,8 +1,13 @@
 from abc import ABC, abstractmethod
 import json
+import os
 
 
 __all__ = ['ClamsApp']
+
+from typing import Union
+
+from mmif import Mmif
 
 
 class ClamsApp(ABC):
@@ -28,3 +33,19 @@ class ClamsApp(ABC):
     @abstractmethod
     def annotate(self, mmif) -> str:
         raise NotImplementedError()
+
+    @staticmethod
+    def validate_document_files(mmif: Union[str, Mmif]) -> None:
+        if isinstance(mmif, str):
+            mmif = Mmif(mmif)
+        for document in mmif.documents:
+            loc = document.location
+            if loc is not None and len(loc) > 0:
+                # TODO (krim @ 12/15/20): when `location` implements full URI values
+                #  (https://github.com/clamsproject/mmif/issues/151) , check for protocol first and use proper check
+                #  methods based on the protocol (e.g. file:// --> os.path.exists())
+                if os.path.exists(loc):
+                    raise FileNotFoundError(f'{document.id}: {loc}')
+                # TODO (krim @ 12/15/20): with implementation of file checksum
+                #  (https://github.com/clamsproject/mmif/issues/150) , here is a good place for additional check for
+                #  file integrity

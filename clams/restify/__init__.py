@@ -49,5 +49,12 @@ class ClamsRestfulApi(Resource):
             return Response(status=406, response=str(e))
 
     def put(self):
-        return self.json_to_response(self.cla.annotate(Mmif(request.get_data())))
+        try:
+            return self.json_to_response(self.cla.annotate(Mmif(request.get_data())))
+        except TypeError as e:
+            return Response(status=415, response=str(e))
+        except FileNotFoundError as e:
+            return Response(status=404, response=str(e))
+        except Exception as e:
+            return Response(status=400, response=str(e))
 
