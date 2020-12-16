@@ -1,6 +1,7 @@
 import argparse
 import json
 import itertools
+from os import path
 from typing import Union, Generator, List, Optional, Iterable
 
 from mmif import Mmif, Document, DocumentTypes, __specver__
@@ -183,10 +184,19 @@ def prep_argparser():
              "output will be a MMIF file containing a document for each of those file paths, with the appropriate "
              "``@type`` and MIME type (if given), printed to the standard output. "
     )
+    parser.add_argument(
+        '-p', '--prefix',
+        default=None,
+        metavar='PATH',
+        nargs='?',
+        help='An absolute path to use as prefix for document file paths. When prefix is set, document file paths MUST '
+             'be relative. This can be useful when creating source MMIF files from a system that\'s different from '
+             'the system that actually runs the pipeline (e.g. in a docker container).'
+    )
     return parser
 
 
-def generate_source_mmif(source_docs):
+def generate_source_mmif(documents, prefix=None):
     from string import Template
     at_types = {
         'video': DocumentTypes.VideoDocument,
@@ -202,8 +212,10 @@ def generate_source_mmif(source_docs):
             "location": "${location}" }
         }''')
     pl = PipelineSource()
+    if prefix and not path.isabs(prefix):
+        raise ValueError(f"prefix must be an absolute path; given \"{prefix}\".")
 
-    for doc_id, arg in enumerate(source_docs, start=1):
+    for doc_id, arg in enumerate(documents, start=1):
         arg = arg.strip()
         if len(arg) < 1:
             continue
@@ -214,6 +226,12 @@ def generate_source_mmif(source_docs):
             raise ValueError(
                 f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source'
             )
+        if prefix and path.isabs(location):
+            raise ValueError(f"when prefix is used, file location must not be an absolute path; given \"{location}\".")
+        elif not prefix and not path.isabs(location):
+            raise ValueError(f'file location must be an absolute path, or --prefix must be used; given \"{location}\".')
+        elif prefix and not path.isabs(location):
+            location = path.join(prefix, location)
         doc = template.substitute(
             at_type=at_types[mime.split('/', maxsplit=1)[0]].value,
             aid=f'd{doc_id}',
@@ -227,4 +245,4 @@ def generate_source_mmif(source_docs):
 if __name__ == '__main__':
     parser = prep_argparser()
     args = parser.parse_args()
-    print(generate_source_mmif(args.documents))
+    print(generate_source_mmif(**vars(args)))

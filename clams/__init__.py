@@ -21,4 +21,4 @@ def cli():
     args = parser.parse_args()
 
     if args.documents:
-        print(source.generate_source_mmif(args.documents))
+        print(source.generate_source_mmif(**vars(args)))
