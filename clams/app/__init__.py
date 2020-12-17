@@ -26,7 +26,6 @@ class ClamsApp(ABC):
     def setupmetadata(self) -> dict:
         raise NotImplementedError()
 
-    @abstractmethod
     def sniff(self, mmif) -> bool:
         raise NotImplementedError()
 

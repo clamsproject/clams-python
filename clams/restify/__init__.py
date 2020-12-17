@@ -43,13 +43,6 @@ class ClamsRestfulApi(Resource):
 
     def post(self) -> Response:
         try:
-            accept = self.cla.sniff(Mmif(request.get_data()))
-            return Response(status=200) if accept else Response(status=406)
-        except Exception as e:
-            return Response(status=406, response=str(e))
-
-    def put(self) -> Response:
-        try:
             return self.json_to_response(self.cla.annotate(Mmif(request.get_data()), **request.args))
         except TypeError as e:
             return Response(status=415, response=str(e))
@@ -58,3 +51,4 @@ class ClamsRestfulApi(Resource):
         except Exception as e:
             return Response(status=400, response=str(e))
 
+    put = post
