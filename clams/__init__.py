@@ -1,7 +1,7 @@
 from typing import Dict, Type
 
-from clams.serve import *
-from clams.serve import __all__ as serve_all
+from clams.app import *
+from clams.app import __all__ as serve_all
 from clams.restify import Restifier
 from clams.source import PipelineSource, SourceCli
 from clams.utils import Cli
