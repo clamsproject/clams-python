@@ -3,7 +3,7 @@ from builtins import object
 from typing import Union
 
 import clams.restify
-import clams.serve
+import clams.app
 from mmif import Mmif, Document, DocumentTypes, AnnotationTypes
 
 
@@ -30,7 +30,7 @@ class TestSerialization(unittest.TestCase):
         self.assertEqual(len(self.mmif.views), 0)
 
 
-class ExampleClamsApp(clams.serve.ClamsApp):
+class ExampleClamsApp(clams.app.ClamsApp):
 
     def setupmetadata(self):
         return {"name": "Tesseract OCR",

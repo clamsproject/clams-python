@@ -59,9 +59,9 @@ For more information on the relation between ``mmif-python`` versions and MMIF s
 
 CLAMS App API
 -------------
-A CLAMS Python app is a python class that implements and exposes three core methods; ``annotate()``, ``appmetadata()`` and ``sniff()``.  And a good place to start writing a CLAMS app is to start with inheriting :class:`clams.serve.ClamsApp`. 
+A CLAMS Python app is a python class that implements and exposes three core methods; ``annotate()``, ``appmetadata()`` and ``sniff()``.  And a good place to start writing a CLAMS app is to start with inheriting :class:`clams.app.ClamsApp`.
 
-* ``appmetadata()``: Returns JSON-formatted :class:`str` that contains metadata about the app. You will be implementing :meth:`clams.serve.ClamsApp.setupmetadata` instead if you're using :class:`clams.serve.ClamsApp` as a super class.
+* ``appmetadata()``: Returns JSON-formatted :class:`str` that contains metadata about the app. You will be implementing :meth:`clams.app.ClamsApp.setupmetadata` instead if you're using :class:`clams.app.ClamsApp` as a super class.
 * ``sniff()``: Takes a MMIF as the only input and returns True if the app can process input MMIF.
 * ``annotate()``: Takes a MMIF as the only input and processes the MMIF input, then returns serialized MMIF :class:`str`.
 
@@ -77,7 +77,7 @@ To be integrated into the CLAMS appliance, a CLAMS app needs to serve as a webap
 
 .. code-block:: python 
 
-    from clams.serve import ClamsApp
+    from clams.app import ClamsApp
     from clams.restify import Restifier
 
     class AnApp(ClamsApp):
@@ -89,7 +89,7 @@ To be integrated into the CLAMS appliance, a CLAMS app needs to serve as a webap
         webapp = Restifier(app)
         webapp.run()
 
-When running the above code, Python will start a web serve and host your CLAMS app. By default the serve will listen to ``0.0.0.0:5000``, but you can adjust hostname and port number. In this webapp, ``appmetadata``, ``sniff``, and ``annotate`` will be respectively mapped to ``GET``, ``POST`` and ``PUT`` to the root route. Hence, for example, you can ``PUT`` a MMIF file to the web app and get a response with the annotated MMIF string in the body. 
+When running the above code, Python will start a web server and host your CLAMS app. By default the serve will listen to ``0.0.0.0:5000``, but you can adjust hostname and port number. In this webapp, ``appmetadata``, ``sniff``, and ``annotate`` will be respectively mapped to ``GET``, ``POST`` and ``PUT`` to the root route. Hence, for example, you can ``PUT`` a MMIF file to the web app and get a response with the annotated MMIF string in the body.
 
 Note that with currently implementation, :class:`clams.restify.Restifier` will start the webapp in debug mode on a `Werkzeug <https://palletsprojects.com/p/werkzeug/>`_ server, which is not always suitable for a production server. For more robust and fast server, you might want to use a production-ready HTTP server. In the end of the day, for the appliance integration, all you need is a webapp the does ``appmetadata``, ``sniff``, and ``annotate`` on ``GET``, ``POST``, and ``PUT`` requests. 
 
