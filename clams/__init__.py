@@ -1,35 +1,29 @@
-from typing import Dict, Type
-
 from clams.app import *
 from clams.app import __all__ as serve_all
 from clams.restify import Restifier
-from clams.source import PipelineSource, SourceCli
-from clams.utils import Cli
+from clams import source
+from clams.source import PipelineSource
 from clams.ver import __version__
-
 
 __all__ = ['Restifier', 'PipelineSource'] + serve_all
 
-CLIS: Dict[str, Type[Cli]] = {
-    'source': SourceCli,
-}
+
+def prep_argparser():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-v', '--version',
+        action='version',
+        version=__version__
+    )
+    subparsers = parser.add_subparsers()
+    subparsers._name_parser_map['source'] = source.prep_argparser()
+    return parser
 
 
 def cli():
-    import argparse
-    import sys
-    parser = argparse.ArgumentParser()
-    parser.add_argument('verb', type=str, nargs='?', choices=['source', 'version'])
-    parser.add_argument(
-        '-v', '--version',
-        action='store_true',
-        help='Print CLAMS version information'
-    )
-    args = parser.parse_args(sys.argv[1:2])
-    if args.version:
-        print(__version__)
-    if args.verb:
-        if args.verb == 'version':
-            print(__version__)
-        else:
-            CLIS[args.verb]().run()
+    parser = prep_argparser()
+    args = parser.parse_args()
+
+    if args.documents:
+        print(source.generate_source_mmif(**vars(args)))
