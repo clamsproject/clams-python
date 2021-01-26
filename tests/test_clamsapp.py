@@ -37,9 +37,6 @@ class ExampleClamsApp(clams.app.ClamsApp):
                 "requires": [],
                 "produces": [AT_TYPE.value]}
 
-    def sniff(self, mmif):
-        return True
-
     def _annotate(self, mmif):
         if type(mmif) is not Mmif:
             mmif = Mmif(mmif, validate=False)
@@ -59,9 +56,6 @@ class TestClamsApp(unittest.TestCase):
         metadata = self.app.appmetadata
         # TODO (krim @ 9/3/19): more robust test cases
         self.assertIsNotNone(metadata)
-
-    def test_sniff(self):
-        self.assertTrue(self.app.sniff(self.in_mmif))
 
     def test_annotate(self):
         out_mmif = self.app.annotate(self.in_mmif)

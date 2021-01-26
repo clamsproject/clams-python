@@ -26,9 +26,6 @@ class ClamsApp(ABC):
     def setupmetadata(self) -> dict:
         raise NotImplementedError()
 
-    def sniff(self, mmif) -> bool:
-        raise NotImplementedError()
-
     def annotate(self, mmif: Union[str, dict, Mmif], **kwargs) -> str:
         """
         A wrapper around ``_annotate`` method where some common operations invoked by kwargs are implemented.

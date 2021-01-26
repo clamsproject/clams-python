@@ -211,11 +211,9 @@ Things to do:
 
 1. Write a ``setupmetadata`` method
 
-2. Write a ``sniff`` method
+2. Write an ``_annotate`` method
 
-3. Write an ``annotate`` method
-
-4. Set up a Flask app
+3. Set up a Flask app
 
 Steps 1 and 2 are still a bit unconstrained at this point.
 
@@ -250,29 +248,13 @@ date but for now is rather informal
 
 .. _header-n47:
 
-1.2 ``sniff(mmif)``
-^^^^^^^^^^^^^^^^^^^
-
-This method should return a Boolean value signifying whether the
-passed-in MMIF data would be accepted by the app. For Kaldi, this means
-the MMIF file should contain at least one AudioDocument pointing to a
-location:
-
-.. code:: python
-
-   def sniff(self, mmif) -> bool:
-       if type(mmif) is not Mmif:
-           mmif = Mmif(mmif)
-       return len(mmif.get_documents_locations(DocumentTypes.AudioDocument.value)) > 0
-
-.. _header-n50:
-
-1.3 ``annotate(mmif)``
+1.2 ``_annotate(mmif)``
 ^^^^^^^^^^^^^^^^^^^^^^
 
-This method should accept a MMIF file as its parameter. You will see
-that in the Kaldi wrapper’s method signature, there are additional
-parameters; these are filled in later by this wrapper’s CLI.
+This method should accept a MMIF file as its parameter, and should return
+a ``Mmif`` object with an additional ``view`` with annotation results.
+You will see that in the Kaldi wrapper’s method signature, there are
+additional parameters; these are filled in later by this wrapper’s CLI.
 
 This is where the bulk of your logic will go.
 
@@ -474,7 +456,7 @@ properties by using the ``id`` property of an ``Annotation`` object.
 
 .. _header-n87:
 
-1.4 Flask app
+1.3 Flask app
 ^^^^^^^^^^^^^
 
 We use the CLAMS RESTful API:
