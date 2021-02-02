@@ -30,7 +30,7 @@ class TestSerialization(unittest.TestCase):
 
 class ExampleClamsApp(clams.app.ClamsApp):
 
-    def setupmetadata(self):
+    def _appmetadata(self):
         return {"name": "Tesseract OCR",
                 "description": "A dummy tool for testing",
                 "vendor": "Team CLAMS",

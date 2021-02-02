@@ -14,7 +14,7 @@ class ClamsApp(ABC):
     def __init__(self):
         # TODO (krim @ 10/9/20): eventually we might end up with a python class
         # for this metadata (with a JSON schema)
-        self.metadata: dict = self.setupmetadata()
+        self.metadata: dict = self._appmetadata()
         super().__init__()
 
     def appmetadata(self) -> str:
@@ -23,7 +23,7 @@ class ClamsApp(ABC):
         return json.dumps(self.metadata)
 
     @abstractmethod
-    def setupmetadata(self) -> dict:
+    def _appmetadata(self) -> dict:
         raise NotImplementedError()
 
     def annotate(self, mmif: Union[str, dict, Mmif], **kwargs) -> str:

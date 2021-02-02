@@ -59,9 +59,9 @@ For more information on the relation between ``mmif-python`` versions and MMIF s
 
 CLAMS App API
 -------------
-A CLAMS Python app is a python class that implements and exposes two core methods; ``_annotate()``, ``setupmetadata()``.  And a good place to start writing a CLAMS app is to start with inheriting :class:`clams.app.ClamsApp`.
+A CLAMS Python app is a python class that implements and exposes two core methods; ``_annotate()``, ``_appmetadata()``.  And a good place to start writing a CLAMS app is to start with inheriting :class:`clams.app.ClamsApp`.
 
-* ``setupmetadata()``: Returns JSON-formatted :class:`str` that contains metadata about the app. You will be implementing :meth:`clams.app.ClamsApp.setupmetadata` instead if you're using :class:`clams.app.ClamsApp` as a super class.
+* ``_appmetadata()``: Returns JSON-formatted :class:`str` that contains metadata about the app. You will be implementing :meth:`clams.app.ClamsApp._appmetadata` instead if you're using :class:`clams.app.ClamsApp` as a super class.
 * ``_annotate()``: Takes a MMIF as the only input and processes the MMIF input, then returns serialized MMIF :class:`str`.
 
 These two methods, then, will be wrapped in public methods ``appmetadata()`` and ``annotate()`` to support some common operations.
@@ -82,7 +82,7 @@ To be integrated into the CLAMS appliance, a CLAMS app needs to serve as a webap
 
     class AnApp(ClamsApp):
         # Implements an app that does this and that. 
-        # Must implement `setupmetadata`, `_annotate` methods
+        # Must implement `_appmetadata`, `_annotate` methods
 
     if __name__ == "__main__":
         app = AnApp()

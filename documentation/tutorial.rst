@@ -209,7 +209,7 @@ clams-python package.
 
 Things to do:
 
-1. Write a ``setupmetadata`` method
+1. Write a ``_appmetadata`` method
 
 2. Write an ``_annotate`` method
 
@@ -219,7 +219,7 @@ Steps 1 and 2 are still a bit unconstrained at this point.
 
 .. _header-n44:
 
-1.1 ``setupmetadata``
+1.1 ``_appmetadata``
 ^^^^^^^^^^^^^^^^^^^^^
 
 This method should just return a dictionary containing the metadata
@@ -230,7 +230,7 @@ date but for now is rather informal
 
    class Kaldi(ClamsApp):
 
-       def setupmetadata(self) -> dict:
+       def _appmetadata(self) -> dict:
            return {
                "name": "Kaldi Wrapper",
                "description": "This tool wraps the Kaldi ASR tool",
