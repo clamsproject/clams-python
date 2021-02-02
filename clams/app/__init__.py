@@ -14,24 +14,35 @@ class ClamsApp(ABC):
     def __init__(self):
         # TODO (krim @ 10/9/20): eventually we might end up with a python class
         # for this metadata (with a JSON schema)
-        self.metadata: dict = self.setupmetadata()
+        self.metadata: dict = self._appmetadata()
         super().__init__()
 
-    def appmetadata(self):
+    def appmetadata(self) -> str:
         # TODO (krim @ 10/9/20): when self.metadata is no longer a `dict`
         # this method might needs to be changed to properly serialize input
         return json.dumps(self.metadata)
 
     @abstractmethod
-    def setupmetadata(self) -> dict:
+    def _appmetadata(self) -> dict:
         raise NotImplementedError()
 
-    @abstractmethod
-    def sniff(self, mmif) -> bool:
-        raise NotImplementedError()
+    def annotate(self, mmif: Union[str, dict, Mmif], **kwargs) -> str:
+        """
+        A wrapper around ``_annotate`` method where some common operations invoked by kwargs are implemented.
+
+        :param mmif:
+        :param kwargs:
+        :return:
+        """
+        # TODO (krim @ 12/17/20): add documentation on what are "common" operations
+
+        # popping
+        pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
+        annotated = self._annotate(mmif, **kwargs)
+        return annotated.serialize(pretty=pretty)
 
     @abstractmethod
-    def annotate(self, mmif) -> str:
+    def _annotate(self, mmif: Union[str, dict, Mmif], **kwargs) -> Mmif:
         raise NotImplementedError()
 
     @staticmethod

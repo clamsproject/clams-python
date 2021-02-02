@@ -1,11 +1,9 @@
 import unittest
-from builtins import object
-from typing import Union
 
-import clams.restify
-import clams.app
 from mmif import Mmif, Document, DocumentTypes, AnnotationTypes
 
+import clams.app
+import clams.restify
 
 AT_TYPE = AnnotationTypes.TimeFrame
 
@@ -32,24 +30,21 @@ class TestSerialization(unittest.TestCase):
 
 class ExampleClamsApp(clams.app.ClamsApp):
 
-    def setupmetadata(self):
+    def _appmetadata(self):
         return {"name": "Tesseract OCR",
                 "description": "A dummy tool for testing",
                 "vendor": "Team CLAMS",
                 "requires": [],
                 "produces": [AT_TYPE.value]}
 
-    def sniff(self, mmif):
-        return True
-
-    def annotate(self, mmif: Union[str, dict, Mmif]):
+    def _annotate(self, mmif):
         if type(mmif) is not Mmif:
             mmif = Mmif(mmif, validate=False)
         new_view = mmif.new_view()
         new_view.new_contain(AT_TYPE, {"producer": "dummy-producer"})
         ann = new_view.new_annotation('a1', AT_TYPE)
         ann.add_property("f1", "hello_world")
-        return mmif.serialize()
+        return mmif
 
 
 class TestClamsApp(unittest.TestCase):
@@ -61,9 +56,6 @@ class TestClamsApp(unittest.TestCase):
         metadata = self.app.appmetadata
         # TODO (krim @ 9/3/19): more robust test cases
         self.assertIsNotNone(metadata)
-
-    def test_sniff(self):
-        self.assertTrue(self.app.sniff(self.in_mmif))
 
     def test_annotate(self):
         out_mmif = self.app.annotate(self.in_mmif)
@@ -93,8 +85,26 @@ class TestRestifier(unittest.TestCase):
 
     def test_can_put_as_json(self):
         put = self.app.put('/', data=ExampleInputMMIF.get_mmif(), headers={"Content-Type": "Application/json"})
-        print(put.get_data())
         self.assertIsNotNone(put)
+        self.assertEqual(put.status_code, 200)
+        self.assertIsNotNone(Mmif(put.get_data()))
+
+    def test_can_pass_params(self):
+        mmif = ExampleInputMMIF.get_mmif()
+        pretty_res = self.app.put('/', data=mmif, headers={"Content-Type": "Application/json"}, query_string={'pretty': True})
+        self.assertEqual(pretty_res.status_code, 200)
+        self.assertIsNotNone(Mmif(pretty_res.get_data()))
+        pretty_to_mmif = Mmif(pretty_res.get_data())
+        unpretty_res = self.app.put('/', data=mmif, headers={"Content-Type": "Application/json"})
+        unpretty_to_mmif = Mmif(unpretty_res.get_data())
+        self.assertIsNotNone(pretty_to_mmif)
+        self.assertIsNotNone(unpretty_to_mmif)
+        # TODO (krim @ 12/17/20): __eq__() is not working as expected, possibly realted to https://github.com/clamsproject/mmif/issues/131
+        # self.assertEqual(pretty_to_mmif, unpretty_to_mmif)
+
+        # this should raise TypeError because the ExampleClamsApp:_annotate() doesn't take kwargs at all
+        res = self.app.put('/', data=ExampleInputMMIF.get_mmif(), headers={"Content-Type": "Application/json"}, query_string={'pretty': True, 'random': 'random'})
+        self.assertEqual(res.status_code, 415)
 
 
 if __name__ == '__main__':
