@@ -29,7 +29,7 @@ jobs:
       run: |
         pip install -r requirements.dev
         python setup.py build_sphinx -a
-        rm -rf docs/html
+        rm -rf docs
         mv documentation/_build/html docs
         echo 'sdk.clams.ai' > docs/CNAME
         touch docs/.nojekyll
