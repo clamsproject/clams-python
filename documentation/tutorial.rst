@@ -249,7 +249,7 @@ date but for now is rather informal
 .. _header-n47:
 
 1.2 ``_annotate(mmif)``
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 This method should accept a MMIF file as its parameter, and should return
 a ``Mmif`` object with an additional ``view`` with annotation results.

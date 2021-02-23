@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.1.7
+                0.2.0
               </div>
             
           
@@ -96,10 +96,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#translated-into-a-mmif-view">…translated into a MMIF view</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#so-how-do-we-generate-this">So, how do we generate this?</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#setting-up-a-clams-app-in-python">1. Setting up a CLAMS app in Python</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#setupmetadata">1.1 <code class="docutils literal notranslate"><span class="pre">setupmetadata</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sniff-mmif">1.2 <code class="docutils literal notranslate"><span class="pre">sniff(mmif)</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#annotate-mmif">1.3 <code class="docutils literal notranslate"><span class="pre">annotate(mmif)</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#flask-app">1.4 Flask app</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#appmetadata">1.1 <code class="docutils literal notranslate"><span class="pre">_appmetadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#annotate-mmif">1.2 <code class="docutils literal notranslate"><span class="pre">_annotate(mmif)</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask-app">1.3 Flask app</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#wrangling-data">2. Wrangling data</a><ul>
@@ -361,20 +360,19 @@ clamsproject organization for more examples.</p></li>
 clams-python package.</p>
 <p>Things to do:</p>
 <ol class="arabic simple">
-<li><p>Write a <code class="docutils literal notranslate"><span class="pre">setupmetadata</span></code> method</p></li>
-<li><p>Write a <code class="docutils literal notranslate"><span class="pre">sniff</span></code> method</p></li>
-<li><p>Write an <code class="docutils literal notranslate"><span class="pre">annotate</span></code> method</p></li>
+<li><p>Write a <code class="docutils literal notranslate"><span class="pre">_appmetadata</span></code> method</p></li>
+<li><p>Write an <code class="docutils literal notranslate"><span class="pre">_annotate</span></code> method</p></li>
 <li><p>Set up a Flask app</p></li>
 </ol>
 <p>Steps 1 and 2 are still a bit unconstrained at this point.</p>
-<div class="section" id="setupmetadata">
-<span id="header-n44"></span><h4>1.1 <code class="docutils literal notranslate"><span class="pre">setupmetadata</span></code><a class="headerlink" href="#setupmetadata" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="appmetadata">
+<span id="header-n44"></span><h4>1.1 <code class="docutils literal notranslate"><span class="pre">_appmetadata</span></code><a class="headerlink" href="#appmetadata" title="Permalink to this headline">¶</a></h4>
 <p>This method should just return a dictionary containing the metadata
 relevant to your app. Metadata format will be standardized at a later
 date but for now is rather informal</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Kaldi</span><span class="p">(</span><span class="n">ClamsApp</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">setupmetadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_appmetadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Kaldi Wrapper&quot;</span><span class="p">,</span>
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;This tool wraps the Kaldi ASR tool&quot;</span><span class="p">,</span>
@@ -392,24 +390,12 @@ date but for now is rather informal</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="sniff-mmif">
-<span id="header-n47"></span><h4>1.2 <code class="docutils literal notranslate"><span class="pre">sniff(mmif)</span></code><a class="headerlink" href="#sniff-mmif" title="Permalink to this headline">¶</a></h4>
-<p>This method should return a Boolean value signifying whether the
-passed-in MMIF data would be accepted by the app. For Kaldi, this means
-the MMIF file should contain at least one AudioDocument pointing to a
-location:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sniff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mmif</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">mmif</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">Mmif</span><span class="p">:</span>
-        <span class="n">mmif</span> <span class="o">=</span> <span class="n">Mmif</span><span class="p">(</span><span class="n">mmif</span><span class="p">)</span>
-    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">mmif</span><span class="o">.</span><span class="n">get_documents_locations</span><span class="p">(</span><span class="n">DocumentTypes</span><span class="o">.</span><span class="n">AudioDocument</span><span class="o">.</span><span class="n">value</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span>
-</pre></div>
-</div>
-</div>
 <div class="section" id="annotate-mmif">
-<span id="header-n50"></span><h4>1.3 <code class="docutils literal notranslate"><span class="pre">annotate(mmif)</span></code><a class="headerlink" href="#annotate-mmif" title="Permalink to this headline">¶</a></h4>
-<p>This method should accept a MMIF file as its parameter. You will see
-that in the Kaldi wrapper’s method signature, there are additional
-parameters; these are filled in later by this wrapper’s CLI.</p>
+<span id="header-n47"></span><h4>1.2 <code class="docutils literal notranslate"><span class="pre">_annotate(mmif)</span></code><a class="headerlink" href="#annotate-mmif" title="Permalink to this headline">¶</a></h4>
+<p>This method should accept a MMIF file as its parameter, and should return
+a <code class="docutils literal notranslate"><span class="pre">Mmif</span></code> object with an additional <code class="docutils literal notranslate"><span class="pre">view</span></code> with annotation results.
+You will see that in the Kaldi wrapper’s method signature, there are
+additional parameters; these are filled in later by this wrapper’s CLI.</p>
 <p>This is where the bulk of your logic will go.</p>
 <p>Let’s walk through the highlights of the <code class="docutils literal notranslate"><span class="pre">annotate</span></code> method for the
 Kaldi app.</p>
@@ -575,7 +561,7 @@ milliseconds from the JSON data, which is in start/duration form.</p>
 properties by using the <code class="docutils literal notranslate"><span class="pre">id</span></code> property of an <code class="docutils literal notranslate"><span class="pre">Annotation</span></code> object.</p>
 </div>
 <div class="section" id="flask-app">
-<span id="header-n87"></span><h4>1.4 Flask app<a class="headerlink" href="#flask-app" title="Permalink to this headline">¶</a></h4>
+<span id="header-n87"></span><h4>1.3 Flask app<a class="headerlink" href="#flask-app" title="Permalink to this headline">¶</a></h4>
 <p>We use the CLAMS RESTful API:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">kaldi_app</span> <span class="o">=</span> <span class="n">Kaldi</span><span class="p">()</span>
 <span class="n">annotate</span> <span class="o">=</span> <span class="n">kaldi_app</span><span class="o">.</span><span class="n">annotate</span>

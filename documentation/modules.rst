@@ -8,4 +8,3 @@ API documentation
    autodoc/clams.restify
    autodoc/clams.app
    autodoc/clams.source
-   autodoc/clams.utils
