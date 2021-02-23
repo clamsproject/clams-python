@@ -11,6 +11,7 @@ from mmif import Mmif
 
 
 class ClamsApp(ABC):
+
     def __init__(self):
         # TODO (krim @ 10/9/20): eventually we might end up with a python class
         # for this metadata (with a JSON schema)
@@ -20,7 +21,12 @@ class ClamsApp(ABC):
     def appmetadata(self) -> str:
         # TODO (krim @ 10/9/20): when self.metadata is no longer a `dict`
         # this method might needs to be changed to properly serialize input
-        return json.dumps(self.metadata)
+        pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
+        pretty = False if pretty in (False, 0, 'False', 'false', '0') else True
+        if pretty:
+            return json.dumps(self.metadata, indent=4)
+        else:
+            return json.dumps(self.metadata)
 
     @abstractmethod
     def _appmetadata(self) -> dict:
@@ -36,8 +42,8 @@ class ClamsApp(ABC):
         """
         # TODO (krim @ 12/17/20): add documentation on what are "common" operations
 
-        # popping
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
+        pretty = False if pretty in (False, 0, 'False', 'false', '0') else True
         annotated = self._annotate(mmif, **kwargs)
         return annotated.serialize(pretty=pretty)
 
