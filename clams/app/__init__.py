@@ -17,12 +17,14 @@ class ClamsApp(ABC):
         # for this metadata (with a JSON schema)
         self.metadata: dict = self._appmetadata()
         super().__init__()
+        # data type specification for common parameters
+        self.metadata_param_spec = {'pretty': bool}
+        self.annotate_param_spec = {'pretty': bool}
 
-    def appmetadata(self) -> str:
+    def appmetadata(self, **kwargs) -> str:
         # TODO (krim @ 10/9/20): when self.metadata is no longer a `dict`
         # this method might needs to be changed to properly serialize input
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
-        pretty = False if pretty in (False, 0, 'False', 'false', '0') else True
         if pretty:
             return json.dumps(self.metadata, indent=4)
         else:
@@ -41,9 +43,8 @@ class ClamsApp(ABC):
         :return:
         """
         # TODO (krim @ 12/17/20): add documentation on what are "common" operations
-
+        # should pop all "common" parameters before passing the args to _annotate()
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
-        pretty = False if pretty in (False, 0, 'False', 'false', '0') else True
         annotated = self._annotate(mmif, **kwargs)
         return annotated.serialize(pretty=pretty)
 

@@ -1,3 +1,5 @@
+from typing import Dict
+
 from flask import Flask, request, Response
 from flask_restful import Resource, Api
 
@@ -5,6 +7,7 @@ from mmif import Mmif
 
 
 class Restifier(object):
+
     def __init__(self, app_instance, loopback=False, port=5000, debug=True):
         super().__init__()
         self.cla = app_instance
@@ -31,6 +34,8 @@ class ClamsRestfulApi(Resource):
     def __init__(self, cla_instance):
         super().__init__()
         self.cla = cla_instance
+        self.metadata_param_caster = ParameterCaster(self.cla.metadata_param_spec)
+        self.annotate_param_caster = ParameterCaster(self.cla.annotate_param_spec)
 
     @staticmethod
     def json_to_response(json_str: str, status=200):
@@ -39,11 +44,12 @@ class ClamsRestfulApi(Resource):
         return Response(response=json_str, status=status, mimetype='application/json')
 
     def get(self) -> Response:
-        return self.json_to_response(self.cla.appmetadata())
+        return self.json_to_response(self.cla.appmetadata(self.metadata_param_caster.cast(**request.args)))
 
     def post(self) -> Response:
         try:
-            return self.json_to_response(self.cla.annotate(Mmif(request.get_data()), **request.args))
+            return self.json_to_response(self.cla.annotate(Mmif(request.get_data()),
+                                                           self.annotate_param_caster.cast(**request.args)))
         except TypeError as e:
             return Response(status=415, response=str(e))
         except FileNotFoundError as e:
@@ -52,3 +58,22 @@ class ClamsRestfulApi(Resource):
             return Response(status=400, response=str(e))
 
     put = post
+
+
+class ParameterCaster(object):
+    """
+    A helper class to convert parameters passed by HTTP query strings to
+    proper python data types.
+    """
+
+    def __init__(self, param_spec: Dict):
+        self.param_spec = param_spec
+
+    def cast(self, args):
+        for k, v in args:
+            if self.param_spec[k] == bool:
+                args[k] = self.bool_param(v)
+
+    @staticmethod
+    def bool_param(value):
+        return False if value in (False, 0, 'False', 'false', '0') else True
