@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 
 from mmif import Mmif, Document, DocumentTypes, AnnotationTypes
@@ -9,14 +11,35 @@ AT_TYPE = AnnotationTypes.TimeFrame
 
 
 class ExampleInputMMIF(object):
+    EXAMPLE_TEXT = 'this is a temp file.'
 
     @staticmethod
-    def get_mmif():
+    def get_rawmmif() -> Mmif:
         mmif = Mmif(validate=False, frozen=False)
-        mmif.add_document(Document({'@type': DocumentTypes.VideoDocument.value,
-                                    'properties':
-                                        {'id': 'm1', 'location': "/dummy/dir/dummy.file.mp4"}}))
-        return mmif.serialize()
+
+        vdoc = Document({'@type': DocumentTypes.VideoDocument.value,
+                         'properties':
+                             {'id': 'v1', 'location': "/dummy/dir/dummy.file.mp4"}})
+        mmif.add_document(vdoc)
+
+        idoc: Document = Document({'@type': DocumentTypes.ImageDocument})
+        idoc.id = 'i1'
+        idoc.location = os.path.join(os.path.dirname(__file__), 'pillow-logo.png')
+        mmif.add_document(idoc)
+
+        t = tempfile.NamedTemporaryFile(delete=False)
+        with open(t.name, 'w') as t_f:
+            t_f.write(ExampleInputMMIF.EXAMPLE_TEXT)
+        tdoc: Document = Document({'@type': DocumentTypes.TextDocument})
+        tdoc.location = t.name
+        tdoc.id = 't1'
+        mmif.add_document(tdoc)
+
+        return mmif
+
+    @staticmethod
+    def get_mmif() -> str:
+        return ExampleInputMMIF.get_rawmmif().serialize()
 
 
 class TestSerialization(unittest.TestCase):
@@ -61,6 +84,17 @@ class TestClamsApp(unittest.TestCase):
         out_mmif = self.app.annotate(self.in_mmif)
         # TODO (krim @ 9/3/19): more robust test cases
         self.assertIsNotNone(out_mmif)
+
+    def test_open_document_location(self):
+        mmif = ExampleInputMMIF.get_rawmmif()
+        with self.app.open_document_location(mmif.documents['t1']) as f:
+            self.assertEqual(f.read(), ExampleInputMMIF.EXAMPLE_TEXT)
+
+    def test_open_document_location_custom_opener(self):
+        from PIL import Image
+        mmif = ExampleInputMMIF.get_rawmmif()
+        with self.app.open_document_location(mmif.documents['i1'], Image.open) as f:
+            self.assertEqual(f.size, (200, 71))
 
 
 class TestRestifier(unittest.TestCase):
