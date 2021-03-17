@@ -1,3 +1,4 @@
+import traceback
 from typing import Dict
 
 from flask import Flask, request, Response
@@ -44,18 +45,18 @@ class ClamsRestfulApi(Resource):
         return Response(response=json_str, status=status, mimetype='application/json')
 
     def get(self) -> Response:
-        return self.json_to_response(self.cla.appmetadata(self.metadata_param_caster.cast(**request.args)))
+        return self.json_to_response(self.cla.appmetadata(**self.metadata_param_caster.cast(request.args)))
 
     def post(self) -> Response:
         try:
             return self.json_to_response(self.cla.annotate(Mmif(request.get_data()),
-                                                           self.annotate_param_caster.cast(**request.args)))
-        except TypeError as e:
-            return Response(status=415, response=str(e))
-        except FileNotFoundError as e:
-            return Response(status=404, response=str(e))
-        except Exception as e:
-            return Response(status=400, response=str(e))
+                                                           **self.annotate_param_caster.cast(request.args)))
+        except TypeError:
+            return Response(status=415, response=traceback.format_exc())
+        except FileNotFoundError:
+            return Response(status=404, response=traceback.format_exc())
+        except Exception:
+            return Response(status=400, response=traceback.format_exc())
 
     put = post
 
@@ -70,9 +71,14 @@ class ParameterCaster(object):
         self.param_spec = param_spec
 
     def cast(self, args):
-        for k, v in args:
-            if self.param_spec[k] == bool:
-                args[k] = self.bool_param(v)
+        casted = {}
+        for k, v in args.items():
+            if k in self.param_spec:
+                if self.param_spec[k] == bool:
+                    casted[k] = self.bool_param(v)
+            else:
+                casted[k] = v
+        return casted
 
     @staticmethod
     def bool_param(value):
