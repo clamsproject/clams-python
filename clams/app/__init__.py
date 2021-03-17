@@ -1,13 +1,15 @@
 from abc import ABC, abstractmethod
 import json
 import os
+from urllib import parse as urlparser
+from contextlib import contextmanager
 
 
 __all__ = ['ClamsApp']
 
-from typing import Union
+from typing import Union, Any
 
-from mmif import Mmif
+from mmif import Mmif, Document, DocumentTypes
 
 
 class ClamsApp(ABC):
@@ -46,17 +48,42 @@ class ClamsApp(ABC):
         raise NotImplementedError()
 
     @staticmethod
-    def validate_document_files(mmif: Union[str, Mmif]) -> None:
+    def validate_document_locations(mmif: Union[str, Mmif]) -> None:
         if isinstance(mmif, str):
             mmif = Mmif(mmif)
         for document in mmif.documents:
             loc = document.location
             if loc is not None and len(loc) > 0:
-                # TODO (krim @ 12/15/20): when `location` implements full URI values
-                #  (https://github.com/clamsproject/mmif/issues/151) , check for protocol first and use proper check
-                #  methods based on the protocol (e.g. file:// --> os.path.exists())
-                if os.path.exists(loc):
-                    raise FileNotFoundError(f'{document.id}: {loc}')
+                p = urlparser.urlparse(loc)
+                if p.scheme == 'file':
+                    if os.path.exists(p.path):
+                        raise FileNotFoundError(f'{document.id}: {loc}')
                 # TODO (krim @ 12/15/20): with implementation of file checksum
                 #  (https://github.com/clamsproject/mmif/issues/150) , here is a good place for additional check for
                 #  file integrity
+
+    @staticmethod
+    @contextmanager
+    def open_document_location(document: Union[str, Document], opener: Any = open, **openerargs):
+        """
+        A context-providing file opener. User can provide their own opening class/method and parameters.
+        By default, with will use python built-in `open` to open the location of the document.
+        :param document:
+        :param opener:
+        :return:
+        """
+        if isinstance(document, str):
+            document = Document(document)
+        if document.location is not None and len(document.location) > 0:
+            p = urlparser.urlparse(document.location)
+            if p.scheme == 'file':
+                if os.path.exists(p.path):
+                    if 'mode' not in openerargs and document.at_type == DocumentTypes.TextDocument:
+                        openerargs['mode'] = 'r'
+                    document_file = opener(p.path, **openerargs)
+                    try:
+                        yield document_file
+                    finally:
+                        document_file.close()
+                else:
+                    raise FileNotFoundError(p.path)
