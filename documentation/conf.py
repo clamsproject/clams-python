@@ -12,13 +12,14 @@
 
 import os
 import sys
+import datetime
 sys.path.insert(0, os.path.abspath(os.path.join('.', 'documentation')))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'clams_python'
-copyright = '2020, Brandeis LLC'
+project = 'clams-python'
+copyright = f'{datetime.date.today().year}, Brandeis LLC'
 author = 'Brandeis LLC'
 
 
