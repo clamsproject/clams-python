@@ -125,20 +125,23 @@ class TestRestifier(unittest.TestCase):
 
     def test_can_pass_params(self):
         mmif = ExampleInputMMIF.get_mmif()
-        pretty_res = self.app.put('/', data=mmif, headers={"Content-Type": "Application/json"}, query_string={'pretty': True})
-        self.assertEqual(pretty_res.status_code, 200)
-        self.assertIsNotNone(Mmif(pretty_res.get_data()))
-        pretty_to_mmif = Mmif(pretty_res.get_data())
-        unpretty_res = self.app.put('/', data=mmif, headers={"Content-Type": "Application/json"})
-        unpretty_to_mmif = Mmif(unpretty_res.get_data())
+        headers = {"Content-Type": "Application/json"}
+        query_string = {'pretty': True}
+        pretty_res = self.app.put('/', data=mmif, headers=headers, query_string=query_string)
+        self.assertEqual(pretty_res.status_code, 200, pretty_res.get_data(as_text=True))
+        self.assertIsNotNone(Mmif(pretty_res.get_data(as_text=True)))
+        pretty_to_mmif = Mmif(pretty_res.get_data(as_text=True))
+        unpretty_res = self.app.put('/', data=mmif, headers=headers)
+        unpretty_to_mmif = Mmif(unpretty_res.get_data(as_text=True))
         self.assertIsNotNone(pretty_to_mmif)
         self.assertIsNotNone(unpretty_to_mmif)
         # TODO (krim @ 12/17/20): __eq__() is not working as expected, possibly realted to https://github.com/clamsproject/mmif/issues/131
         # self.assertEqual(pretty_to_mmif, unpretty_to_mmif)
 
-        # this should raise TypeError because the ExampleClamsApp:_annotate() doesn't take kwargs at all
-        res = self.app.put('/', data=ExampleInputMMIF.get_mmif(), headers={"Content-Type": "Application/json"}, query_string={'pretty': True, 'random': 'random'})
-        self.assertEqual(res.status_code, 415)
+        # this should raise TypeError because the ExampleClamsApp._annotate() doesn't take kwargs at all
+        query_string = {'pretty': True, 'random': 'random'}
+        res = self.app.put('/', data=mmif, headers=headers, query_string=query_string)
+        self.assertEqual(res.status_code, 415, res.get_data(as_text=True))
 
 
 if __name__ == '__main__':

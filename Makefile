@@ -36,6 +36,7 @@ publish: clean version package test
 docs: package
 	pip install -r requirements.dev
 	rm -rf documentation/_build docs
+	rm -rf docs
 	python3 setup.py build_sphinx -a
 	mv documentation/_build/html docs
 	echo 'sdk.clams.ai' > docs/CNAME
