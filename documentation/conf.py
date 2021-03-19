@@ -28,8 +28,21 @@ author = 'Brandeis LLC'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.linkcode', 'sphinx_rtd_theme', 'm2r2']
+extensions = [
+        'sphinx.ext.autodoc',
+        'sphinx.ext.linkcode',
+        'sphinx.ext.intersphinx',
+        'sphinx_rtd_theme',
+        'm2r2']
+#  autodoc_typehints = 'description'
 source_suffix = [".rst", ".md"]
+
+# mapping for external documentations
+intersphinx_mapping = {
+        'python': ('https://docs.python.org/3', None),
+        'mmif': ('https://clamsproject.github.io/mmif-python', None)
+        }
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
