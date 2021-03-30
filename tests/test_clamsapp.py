@@ -104,24 +104,27 @@ class TestRestifier(unittest.TestCase):
 
     def test_can_get(self):
         gotten = self.app.get('/')
-        print(gotten.get_data())
+        print(gotten.get_data(as_text=True))
+        self.assertIsNotNone(gotten)
+        gotten = self.app.get('/', query_string={'pretty': 'true'})
+        print(gotten.get_data(as_text=True))
         self.assertIsNotNone(gotten)
 
     def test_can_post(self):
         posted = self.app.post('/', data=ExampleInputMMIF.get_mmif())
-        print(posted.get_data())
+        print(posted.get_data(as_text=True).decode('utf8'))
         self.assertIsNotNone(posted)
 
     def test_can_put(self):
         put = self.app.put('/', data=ExampleInputMMIF.get_mmif())
-        print(put.get_data())
+        print(put.get_data(as_text=True))
         self.assertIsNotNone(put)
 
     def test_can_put_as_json(self):
         put = self.app.put('/', data=ExampleInputMMIF.get_mmif(), headers={"Content-Type": "Application/json"})
         self.assertIsNotNone(put)
         self.assertEqual(put.status_code, 200)
-        self.assertIsNotNone(Mmif(put.get_data()))
+        self.assertIsNotNone(Mmif(put.get_data(as_text=True)))
 
     def test_can_pass_params(self):
         mmif = ExampleInputMMIF.get_mmif()
