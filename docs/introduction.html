@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.2.1
+                0.2.2
               </div>
             
           
@@ -230,8 +230,8 @@
 <h2>CLAMS App API<a class="headerlink" href="#clams-app-api" title="Permalink to this headline">¶</a></h2>
 <p>A CLAMS Python app is a python class that implements and exposes two core methods; <code class="docutils literal notranslate"><span class="pre">_annotate()</span></code>, <code class="docutils literal notranslate"><span class="pre">_appmetadata()</span></code>.  And a good place to start writing a CLAMS app is to start with inheriting <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.app.ClamsApp</span></code></a>.</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">_appmetadata()</span></code>: Returns JSON-formatted <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> that contains metadata about the app. You will be implementing <code class="xref py py-meth docutils literal notranslate"><span class="pre">clams.app.ClamsApp._appmetadata()</span></code> instead if you’re using <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.app.ClamsApp</span></code></a> as a super class.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">_annotate()</span></code>: Takes a MMIF as the only input and processes the MMIF input, then returns serialized MMIF <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">_appmetadata()</span></code>: Returns JSON-formatted <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> that contains metadata about the app. You will be implementing <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._appmetadata" title="clams.app.ClamsApp._appmetadata"><code class="xref py py-meth docutils literal notranslate"><span class="pre">clams.app.ClamsApp._appmetadata()</span></code></a> instead if you’re using <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.app.ClamsApp</span></code></a> as a super class.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">_annotate()</span></code>: Takes a MMIF as the only input and processes the MMIF input, then returns serialized MMIF <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>.</p></li>
 </ul>
 <p>These two methods, then, will be wrapped in public methods <code class="docutils literal notranslate"><span class="pre">appmetadata()</span></code> and <code class="docutils literal notranslate"><span class="pre">annotate()</span></code> to support some common operations.
 We provide a tutorial for writing with a real world example at &lt;<a class="reference internal" href="tutorial.html#tutorial"><span class="std std-ref">Tutorial: writing a CLAMS app</span></a>&gt;. We highly recommend you to go through it.</p>
