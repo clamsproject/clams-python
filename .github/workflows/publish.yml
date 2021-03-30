@@ -83,6 +83,37 @@ jobs:
         build-args: |
           clams_version=${{ env.VERSION }}
 
+    - name: generate tags for the tf2 docker image
+      id: tf2_docker_tags
+      uses: Surgo/docker-smart-tag-action@v1
+      with:
+        docker_image: clamsproject/clams-python-tf2
+    - name: build tf2-enabled docker image and push to the hub using the tags
+      id: tf2_docker_build
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        context: docker
+        file: ./docker/tf2.dockerfile
+        tags: ${{ steps.tf2_docker_tags.outputs.tag }}
+        build-args: |
+          clams_version=${{ env.VERSION }}
+
+    - name: generate tags for the torch docker image
+      id: torch_docker_tags
+      uses: Surgo/docker-smart-tag-action@v1
+      with:
+        docker_image: clamsproject/clams-python-torch
+    - name: build torch-enabled docker image and push to the hub using the tags
+      id: torch_docker_build
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        context: docker
+        file: ./docker/torch.dockerfile
+        tags: ${{ steps.torch_docker_tags.outputs.tag }}
+        build-args: |
+          clams_version=${{ env.VERSION }}
 
     - name: generate tags for the ffmpeg docker image
       id: ffmpeg_docker_tags
@@ -100,6 +131,37 @@ jobs:
         build-args: |
           clams_version=${{ env.VERSION }}
 
+    - name: generate tags for the ffmpeg-tf2 docker image
+      id: ffmpeg_tf2_docker_tags
+      uses: Surgo/docker-smart-tag-action@v1
+      with:
+        docker_image: clamsproject/clams-python-ffmpeg-tf2
+    - name: build ffmpeg-tf2-enabled docker image and push to the hub using the tags
+      id: ffmpeg_tf2_docker_build
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        context: docker
+        file: ./docker/ffmpeg-tf2.dockerfile
+        tags: ${{ steps.ffmpeg_tf2_docker_tags.outputs.tag }}
+        build-args: |
+          clams_version=${{ env.VERSION }}
+
+    - name: generate tags for the ffmpeg-torch docker image
+      id: ffmpeg_torch_docker_tags
+      uses: Surgo/docker-smart-tag-action@v1
+      with:
+        docker_image: clamsproject/clams-python-ffmpeg-torch
+    - name: build ffmpeg-torch-enabled docker image and push to the hub using the tags
+      id: ffmpeg_torch_docker_build
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        context: docker
+        file: ./docker/ffmpeg-torch.dockerfile
+        tags: ${{ steps.ffmpeg_torch_docker_tags.outputs.tag }}
+        build-args: |
+          clams_version=${{ env.VERSION }}
 
     - name: generate tags for the opencv4 docker image
       id: opencv4_docker_tags
@@ -117,4 +179,35 @@ jobs:
         build-args: |
           clams_version=${{ env.VERSION }}
 
+    - name: generate tags for the opencv4-tf2 docker image
+      id: opencv4_tf2_docker_tags
+      uses: Surgo/docker-smart-tag-action@v1
+      with:
+        docker_image: clamsproject/clams-python-opencv4-tf2
+    - name: build opencv4-tf2-enabled docker image and push to the hub using the tags
+      id: opencv4_tf2_docker_build
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        context: docker
+        file: ./docker/opencv4-tf2.dockerfile
+        tags: ${{ steps.opencv4_tf2_docker_tags.outputs.tag }}
+        build-args: |
+          clams_version=${{ env.VERSION }}
+
+    - name: generate tags for the opencv4-torch docker image
+      id: opencv4_torch_docker_tags
+      uses: Surgo/docker-smart-tag-action@v1
+      with:
+        docker_image: clamsproject/clams-python-opencv4-torch
+    - name: build opencv4-torch-enabled docker image and push to the hub using the tags
+      id: opencv4_torch_docker_build
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        context: docker
+        file: ./docker/opencv4-torch.dockerfile
+        tags: ${{ steps.opencv4_torch_docker_tags.outputs.tag }}
+        build-args: |
+          clams_version=${{ env.VERSION }}
 
