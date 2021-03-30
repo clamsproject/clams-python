@@ -4,8 +4,10 @@ from clams.restify import Restifier
 from clams import source
 from clams.source import PipelineSource
 from clams.ver import __version__
+from mmif import __specver__
 
 __all__ = ['Restifier', 'PipelineSource'] + serve_all
+version_template = "{} (based on MMIF spec: {})"
 
 
 def prep_argparser():
@@ -14,7 +16,7 @@ def prep_argparser():
     parser.add_argument(
         '-v', '--version',
         action='version',
-        version=__version__
+        version=version_template.format(__version__, __specver__)
     )
     subparsers = parser.add_subparsers()
     subparsers._name_parser_map['source'] = source.prep_argparser()

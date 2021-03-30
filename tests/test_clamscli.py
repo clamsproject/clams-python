@@ -14,7 +14,8 @@ class TestCli(unittest.TestCase):
         with self.assertRaises(SystemExit) as e, contextlib.redirect_stdout(stdout):
             self.parser.parse_args("-v".split())
         self.assertEqual(e.exception.code, 0)
-        self.assertEqual(stdout.getvalue().strip(), clams.__version__)
+        self.assertEqual(stdout.getvalue().strip(),
+                         clams.version_template.format(clams.__version__, clams.__specver__))
 
 
 class TestSource(unittest.TestCase):
