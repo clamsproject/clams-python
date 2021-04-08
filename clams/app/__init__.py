@@ -79,6 +79,22 @@ class ClamsApp(ABC):
         """
         raise NotImplementedError()
 
+    def sign_view(self, view: View, parameters: dict) -> None:
+        """
+        A method to "sign" a new view that this app creates at the beginning of annotation.
+        Signing will populate the view metadata with information and configuration of this app.
+        The parameters passed to the :func:`~clams.app.ClamsApp._annotate` must be
+        passed to this method. This means all parameters for "common" configuration that
+        are consumed in :func:`~clams.app.ClamsApp.annotate` should not be recorded in the
+        view metadata.
+        :param view: a view to sign
+        :param parameters: runtime configuration of the app as k-v pairs
+        """
+        if view.is_frozen():
+            raise ValueError("can't modify an old view")
+        view.metadata['app'] = self.metadata['iri']
+        view.metadata['parameter'] = parameters
+
     @staticmethod
     def validate_document_locations(mmif: Union[str, Mmif]) -> None:
         """
