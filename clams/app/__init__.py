@@ -9,7 +9,7 @@ __all__ = ['ClamsApp']
 
 from typing import Union, Any
 
-from mmif import Mmif, Document, DocumentTypes
+from mmif import Mmif, Document, DocumentTypes, View
 
 
 class ClamsApp(ABC):

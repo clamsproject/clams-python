@@ -112,7 +112,7 @@ class TestRestifier(unittest.TestCase):
 
     def test_can_post(self):
         posted = self.app.post('/', data=ExampleInputMMIF.get_mmif())
-        print(posted.get_data(as_text=True).decode('utf8'))
+        print(posted.get_data(as_text=True))
         self.assertIsNotNone(posted)
 
     def test_can_put(self):
