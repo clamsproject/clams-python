@@ -64,8 +64,8 @@ class ExampleClamsApp(clams.app.ClamsApp):
             app_version=version,
             license="MIT",
             url=f"https://apps.clams.ai/example/{version}",
-            input_spec=[],
-            output_spec=[]
+            input=[],
+            output=[]
         ).dict(exclude_none=True)
 
     def _annotate(self, mmif):
