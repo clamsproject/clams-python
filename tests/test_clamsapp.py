@@ -9,8 +9,7 @@ from mmif import Mmif, Document, DocumentTypes, AnnotationTypes
 
 import clams.app
 import clams.restify
-import clams.appmetadata
-from clams.appmetadata import AppMetadata
+from clams.appmetadata import AppMetadata, Input, Output
 
 AT_TYPE = AnnotationTypes.TimeFrame
 
@@ -60,6 +59,12 @@ class ExampleClamsApp(clams.app.ClamsApp):
 
     def _appmetadata(self) -> Union[dict, AppMetadata]:
         pass
+    
+    def _input_spec(self):
+        return []
+        
+    def _output_spec(self):
+        return [Output(at_type=AT_TYPE.value)]
 
     def _annotate(self, mmif):
         if type(mmif) is not Mmif:
@@ -75,7 +80,7 @@ class TestClamsApp(unittest.TestCase):
     
     def setUp(self):
         self.exampleappversion = '0.0.1'
-        self.exampleappmetadata = clams.appmetadata.AppMetadata(
+        self.exampleappmetadata = AppMetadata(
             name="Example CLAMS App for testing",
             description="This app doesn't do anything",
             app_version=self.exampleappversion,
@@ -84,7 +89,7 @@ class TestClamsApp(unittest.TestCase):
             input=[],
             output=[]
         )
-        self.appmetadataschema = json.loads(clams.appmetadata.AppMetadata.schema_json())
+        self.appmetadataschema = json.loads(AppMetadata.schema_json())
         self.app = ExampleClamsApp()
         self.in_mmif = ExampleInputMMIF.get_mmif()
 
@@ -98,11 +103,6 @@ class TestClamsApp(unittest.TestCase):
         metadata = json.loads(self.app.appmetadata(pretty=True))
         jsonschema.validate(metadata, self.appmetadataschema)
         
-        # from plain dict
-        self.app.metadata = self.exampleappmetadata.dict(exclude_unset=True)
-        metadata = json.loads(self.app.appmetadata(pretty=True))
-        jsonschema.validate(metadata, self.appmetadataschema)
-
     def test_annotate(self):
         out_mmif = self.app.annotate(self.in_mmif)
         # TODO (krim @ 9/3/19): more robust test cases

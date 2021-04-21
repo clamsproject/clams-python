@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, Union, Dict, List
 
 import mmif
 import pydantic
@@ -8,9 +8,41 @@ import clams
 primitives = Union[int, str, bool]
 
 
+class Output(pydantic.BaseModel):
+    """
+    Defines a data model that describes output specification of a CLAMS app
+    """
+    at_type: pydantic.AnyHttpUrl = pydantic.Field(
+        None,
+        alias="@type"
+    )
+    properties: Optional[Dict[str, str]]
+    
+    class Config:
+        title = 'CLAMS Output Specification'
+        extra = 'forbid'
+        allow_population_by_field_name = True
+
+        def schema_extra(schema, model) -> None:
+            for prop in schema.get('properties', {}).values():
+                prop.pop('title', None)
+                
+                
+class Input(Output):
+    """
+    Defines a data model that describes input specification of a CLAMS app
+    """
+    required: Optional[bool] = True
+
+    class Config:
+        title = 'CLAMS Input Specification'
+        extra = 'forbid'
+        allow_population_by_field_name = True
+
+
 class AppMetadata(pydantic.BaseModel):
     """
-    CLAMS AppMetadata defines metadata model that describes a CLAMS app
+    Defines a data model that describes a CLAMS app
     """
     name: str
     description: str
@@ -20,8 +52,8 @@ class AppMetadata(pydantic.BaseModel):
     license: str
     wrapper_license: Optional[str]
     url: pydantic.AnyHttpUrl
-    input: list
-    output: list
+    input: List[Input]
+    output: List[Output]
 
     class Config:
         title = "CLAMS AppMetadata"

@@ -4,13 +4,12 @@ import os
 from urllib import parse as urlparser
 from contextlib import contextmanager
 
-
 __all__ = ['ClamsApp']
 
-from typing import Union, Any
+from typing import Union, Any, List
 
 from mmif import Mmif, Document, DocumentTypes, View
-from clams.appmetadata import AppMetadata
+from clams.appmetadata import AppMetadata, Input
 
 
 class ClamsApp(ABC):
@@ -19,10 +18,11 @@ class ClamsApp(ABC):
     this class and then can be used with classes in :mod:`.restify` to work as
     web applications.
     """
+
     def __init__(self):
-        # TODO (krim @ 10/9/20): eventually we might end up with a python class
-        # for this metadata (with a JSON schema)
-        self.metadata: Union[dict, AppMetadata] = self._appmetadata()
+        self.metadata: AppMetadata = self._appmetadata()
+        self.input_spec = self._input_spec()
+        self.output_spec = self._output_spec()
         super().__init__()
         # data type specification for common parameters
         self.metadata_param_spec = {'pretty': bool}
@@ -34,10 +34,10 @@ class ClamsApp(ABC):
 
         :return: Serialized JSON string of the metadata
         """
-        # TODO (krim @ 10/9/20): when self.metadata is no longer a `dict`
-        # this method might needs to be changed to properly serialize input
+        self.metadata.input = self.input_spec
+        self.metadata.output = self.output_spec
         if isinstance(self.metadata, AppMetadata):
-            self.metadata = self.metadata.dict(exclude_unset=True)
+            self.metadata = self.metadata.dict(exclude_unset=True, by_alias=True)
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
         if pretty:
             return json.dumps(self.metadata, indent=4)
@@ -45,10 +45,33 @@ class ClamsApp(ABC):
             return json.dumps(self.metadata)
 
     @abstractmethod
-    def _appmetadata(self) -> Union[dict, AppMetadata]:
+    def _input_spec(self) -> List['Input']:
+        """
+        An abstract method to set up input specification for this app. All CLAMS
+        app must implement this.
+        
+        :return: a list of ``Input`` objects
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _output_spec(self) -> List['Input']:
+        """
+        An abstract method to set up output specification for this app. All CLAMS
+        app must implement this.
+        
+        :return: a list of ``Output`` objects
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _appmetadata(self) -> AppMetadata:
         """
         An abstract method to generate (or load if stored elsewhere) the app metadata
-        at runtime. All CLAMS app must implement this.
+        at runtime. All CLAMS app must implement this. Note that ``input`` and 
+        ``output`` fields must be implemented separately via :func:`_input_spec` 
+        and :func:`_output_spec` respectively. That is, this method should only 
+        populate basic app information on the top-level of the schema. 
 
         :return: A Python object of the metadata, must be JSON-serializable
         """
