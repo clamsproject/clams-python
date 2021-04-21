@@ -48,7 +48,7 @@ class ClamsApp(ABC):
         An abstract method to set up input specification for this app. All CLAMS
         app must implement this.
         
-        :return: a list of ``Input`` objects
+        :return: a list of :class:`~clams.appmetadata.Input` objects
         """
         raise NotImplementedError()
 
@@ -58,7 +58,7 @@ class ClamsApp(ABC):
         An abstract method to set up output specification for this app. All CLAMS
         app must implement this.
         
-        :return: a list of ``Output`` objects
+        :return: a list of :class:`~clams.appmetadata.Output` objects
         """
         raise NotImplementedError()
 
@@ -66,9 +66,10 @@ class ClamsApp(ABC):
     def _appmetadata(self) -> AppMetadata:
         """
         An abstract method to generate (or load if stored elsewhere) the app metadata
-        at runtime. All CLAMS app must implement this. Note that ``input`` and 
-        ``output`` fields must be implemented separately via :func:`_input_spec` 
-        and :func:`_output_spec` respectively. That is, this method should only 
+        at runtime. All CLAMS app must implement this. For metadata specification, 
+        see `https://sdk.clams.ai/appmetadata.jsonschema <../appmetadata.jsonschema>`_. Note that ``input`` 
+        and ``output`` fields must be implemented separately via :func:`~clams.app.ClamsApp._input_spec` 
+        and :func:`~clams.app.ClamsApp._output_spec` respectively. That is, this method should only 
         populate basic app information on the top-level of the schema. 
 
         :return: A Python object of the metadata, must be JSON-serializable
