@@ -102,6 +102,7 @@ class TestClamsApp(unittest.TestCase):
         self.app.metadata = self.exampleappmetadata
         metadata = json.loads(self.app.appmetadata(pretty=True))
         jsonschema.validate(metadata, self.appmetadataschema)
+        print(self.app.appmetadata(pretty=True))
         
     def test_annotate(self):
         out_mmif = self.app.annotate(self.in_mmif)

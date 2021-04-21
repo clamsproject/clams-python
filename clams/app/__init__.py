@@ -36,13 +36,11 @@ class ClamsApp(ABC):
         """
         self.metadata.input = self.input_spec
         self.metadata.output = self.output_spec
-        if isinstance(self.metadata, AppMetadata):
-            self.metadata = self.metadata.dict(exclude_unset=True, by_alias=True)
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
         if pretty:
-            return json.dumps(self.metadata, indent=4)
+            return self.metadata.json(exclude_unset=True, by_alias=True, indent=2)
         else:
-            return json.dumps(self.metadata)
+            return self.metadata.json(exclude_unset=True, by_alias=True)
 
     @abstractmethod
     def _input_spec(self) -> List['Input']:
