@@ -10,6 +10,7 @@ __all__ = ['ClamsApp']
 from typing import Union, Any
 
 from mmif import Mmif, Document, DocumentTypes, View
+from clams.appmetadata import AppMetadata
 
 
 class ClamsApp(ABC):
@@ -21,7 +22,7 @@ class ClamsApp(ABC):
     def __init__(self):
         # TODO (krim @ 10/9/20): eventually we might end up with a python class
         # for this metadata (with a JSON schema)
-        self.metadata: dict = self._appmetadata()
+        self.metadata: Union[dict, AppMetadata] = self._appmetadata()
         super().__init__()
         # data type specification for common parameters
         self.metadata_param_spec = {'pretty': bool}
@@ -35,6 +36,8 @@ class ClamsApp(ABC):
         """
         # TODO (krim @ 10/9/20): when self.metadata is no longer a `dict`
         # this method might needs to be changed to properly serialize input
+        if isinstance(self.metadata, AppMetadata):
+            self.metadata = self.metadata.dict(exclude_unset=True)
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
         if pretty:
             return json.dumps(self.metadata, indent=4)
@@ -42,7 +45,7 @@ class ClamsApp(ABC):
             return json.dumps(self.metadata)
 
     @abstractmethod
-    def _appmetadata(self) -> dict:
+    def _appmetadata(self) -> Union[dict, AppMetadata]:
         """
         An abstract method to generate (or load if stored elsewhere) the app metadata
         at runtime. All CLAMS app must implement this.

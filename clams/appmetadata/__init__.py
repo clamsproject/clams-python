@@ -9,6 +9,9 @@ primitives = Union[int, str, bool]
 
 
 class AppMetadata(pydantic.BaseModel):
+    """
+    CLAMS AppMetadata defines metadata model that describes a CLAMS app
+    """
     name: str
     description: str
     app_version: str
@@ -22,13 +25,16 @@ class AppMetadata(pydantic.BaseModel):
 
     class Config:
         title = "CLAMS AppMetadata"
-        description = "CLAMS AppMetadata defines metadata model that describes a CLAMS app"
         extra = 'forbid'
         allow_population_by_field_name = True
-        schema_extra = {
-            '$schema': "http://json-schema.org/draft-07/schema#", # currently pydantic doesn't natively support the $schema field. See https://github.com/samuelcolvin/pydantic/issues/1478
-            '$comment': f"clams-python SDK {clams.__version__} was used to generate this schema" # this is only to hold version information
-        }
+
+        @staticmethod
+        def schema_extra(schema, model) -> None:
+            for prop in schema.get('properties', {}).values():
+                prop.pop('title', None)
+            schema['$schema'] = "http://json-schema.org/draft-07/schema#"  # currently pydantic doesn't natively support the $schema field. See https://github.com/samuelcolvin/pydantic/issues/1478
+            schema['$comment'] = f"clams-python SDK {clams.__version__} was used to generate this schema"  # this is only to hold version information
+
 
 if __name__ == '__main__':
     print(AppMetadata.schema_json(indent=2))

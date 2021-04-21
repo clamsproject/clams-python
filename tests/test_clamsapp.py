@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 import unittest
+from typing import Union
 
 import jsonschema
 from mmif import Mmif, Document, DocumentTypes, AnnotationTypes
@@ -9,6 +10,7 @@ from mmif import Mmif, Document, DocumentTypes, AnnotationTypes
 import clams.app
 import clams.restify
 import clams.appmetadata
+from clams.appmetadata import AppMetadata
 
 AT_TYPE = AnnotationTypes.TimeFrame
 
@@ -56,17 +58,8 @@ class TestSerialization(unittest.TestCase):
 
 class ExampleClamsApp(clams.app.ClamsApp):
 
-    def _appmetadata(self):
-        version = '0.0.1'
-        return clams.appmetadata.AppMetadata(
-            name="Example CLAMS App for testing",
-            description="This app doesn't do anything",
-            app_version=version,
-            license="MIT",
-            url=f"https://apps.clams.ai/example/{version}",
-            input=[],
-            output=[]
-        ).dict(exclude_none=True)
+    def _appmetadata(self) -> Union[dict, AppMetadata]:
+        pass
 
     def _annotate(self, mmif):
         if type(mmif) is not Mmif:
@@ -79,18 +72,36 @@ class ExampleClamsApp(clams.app.ClamsApp):
 
 
 class TestClamsApp(unittest.TestCase):
+    
     def setUp(self):
+        self.exampleappversion = '0.0.1'
+        self.exampleappmetadata = clams.appmetadata.AppMetadata(
+            name="Example CLAMS App for testing",
+            description="This app doesn't do anything",
+            app_version=self.exampleappversion,
+            license="MIT",
+            url=f"https://apps.clams.ai/example/{self.exampleappversion}",
+            input=[],
+            output=[]
+        )
+        self.appmetadataschema = json.loads(clams.appmetadata.AppMetadata.schema_json())
         self.app = ExampleClamsApp()
         self.in_mmif = ExampleInputMMIF.get_mmif()
-        self.schema = json.loads(clams.appmetadata.AppMetadata.schema_json())
 
     def test_jsonschema_export(self):
         # TODO (krim @ 4/20/21): there may be a better test for this...
-        self.assertIsNotNone(self.schema)
+        self.assertIsNotNone(self.appmetadataschema)
 
     def test_appmetadata(self):
+        # from AppMetadata class
+        self.app.metadata = self.exampleappmetadata
         metadata = json.loads(self.app.appmetadata(pretty=True))
-        jsonschema.validate(metadata, self.schema)
+        jsonschema.validate(metadata, self.appmetadataschema)
+        
+        # from plain dict
+        self.app.metadata = self.exampleappmetadata.dict(exclude_unset=True)
+        metadata = json.loads(self.app.appmetadata(pretty=True))
+        jsonschema.validate(metadata, self.appmetadataschema)
 
     def test_annotate(self):
         out_mmif = self.app.annotate(self.in_mmif)

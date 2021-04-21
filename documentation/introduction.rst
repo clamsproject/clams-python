@@ -69,7 +69,9 @@ We provide a tutorial for writing with a real world example at <:ref:`tutorial`>
 
 Note on App metadata
 ^^^^^^^^^^^^^^^^^^^^^
-App metadata is a map where important information about the app itself is stored as key-value pairs. At the moment, there's no standard metadata scheme. In the future the app metadata will be used for automatic generation of CLAMS App index in the :ref:`appdirectory`, as well as automatic integration to Galaxy in the appliance deployment. 
+App metadata is a map where important information about the app itself is stored as key-value pairs. 
+The specification is provided as a JSON schema at `here <appmetadata.jsonschema>`_. 
+In the future the app metadata will be used for automatic generation of CLAMS App index in the :ref:`appdirectory`, as well as automatic integration to Galaxy in the appliance deployment. 
 
 HTTP webapp
 -----------
