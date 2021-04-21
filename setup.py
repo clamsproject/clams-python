@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-
+import distutils.cmd
 import os
 from os import path
 import shutil
@@ -11,12 +11,12 @@ cmdclass = {}
 
 try:
     from sphinx.setup_command import BuildDoc
+
     cmdclass['build_sphinx'] = BuildDoc
 except ImportError:
     print('WARNING: sphinx not available, not building docs')
 
-
-with open("VERSION", 'r') as version_f: 
+with open("VERSION", 'r') as version_f:
     version = version_f.read().strip()
 
 with open('README.md') as readme:
@@ -32,22 +32,39 @@ init_mod = open(path.join(ver_pack_dir, '__init__.py'), 'w')
 init_mod.write(f'__version__ = "{version}"')
 init_mod.close()
 
+
+class DoNothing(distutils.cmd.Command):
+    description = "run base code until `setuptools.setup(` line and exits 0."
+    user_options = []
+
+    def initialize_options(self) -> None:
+        pass
+
+    def finalize_options(self) -> None:
+        pass
+
+    def run(self):
+        pass
+
+
+cmdclass['donothing'] = DoNothing
+
 setuptools.setup(
-    name="clams-python", 
+    name="clams-python",
     version=version,
-    author="Brandeis Lab for Linguistics and Computation", 
+    author="Brandeis Lab for Linguistics and Computation",
     author_email="admin@clams.ai",
-    description="A collection of APIs to develop CLAMS app for python", 
+    description="A collection of APIs to develop CLAMS app for python",
     long_description=long_desc,
     long_description_content_type="text/markdown",
     url="https://www.clams.ai",
     classifiers=[
-    'Development Status :: 2 - Pre-Alpha',
-    'Framework :: Flask',
-    'Framework :: Pytest',
-    'Intended Audience :: Developers ',
-    'License :: OSI Approved :: Apache Software License',
-    'Programming Language :: Python :: 3 :: Only',
+        'Development Status :: 2 - Pre-Alpha',
+        'Framework :: Flask',
+        'Framework :: Pytest',
+        'Intended Audience :: Developers ',
+        'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3 :: Only',
     ],
     cmdclass=cmdclass,
     command_options={
@@ -58,8 +75,8 @@ setuptools.setup(
             #  'release': ('setup.py', release),
             'build_dir': ('setup.py', 'documentation/_build'),
             'builder': ('setup.py', 'html'),
-            }
-        },
+        }
+    },
     install_requires=requires,
     python_requires='>=3.6',
     packages=setuptools.find_packages(),

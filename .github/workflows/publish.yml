@@ -20,19 +20,10 @@ jobs:
         echo "VERSION=$(echo "${{ github.ref }}" | cut -d/ -f3)" >> $GITHUB_ENV
     - name: build a sdist
       run: |
-        pip install -r requirements.dev
-        pip install -r requirements.txt
-        echo ${{ env.VERSION }} > VERSION
-        python setup.py sdist
-        python -m pytest --doctest-modules --cov=clams/ --cov-report=xml
+        make package
     - name: build HTML documentation 
       run: |
-        pip install -r requirements.dev
-        python setup.py build_sphinx -a
-        rm -rf docs
-        mv documentation/_build/html docs
-        echo 'sdk.clams.ai' > docs/CNAME
-        touch docs/.nojekyll
+        make docs
     - name: configure clamsbot git user
       run: |
         git config --local user.email "admin@clams.ai"

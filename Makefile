@@ -10,6 +10,7 @@ bdistname = $(packagename)_python
 artifact = build/lib/$(packagename)
 buildcaches = build/bdist* $(bdistname).egg-info __pycache__
 testcaches = .hypothesis .pytest_cache .pytype coverage.xml htmlcov .coverage
+generatedcode = clams/ver
 
 .PHONY: all
 .PHONY: clean
@@ -33,28 +34,34 @@ publish: clean version package test
 	@git tag `cat VERSION` 
 	@git push origin `cat VERSION`
 
-docs: package
+clams/ver: 
+	python3 setup.py donothing
+
+docs: dist
 	pip install -r requirements.dev
 	rm -rf documentation/_build docs
 	rm -rf docs
 	python3 setup.py build_sphinx -a
 	mv documentation/_build/html docs
+	python3 clams/appmetadata/__init__.py > docs/appmetadata.jsonschema
 	echo 'sdk.clams.ai' > docs/CNAME
 	touch docs/.nojekyll
 
-package: VERSION 
+dist: package 
+package: VERSION coverage.xml
 	python3 setup.py sdist
 
 build: $(artifact)
 $(artifact):
 	python3 setup.py build
 
+coverage.xml: test 
 # invoking `test` without a VERSION file will generated a dev version - this ensures `make test` runs unmanned
-test: devversion 
+test: devversion $(generatedcode)
 	pip install -r requirements.dev
 	pip install -r requirements.txt
 	pytype $(packagename)
-	python3 -m pytest --doctest-modules --cov=$(packagename)
+	python3 -m pytest --doctest-modules --cov=$(packagename) --cov-report=xml
 
 # helper functions
 e :=
@@ -86,6 +93,6 @@ VERSION:
 	fi
 
 distclean:
-	@rm -rf dist $(artifact) build/bdist*
+	@rm -rf dist $(artifact) build/bdist* 
 clean: distclean
-	@rm -rf VERSION VERSION.dev $(testcaches) $(buildcaches)
+	@rm -rf VERSION VERSION.dev $(testcaches) $(buildcaches) $(generatedcode)
