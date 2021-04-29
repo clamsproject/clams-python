@@ -89,15 +89,18 @@ class ClamsHTTPApi(Resource):
 
         :return: Returns MMIF output from a ClamsApp in a HTTP response.
         """
+        in_mmif = Mmif(request.get_data())
+        params = self.annotate_param_caster.cast(request.args)
         try:
-            return self.json_to_response(self.cla.annotate(Mmif(request.get_data()),
-                                                           **self.annotate_param_caster.cast(request.args)))
-        except TypeError:
-            return Response(status=415, response=traceback.format_exc())
-        except FileNotFoundError:
-            return Response(status=404, response=traceback.format_exc())
-        except Exception:
-            return Response(status=400, response=traceback.format_exc())
+            return self.json_to_response(self.cla.annotate(in_mmif,
+                                                           **params))
+        except Exception as e:
+            code = 400
+            if type(e) == TypeError:
+                code = 415
+            elif type(e) == FileNotFoundError:
+                code = 404
+            return self.json_to_response(self.cla.record_error(in_mmif, params, e).serialize(), status=code)
 
     put = post
 

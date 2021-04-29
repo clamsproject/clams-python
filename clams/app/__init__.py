@@ -1,3 +1,4 @@
+import sys
 from abc import ABC, abstractmethod
 import json
 import os
@@ -92,8 +93,32 @@ class ClamsApp(ABC):
         """
         if view.is_frozen():
             raise ValueError("can't modify an old view")
-        view.metadata['app'] = self.metadata['iri']
+        view.metadata['app'] = self.metadata['name']
         view.metadata['parameter'] = parameters
+        
+    def record_error(self, mmif: Mmif, runtime_params: dict, error: Exception) -> Mmif:
+        import traceback
+        # TODO (krim @ 4/29/21): needs to be updated when 
+        # https://github.com/clamsproject/mmif/issues/164 and 
+        # https://github.com/clamsproject/mmif-python/issues/158 
+        # are resolved. 
+        error_view = None
+        for view in reversed(mmif.views):
+            if view.metadata.app == self.metadata['name']:
+                error_view = view
+                error_view.metadata.contains = {}
+                error_view.annotations._items = {}
+                break
+        if error_view is None:
+            error_view = mmif.new_view()
+            self.sign_view(error_view, runtime_params)
+        exc_info = sys.exc_info()
+        error = {
+            "message": f'{exc_info[0]}: {exc_info[1]}',
+            "stackTrace": traceback.format_tb(exc_info[2])
+        }
+        error_view.metadata['error'] = error
+        return mmif
 
     @staticmethod
     def validate_document_locations(mmif: Union[str, Mmif]) -> None:

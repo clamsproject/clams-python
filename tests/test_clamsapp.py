@@ -60,13 +60,16 @@ class ExampleClamsApp(clams.app.ClamsApp):
                 "requires": [],
                 "produces": [AT_TYPE.value]}
 
-    def _annotate(self, mmif):
+    def _annotate(self, mmif, raise_error=False):
         if type(mmif) is not Mmif:
             mmif = Mmif(mmif, validate=False)
         new_view = mmif.new_view()
+        self.sign_view(new_view, {'raise_error': raise_error})
         new_view.new_contain(AT_TYPE, {"producer": "dummy-producer"})
         ann = new_view.new_annotation('a1', AT_TYPE)
         ann.add_property("f1", "hello_world")
+        if raise_error:
+            raise ValueError
         return mmif
 
 
@@ -84,6 +87,13 @@ class TestClamsApp(unittest.TestCase):
         out_mmif = self.app.annotate(self.in_mmif)
         # TODO (krim @ 9/3/19): more robust test cases
         self.assertIsNotNone(out_mmif)
+        out_mmif = Mmif(out_mmif)
+        self.assertEqual(len(out_mmif.views), 1)
+        out_mmif = Mmif(self.app.annotate(out_mmif))
+        self.assertEqual(len(out_mmif.views), 2)
+        views = list(out_mmif.views)
+        # insertion order is kept
+        self.assertTrue(views[0].metadata.timestamp < views[1].metadata.timestamp)
 
     def test_open_document_location(self):
         mmif = ExampleInputMMIF.get_rawmmif()
@@ -95,6 +105,16 @@ class TestClamsApp(unittest.TestCase):
         mmif = ExampleInputMMIF.get_rawmmif()
         with self.app.open_document_location(mmif.documents['i1'], Image.open) as f:
             self.assertEqual(f.size, (200, 71))
+            
+    def test_error_handling(self):
+        params = {'raise_error': True}
+        in_mmif = Mmif(self.in_mmif)
+        try: 
+            out_mmif = self.app.annotate(in_mmif, **params)
+        except Exception as e:
+            out_mmif = self.app.record_error(in_mmif, params, e)
+        self.assertIsNotNone(out_mmif)
+        print(out_mmif.serialize(pretty=True))
 
 
 class TestRestifier(unittest.TestCase):
@@ -146,6 +166,14 @@ class TestRestifier(unittest.TestCase):
         res = self.app.put('/', data=mmif, headers=headers, query_string=query_string)
         self.assertEqual(res.status_code, 415, res.get_data(as_text=True))
 
+    def test_can_output_error(self):
+        mmif = ExampleInputMMIF.get_mmif()
+        query_string = {'pretty': True, 'raise_error': True}
+        res = self.app.put('/', data=mmif, query_string=query_string)
+        self.assertEqual(res.status_code, 400)
+        res_mmif = Mmif(res.get_data())
+        self.assertEqual(len(res_mmif.views), 1)
+        self.assertEqual(len(list(res_mmif.views)[0].annotations), 0)
 
 if __name__ == '__main__':
     unittest.main()
