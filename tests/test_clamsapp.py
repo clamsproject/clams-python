@@ -55,6 +55,8 @@ class ExampleClamsApp(clams.app.ClamsApp):
 
     def _appmetadata(self):
         return {"name": "Tesseract OCR",
+                "version": "x.y.z",
+                "iri": "https://app.clams.ai/tesseract-ocr/x.y.z",
                 "description": "A dummy tool for testing",
                 "vendor": "Team CLAMS",
                 "requires": [],
