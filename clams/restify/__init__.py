@@ -100,7 +100,7 @@ class ClamsHTTPApi(Resource):
                 code = 415
             elif type(e) == FileNotFoundError:
                 code = 404
-            return self.json_to_response(self.cla.record_error(in_mmif, params, e).serialize(), status=code)
+            return self.json_to_response(self.cla.record_error(in_mmif, params).serialize(), status=code)
 
     put = post
 

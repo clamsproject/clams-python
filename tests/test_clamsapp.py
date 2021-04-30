@@ -114,7 +114,7 @@ class TestClamsApp(unittest.TestCase):
         try: 
             out_mmif = self.app.annotate(in_mmif, **params)
         except Exception as e:
-            out_mmif = self.app.record_error(in_mmif, params, e)
+            out_mmif = self.app.record_error(in_mmif, params)
         self.assertIsNotNone(out_mmif)
         print(out_mmif.serialize(pretty=True))
 

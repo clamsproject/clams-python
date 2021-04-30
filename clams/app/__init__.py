@@ -52,35 +52,35 @@ class ClamsApp(ABC):
         """
         raise NotImplementedError()
 
-    def annotate(self, mmif: Union[str, dict, Mmif], **kwargs) -> str:
+    def annotate(self, mmif: Union[str, dict, Mmif], **runtime_params) -> str:
         """
         A public method to invoke the primary app function. It's essentially a
         wrapper around :func:`~clams.app.ClamsApp._annotate` method where some common operations
         (that are invoked by keyword arguments) are implemented.
 
         :param mmif: An input MMIF object to annotate
-        :param kwargs: An arbitrary set of k-v pairs to configure the app at runtime
+        :param runtime_params: An arbitrary set of k-v pairs to configure the app at runtime
         :return: Serialized JSON string of the output of the app
         """
         # TODO (krim @ 12/17/20): add documentation on what are "common" operations
         # should pop all "common" parameters before passing the args to _annotate()
-        pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
-        annotated = self._annotate(mmif, **kwargs)
+        pretty = runtime_params.pop('pretty') if 'pretty' in runtime_params else False
+        annotated = self._annotate(mmif, **runtime_params)
         return annotated.serialize(pretty=pretty)
 
     @abstractmethod
-    def _annotate(self, mmif: Union[str, dict, Mmif], **kwargs) -> Mmif:
+    def _annotate(self, mmif: Union[str, dict, Mmif], **runtime_params) -> Mmif:
         """
         An abstract method to generate (or load if stored elsewhere) the app metadata
         at runtime. All CLAMS app must implement this.
 
         :param mmif: An input MMIF object to annotate
-        :param kwargs: An arbitrary set of k-v pairs to configure the app at runtime
+        :param runtime_params: An arbitrary set of k-v pairs to configure the app at runtime
         :return: A :class:`~mmif.serialize.mmif.Mmif` object of the annotated output, ready for serialization
         """
         raise NotImplementedError()
 
-    def sign_view(self, view: View, parameters: dict) -> None:
+    def sign_view(self, view: View, runtime_params: dict) -> None:
         """
         A method to "sign" a new view that this app creates at the beginning of annotation.
         Signing will populate the view metadata with information and configuration of this app.
@@ -89,19 +89,30 @@ class ClamsApp(ABC):
         are consumed in :func:`~clams.app.ClamsApp.annotate` should not be recorded in the
         view metadata.
         :param view: a view to sign
-        :param parameters: runtime configuration of the app as k-v pairs
+        :param runtime_params: runtime configuration of the app as k-v pairs
         """
         if view.is_frozen():
             raise ValueError("can't modify an old view")
         view.metadata['app'] = self.metadata['iri']
-        view.metadata['parameter'] = parameters
+        view.metadata['parameter'] = runtime_params
         
-    def record_error(self, mmif: Mmif, runtime_params: dict, error: Exception) -> Mmif:
+    def record_error(self, mmif: Union[str, dict, Mmif], runtime_params: dict) -> Mmif:
+        """
+        A method to record an error instead of annotation results in the view
+        this app generated. For logging purpose, the runtime parameters used
+        when the error occurred must be passed as well.
+
+        :param mmif: input MMIF object
+        :param runtime_params:
+        :return: An output MMIF with a new view with the error encoded in the view metadata
+        """
         import traceback
         # TODO (krim @ 4/29/21): needs to be updated when 
         # https://github.com/clamsproject/mmif/issues/164 and 
         # https://github.com/clamsproject/mmif-python/issues/158 
-        # are resolved. 
+        # are resolved.
+        if isinstance(mmif, str) or isinstance(mmif, dict):
+            mmif = Mmif(mmif)
         error_view = None
         for view in reversed(mmif.views):
             if view.metadata.app == self.metadata['iri']:
