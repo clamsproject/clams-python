@@ -51,7 +51,7 @@ class AppMetadata(pydantic.BaseModel):
     wrapper_version: Optional[str]
     license: str
     wrapper_license: Optional[str]
-    url: pydantic.AnyHttpUrl
+    identifier: pydantic.AnyHttpUrl
     input: List[Input]
     output: List[Output]
 

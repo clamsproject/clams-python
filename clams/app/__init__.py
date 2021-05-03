@@ -118,8 +118,8 @@ class ClamsApp(ABC):
         """
         if view.is_frozen():
             raise ValueError("can't modify an old view")
-        view.metadata['app'] = self.metadata['iri']
-        view.metadata['parameter'] = runtime_params
+        view.metadata.app = self.metadata.identifier
+        view.metadata.parameter = runtime_params
         
     def record_error(self, mmif: Union[str, dict, Mmif], runtime_params: dict) -> Mmif:
         """
@@ -140,7 +140,7 @@ class ClamsApp(ABC):
             mmif = Mmif(mmif)
         error_view = None
         for view in reversed(mmif.views):
-            if view.metadata.app == self.metadata['iri']:
+            if view.metadata.app == self.metadata.identifier:
                 error_view = view
                 error_view.metadata.contains = {}
                 error_view.annotations._items = {}

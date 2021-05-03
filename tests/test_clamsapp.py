@@ -58,7 +58,16 @@ class TestSerialization(unittest.TestCase):
 class ExampleClamsApp(clams.app.ClamsApp):
 
     def _appmetadata(self) -> Union[dict, AppMetadata]:
-        pass
+        exampleappversion = '0.0.1'
+        return AppMetadata(
+            name="Example CLAMS App for testing",
+            description="This app doesn't do anything",
+            app_version=exampleappversion,
+            license="MIT",
+            identifier=f"https://apps.clams.ai/example/{exampleappversion}",
+            input=[],
+            output=[]
+        )
     
     def _input_spec(self):
         return []
@@ -82,16 +91,6 @@ class ExampleClamsApp(clams.app.ClamsApp):
 class TestClamsApp(unittest.TestCase):
     
     def setUp(self):
-        self.exampleappversion = '0.0.1'
-        self.exampleappmetadata = AppMetadata(
-            name="Example CLAMS App for testing",
-            description="This app doesn't do anything",
-            app_version=self.exampleappversion,
-            license="MIT",
-            url=f"https://apps.clams.ai/example/{self.exampleappversion}",
-            input=[],
-            output=[]
-        )
         self.appmetadataschema = json.loads(AppMetadata.schema_json())
         self.app = ExampleClamsApp()
         self.in_mmif = ExampleInputMMIF.get_mmif()
@@ -101,8 +100,6 @@ class TestClamsApp(unittest.TestCase):
         self.assertIsNotNone(self.appmetadataschema)
 
     def test_appmetadata(self):
-        # from AppMetadata class
-        self.app.metadata = self.exampleappmetadata
         metadata = json.loads(self.app.appmetadata(pretty=True))
         jsonschema.validate(metadata, self.appmetadataschema)
         print(self.app.appmetadata(pretty=True))
