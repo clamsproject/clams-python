@@ -1,8 +1,9 @@
+import json
 import os
 import tempfile
 import unittest
 
-from mmif import Mmif, Document, DocumentTypes, AnnotationTypes
+from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View
 
 import clams.app
 import clams.restify
@@ -116,6 +117,9 @@ class TestClamsApp(unittest.TestCase):
         except Exception as e:
             out_mmif = self.app.record_error(in_mmif, params)
         self.assertIsNotNone(out_mmif)
+        last_view: View = next(reversed(out_mmif.views))
+        self.assertEqual(len(last_view.metadata.contains), 0)
+        self.assertEqual(len(last_view.metadata.error), 2)
         print(out_mmif.serialize(pretty=True))
 
 
@@ -176,6 +180,12 @@ class TestRestifier(unittest.TestCase):
         res_mmif = Mmif(res.get_data())
         self.assertEqual(len(res_mmif.views), 1)
         self.assertEqual(len(list(res_mmif.views)[0].annotations), 0)
+        self.assertEqual(len(list(res_mmif.views)[0].metadata.contains), 0)
+        res_mmif_json = json.loads(res.get_data())
+        self.assertEqual(len(res_mmif_json['views']), 1)
+        self.assertEqual(len(res_mmif_json['views'][0]['annotations']), 0)
+        self.assertFalse('contains' in res_mmif_json['views'][0]['metadata'])
+        self.assertTrue('error' in res_mmif_json['views'][0]['metadata'])
 
 if __name__ == '__main__':
     unittest.main()
