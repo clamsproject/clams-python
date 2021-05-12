@@ -66,7 +66,8 @@ class ExampleClamsApp(clams.app.ClamsApp):
             license="MIT",
             identifier=f"https://apps.clams.ai/example/{exampleappversion}",
             input=[],
-            output=[]
+            output=[],
+            parameters=[]
         )
     
     def _input_spec(self):

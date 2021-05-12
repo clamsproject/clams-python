@@ -1,14 +1,23 @@
 from typing import Optional, Union, Dict, List
+from typing_extensions import Literal
 
 import mmif
 import pydantic
 
 import clams
 
-primitives = Union[int, str, bool]
+primitives = Union[int, float, str, bool]
 
 
-class Output(pydantic.BaseModel):
+class BaseModel(pydantic.BaseModel):
+    
+    class Config:
+        def schema_extra(schema, model) -> None:
+            for prop in schema.get('properties', {}).values():
+                prop.pop('title', None)
+
+
+class Output(BaseModel):
     """
     Defines a data model that describes output specification of a CLAMS app
     """
@@ -23,10 +32,6 @@ class Output(pydantic.BaseModel):
         extra = 'forbid'
         allow_population_by_field_name = True
 
-        def schema_extra(schema, model) -> None:
-            for prop in schema.get('properties', {}).values():
-                prop.pop('title', None)
-                
                 
 class Input(Output):
     """
@@ -39,6 +44,31 @@ class Input(Output):
         extra = 'forbid'
         allow_population_by_field_name = True
 
+
+class RuntimeParameterValue(BaseModel):
+    """ 
+    Defines a data model that describes a value of a runtime parameter. 
+    """
+    # these names are taken from the JSON schema data types
+    datatype: Literal['integer', 'number', 'string', 'boolean']
+    choices: List[primitives]
+    default: Optional[primitives] = None
+    
+    
+class RuntimeParameter(BaseModel):
+    """
+    Defines a data model that describes a single runtime configuration of a CLAMS app. 
+    Usually, an app keeps a list of these configuration specifications in the 
+    ``parameters`` field. 
+    """
+    name: str
+    values: RuntimeParameterValue
+    description: str
+    
+    class Config:
+        title = 'CLAMS App Runtime Parameter'
+        extra = 'forbid'
+        
 
 class AppMetadata(pydantic.BaseModel):
     """
@@ -54,6 +84,7 @@ class AppMetadata(pydantic.BaseModel):
     identifier: pydantic.AnyHttpUrl
     input: List[Input]
     output: List[Output]
+    parameters: List[RuntimeParameter]
 
     class Config:
         title = "CLAMS AppMetadata"
