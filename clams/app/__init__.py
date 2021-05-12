@@ -8,7 +8,7 @@ from contextlib import contextmanager
 
 __all__ = ['ClamsApp']
 
-from typing import Union, Any
+from typing import Union, Any, Optional
 
 from mmif import Mmif, Document, DocumentTypes, View
 
@@ -107,28 +107,19 @@ class ClamsApp(ABC):
         :return: An output MMIF with a new view with the error encoded in the view metadata
         """
         import traceback
-        # TODO (krim @ 4/29/21): needs to be updated when 
-        # https://github.com/clamsproject/mmif/issues/164 and 
-        # https://github.com/clamsproject/mmif-python/issues/158 
-        # are resolved.
         if isinstance(mmif, str) or isinstance(mmif, dict):
             mmif = Mmif(mmif)
-        error_view = None
+        error_view: Optional[View] = None
         for view in reversed(mmif.views):
             if view.metadata.app == self.metadata['iri']:
                 error_view = view
-                error_view.metadata.contains = {}
-                error_view.annotations._items = {}
                 break
         if error_view is None:
             error_view = mmif.new_view()
             self.sign_view(error_view, runtime_params)
         exc_info = sys.exc_info()
-        error = {
-            "message": f'{exc_info[0]}: {exc_info[1]}',
-            "stackTrace": traceback.format_tb(exc_info[2])
-        }
-        error_view.metadata['error'] = error
+        error_view.set_error(f'{exc_info[0]}: {exc_info[1]}',
+                             '\t\n'.join(traceback.format_tb(exc_info[2])))
         return mmif
 
     @staticmethod
