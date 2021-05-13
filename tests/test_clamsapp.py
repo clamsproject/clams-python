@@ -66,16 +66,10 @@ class ExampleClamsApp(clams.app.ClamsApp):
             license="MIT",
             identifier=f"https://apps.clams.ai/example/{exampleappversion}",
             input=[],
-            output=[],
+            output=[Output(at_type=AT_TYPE.value)],
             parameters=[]
         )
     
-    def _input_spec(self):
-        return []
-        
-    def _output_spec(self):
-        return [Output(at_type=AT_TYPE.value)]
-
     def _annotate(self, mmif, raise_error=False):
         if type(mmif) is not Mmif:
             mmif = Mmif(mmif, validate=False)
