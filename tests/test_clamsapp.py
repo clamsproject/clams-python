@@ -56,9 +56,6 @@ class TestSerialization(unittest.TestCase):
 
 class ExampleClamsApp(clams.app.ClamsApp):
 
-    AT_TYPE1 = AnnotationTypes.TimeFrame
-    AT_TYPE2 = AnnotationTypes.BoundingBox
-    
     def _appmetadata(self) -> Union[dict, AppMetadata]:
         
         exampleappversion = '0.0.1'
@@ -68,16 +65,9 @@ class ExampleClamsApp(clams.app.ClamsApp):
             app_version=exampleappversion,
             license="MIT",
             identifier=f"https://apps.clams.ai/example/{exampleappversion}",
-            input=[Input(at_type=DocumentTypes.AudioDocument)],
-            # can add when initialized?
-            output=[Output(at_type=self.AT_TYPE1)],
+            input=[Input(at_type=DocumentTypes.AudioDocument.value)],
+            output=[Output(at_type=AnnotationTypes.TimeFrame)],
         )
-        # can add after initialized?
-        metadata.add_output(self.AT_TYPE2.value)
-        metadata.add_parameter('raise_error', 'force raise a ValueError', 
-                               RuntimeParameterValue(datatype='boolean', default='false'))
-        metadata.add_parameter('multiple_choice', 'force raise a ValueError',
-                               RuntimeParameterValue(datatype='integer', choices=[1,2,3,4,5], default=3))
         return metadata
     
     def _annotate(self, mmif, raise_error=False):
@@ -85,8 +75,8 @@ class ExampleClamsApp(clams.app.ClamsApp):
             mmif = Mmif(mmif, validate=False)
         new_view = mmif.new_view()
         self.sign_view(new_view, {'raise_error': raise_error})
-        new_view.new_contain(self.AT_TYPE1, {"producer": "dummy-producer"})
-        ann = new_view.new_annotation('a1', self.AT_TYPE1)
+        new_view.new_contain(AnnotationTypes.TimeFrame, {"producer": "dummy-producer"})
+        ann = new_view.new_annotation('a1', AnnotationTypes.TimeFrame)
         ann.add_property("f1", "hello_world")
         if raise_error:
             raise ValueError
@@ -105,12 +95,46 @@ class TestClamsApp(unittest.TestCase):
         self.assertIsNotNone(self.appmetadataschema)
 
     def test_appmetadata(self):
-        metadata = json.loads(self.app.appmetadata(pretty=True))
-        jsonschema.validate(metadata, self.appmetadataschema)
-        self.assertEqual(len(metadata['parameters']), 2)
-        self.assertEqual(len(metadata['output']), 2)
+        # base metadata setting is done in the ExampleClamsApp class
+        # here we will try to add more fields to the metadata and test them
+        
+        # test base metadata
+        metadata = json.loads(self.app.appmetadata())
+        self.assertEqual(len(metadata['output']), 1)
         self.assertEqual(len(metadata['input']), 1)
-        self.assertEqual(metadata['input'][0]['required'], True)
+        self.assertTrue('properties' not in metadata['output'][0])
+        self.assertTrue('properties' not in metadata['input'][0])
+        self.assertTrue(metadata['input'][0]['required'])
+        self.assertEqual(len(metadata['parameters']), 0)
+        
+        # test add_X methods
+        self.app.metadata.add_output(AnnotationTypes.BoundingBox)
+        metadata = json.loads(self.app.appmetadata())
+        self.assertEqual(len(metadata['output']), 2)
+        # this should not be added as a duplicate
+        self.app.metadata.add_input(at_type=DocumentTypes.AudioDocument.value)
+        metadata = json.loads(self.app.appmetadata())
+        self.assertEqual(len(metadata['input']), 1)
+        self.assertTrue('properties' not in metadata['input'][0])
+        # adding input with properties
+        self.app.metadata.add_input(at_type=AnnotationTypes.TimeFrame, frameType='speech')
+        metadata = json.loads(self.app.appmetadata())
+        self.assertEqual(len(metadata['input']), 2)
+        self.assertTrue('properties' in metadata['input'][1])
+        self.assertEqual(len(metadata['input'][1]['properties']), 1)
+        # now parameters
+        # using a custom class
+        self.app.metadata.add_parameter(
+            'raise_error', 'force raise a ValueError',
+            RuntimeParameterValue(datatype='boolean', default='false'))
+        # using python dict
+        self.app.metadata.add_parameter(
+            'multiple_choice', 'meaningless multiple choice option',
+            {'datatype': 'integer', 'choices': [1, 2, 3, 4, 5], 'default': 3})
+        metadata = json.loads(self.app.appmetadata())
+        self.assertEqual(len(metadata['parameters']), 2)
+        
+        # finally for an eye exam
         print(self.app.appmetadata(pretty=True))
         
     def test_annotate(self):

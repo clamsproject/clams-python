@@ -121,17 +121,23 @@ class AppMetadata(pydantic.BaseModel):
             schema['$schema'] = "http://json-schema.org/draft-07/schema#"  # currently pydantic doesn't natively support the $schema field. See https://github.com/samuelcolvin/pydantic/issues/1478
             schema['$comment'] = f"clams-python SDK {clams.__version__} was used to generate this schema"  # this is only to hold version information
         
-    def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = False, **properties):
-        if at_type not in [input.at_type for input in self.input]:
-            self.input.append(Input(at_type=str(at_type), required=required, properties=dict(properties)))
-            if required:
+    def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = True, **properties):
+        new_inp = Input(at_type=at_type, required=required)
+        if len(properties) > 0:
+            new_inp.properties = properties
+        if new_inp not in self.input:
+            self.input.append(new_inp)
+            if not required:
                 # TODO (krim @ 5/12/21): automatically add *optional* input types to parameter
                 # see https://github.com/clamsproject/clams-python/issues/29 for discussion
                 pass
         
     def add_output(self, at_type: Union[str, vocabulary.ThingTypesBase], **properties):
         if at_type not in [output.at_type for output in self.output]:
-            self.output.append(Output(at_type=str(at_type), properties=dict(properties)))
+            if len(properties) > 0:
+                self.output.append(Output(at_type=str(at_type), properties=dict(properties)))
+            else:
+                self.output.append(Output(at_type=str(at_type)))
     
     def add_parameter(self, name: str, description: str, value_spec: Union[dict, RuntimeParameterValue]):
         if type(value_spec) == dict:
