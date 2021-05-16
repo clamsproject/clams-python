@@ -9,9 +9,8 @@ from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View
 
 import clams.app
 import clams.restify
-from clams.appmetadata import AppMetadata, Input, Output
+from clams.appmetadata import AppMetadata, Input, Output, RuntimeParameter, RuntimeParameterValue
 
-AT_TYPE = AnnotationTypes.TimeFrame
 
 
 class ExampleInputMMIF(object):
@@ -57,26 +56,37 @@ class TestSerialization(unittest.TestCase):
 
 class ExampleClamsApp(clams.app.ClamsApp):
 
+    AT_TYPE1 = AnnotationTypes.TimeFrame
+    AT_TYPE2 = AnnotationTypes.BoundingBox
+    
     def _appmetadata(self) -> Union[dict, AppMetadata]:
+        
         exampleappversion = '0.0.1'
-        return AppMetadata(
+        metadata = AppMetadata(
             name="Example CLAMS App for testing",
             description="This app doesn't do anything",
             app_version=exampleappversion,
             license="MIT",
             identifier=f"https://apps.clams.ai/example/{exampleappversion}",
-            input=[],
-            output=[Output(at_type=AT_TYPE.value)],
-            parameters=[]
+            input=[Input(at_type=DocumentTypes.AudioDocument)],
+            # can add when initialized?
+            output=[Output(at_type=self.AT_TYPE1)],
         )
+        # can add after initialized?
+        metadata.add_output(self.AT_TYPE2.value)
+        metadata.add_parameter('raise_error', 'force raise a ValueError', 
+                               RuntimeParameterValue(datatype='boolean', default='false'))
+        metadata.add_parameter('multiple_choice', 'force raise a ValueError',
+                               RuntimeParameterValue(datatype='integer', choices=[1,2,3,4,5], default=3))
+        return metadata
     
     def _annotate(self, mmif, raise_error=False):
         if type(mmif) is not Mmif:
             mmif = Mmif(mmif, validate=False)
         new_view = mmif.new_view()
         self.sign_view(new_view, {'raise_error': raise_error})
-        new_view.new_contain(AT_TYPE, {"producer": "dummy-producer"})
-        ann = new_view.new_annotation('a1', AT_TYPE)
+        new_view.new_contain(self.AT_TYPE1, {"producer": "dummy-producer"})
+        ann = new_view.new_annotation('a1', self.AT_TYPE1)
         ann.add_property("f1", "hello_world")
         if raise_error:
             raise ValueError
@@ -97,6 +107,10 @@ class TestClamsApp(unittest.TestCase):
     def test_appmetadata(self):
         metadata = json.loads(self.app.appmetadata(pretty=True))
         jsonschema.validate(metadata, self.appmetadataschema)
+        self.assertEqual(len(metadata['parameters']), 2)
+        self.assertEqual(len(metadata['output']), 2)
+        self.assertEqual(len(metadata['input']), 1)
+        self.assertEqual(metadata['input'][0]['required'], True)
         print(self.app.appmetadata(pretty=True))
         
     def test_annotate(self):
@@ -128,12 +142,14 @@ class TestClamsApp(unittest.TestCase):
         try: 
             out_mmif = self.app.annotate(in_mmif, **params)
         except Exception as e:
-            out_mmif = self.app.record_error(in_mmif, params)
+            out_mmif_from_str = self.app.record_error(self.in_mmif, params)
+            out_mmif_from_mmif = self.app.record_error(in_mmif, params)
+            self.assertEqual(out_mmif_from_mmif, out_mmif_from_str)
+            out_mmif = out_mmif_from_str
         self.assertIsNotNone(out_mmif)
         last_view: View = next(reversed(out_mmif.views))
         self.assertEqual(len(last_view.metadata.contains), 0)
         self.assertEqual(len(last_view.metadata.error), 2)
-        print(out_mmif.serialize(pretty=True))
 
 
 class TestRestifier(unittest.TestCase):

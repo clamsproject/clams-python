@@ -24,10 +24,16 @@ class Output(BaseModel):
     Defines a data model that describes output specification of a CLAMS app
     """
     at_type: pydantic.AnyHttpUrl = pydantic.Field(
-        None,
+        ...,
         alias="@type"
     )
-    properties: Optional[Dict[str, str]]
+    properties: Dict[str, str] = {}
+    
+    @pydantic.validator('at_type', pre=True)
+    def at_type_must_be_str(cls, v):
+        if not isinstance(v, str):
+            return str(v)
+        return v
     
     class Config:
         title = 'CLAMS Output Specification'
@@ -39,7 +45,12 @@ class Input(Output):
     """
     Defines a data model that describes input specification of a CLAMS app
     """
-    required: Optional[bool] = True
+    required: bool = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.required is None:
+            self.required = True
 
     class Config:
         title = 'CLAMS Input Specification'
@@ -53,8 +64,8 @@ class RuntimeParameterValue(BaseModel):
     """
     # these names are taken from the JSON schema data types
     datatype: param_value_types
-    choices: List[primitives]
-    default: Optional[primitives] = None
+    choices: Optional[List[primitives]]
+    default: Optional[primitives]
     
     
 class RuntimeParameter(BaseModel):
@@ -79,14 +90,24 @@ class AppMetadata(pydantic.BaseModel):
     name: str
     description: str
     app_version: str
-    mmif_version: str = mmif.__version__
+    mmif_version: str = None
     wrapper_version: Optional[str]
     license: str
     wrapper_license: Optional[str]
     identifier: pydantic.AnyHttpUrl
-    input: List[Input] = []
-    output: List[Output] = []
-    parameters: List[RuntimeParameter] = []
+    input: List[Input] = None
+    output: List[Output] = None
+    parameters: List[RuntimeParameter] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mmif_version = mmif.__version__
+        if self.input is None:
+            self.input = []
+        if self.output is None:
+            self.output = []
+        if self.parameters is None:
+            self.parameters = []
 
     class Config:
         title = "CLAMS AppMetadata"
@@ -104,7 +125,7 @@ class AppMetadata(pydantic.BaseModel):
         if at_type not in [input.at_type for input in self.input]:
             self.input.append(Input(at_type=str(at_type), required=required, properties=dict(properties)))
             if required:
-                # TODO (krim @ 5/12/21): add this *optional* input to parameter
+                # TODO (krim @ 5/12/21): automatically add *optional* input types to parameter
                 # see https://github.com/clamsproject/clams-python/issues/29 for discussion
                 pass
         
@@ -118,20 +139,7 @@ class AppMetadata(pydantic.BaseModel):
         if name not in [param.name for param in self.parameters]:
             self.parameters.append(RuntimeParameter(name=name, description=description, value=value_spec))
         else:
-            raise ValueError('name alredy exist')
+            raise ValueError('name already exist')
 
 if __name__ == '__main__':
-    # print(AppMetadata.schema_json(indent=2))
-    r_dict = {'datatype': 'string', 'choices': ['aa', 'bb'], 'default': None}
-    r = RuntimeParameterValue(**r_dict)
-    print(r)
-    rr = RuntimeParameter(name='tmp', description='string', value=r_dict)
-    print(rr)
-    rr = RuntimeParameter(name='tmp', description='string', value=r)
-    print(rr)
-    m = AppMetadata(name='test', description='test app metadata', app_version='0.0.1', license='mit', identifier='https://google.com')
-    m.add_parameter(name='tmp', description='aaa', value_spec=r_dict)
-    print(m)
-    m.add_parameter(name='tmp2', description='aaa', value_spec=r)
-    print(m.json(indent=2))
-
+    print(AppMetadata.schema_json(indent=2))
