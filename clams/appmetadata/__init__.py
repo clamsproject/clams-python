@@ -19,7 +19,7 @@ class BaseModel(pydantic.BaseModel):
                 prop.pop('title', None)
 
 
-class Output(BaseModel):
+class _Output(BaseModel):
     """
     Defines a data model that describes output specification of a CLAMS app
     """
@@ -41,7 +41,7 @@ class Output(BaseModel):
         allow_population_by_field_name = True
 
                 
-class Input(Output):
+class _Input(_Output):
     """
     Defines a data model that describes input specification of a CLAMS app
     """
@@ -58,7 +58,7 @@ class Input(Output):
         allow_population_by_field_name = True
 
 
-class RuntimeParameter(BaseModel):
+class _RuntimeParameter(BaseModel):
     """
     Defines a data model that describes a single runtime configuration of a CLAMS app. 
     Usually, an app keeps a list of these configuration specifications in the 
@@ -87,9 +87,9 @@ class AppMetadata(pydantic.BaseModel):
     license: str
     wrapper_license: Optional[str]
     identifier: pydantic.AnyHttpUrl
-    input: List[Input] = None
-    output: List[Output] = None
-    parameters: List[RuntimeParameter] = None
+    input: List[_Input] = None
+    output: List[_Output] = None
+    parameters: List[_RuntimeParameter] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -114,7 +114,7 @@ class AppMetadata(pydantic.BaseModel):
             schema['$comment'] = f"clams-python SDK {clams.__version__} was used to generate this schema"  # this is only to hold version information
         
     def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = True, **properties):
-        new_inp = Input(at_type=at_type, required=required)
+        new_inp = _Input(at_type=at_type, required=required)
         if len(properties) > 0:
             new_inp.properties = properties
         if new_inp not in self.input:
@@ -127,14 +127,14 @@ class AppMetadata(pydantic.BaseModel):
     def add_output(self, at_type: Union[str, vocabulary.ThingTypesBase], **properties):
         if at_type not in [output.at_type for output in self.output]:
             if len(properties) > 0:
-                self.output.append(Output(at_type=str(at_type), properties=dict(properties)))
+                self.output.append(_Output(at_type=str(at_type), properties=dict(properties)))
             else:
-                self.output.append(Output(at_type=str(at_type)))
+                self.output.append(_Output(at_type=str(at_type)))
         else:
             raise ValueError(f"output '{at_type}' already exist.")
     
     def add_parameter(self, **parameter_spec):
-        new_param = RuntimeParameter(**parameter_spec)
+        new_param = _RuntimeParameter(**parameter_spec)
         if new_param.name not in [param.name for param in self.parameters]:
             self.parameters.append(new_param)
         else:

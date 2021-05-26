@@ -65,9 +65,9 @@ class ExampleClamsApp(clams.app.ClamsApp):
             app_version=exampleappversion,
             license="MIT",
             identifier=f"https://apps.clams.ai/example/{exampleappversion}",
-            input=[{'at_type': DocumentTypes.AudioDocument}],
-            output=[{'at_type': AnnotationTypes.TimeFrame}],
+            output=[{'@type': AnnotationTypes.TimeFrame}],
         )
+        metadata.add_input(DocumentTypes.AudioDocument)
         return metadata
     
     def _annotate(self, mmif, raise_error=False):
