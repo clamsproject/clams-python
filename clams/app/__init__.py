@@ -96,7 +96,7 @@ class ClamsApp(ABC):
         view.metadata['app'] = self.metadata['iri']
         view.metadata['parameter'] = runtime_params
         
-    def record_error(self, mmif: Union[str, dict, Mmif], runtime_params: dict) -> Mmif:
+    def set_error_view(self, mmif: Union[str, dict, Mmif], runtime_params: dict) -> Mmif:
         """
         A method to record an error instead of annotation results in the view
         this app generated. For logging purpose, the runtime parameters used
@@ -121,6 +121,8 @@ class ClamsApp(ABC):
         error_view.set_error(f'{exc_info[0]}: {exc_info[1]}',
                              '\t\n'.join(traceback.format_tb(exc_info[2])))
         return mmif
+    
+    record_error = set_error_view
 
     @staticmethod
     def validate_document_locations(mmif: Union[str, Mmif]) -> None:
