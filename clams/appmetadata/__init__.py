@@ -58,16 +58,6 @@ class Input(Output):
         allow_population_by_field_name = True
 
 
-class RuntimeParameterValue(BaseModel):
-    """ 
-    Defines a data model that describes a value of a runtime parameter. 
-    """
-    # these names are taken from the JSON schema data types
-    datatype: param_value_types
-    choices: Optional[List[primitives]]
-    default: Optional[primitives]
-    
-    
 class RuntimeParameter(BaseModel):
     """
     Defines a data model that describes a single runtime configuration of a CLAMS app. 
@@ -75,8 +65,10 @@ class RuntimeParameter(BaseModel):
     ``parameters`` field. 
     """
     name: str
-    value: RuntimeParameterValue
     description: str
+    type: param_value_types  # these names are taken from the JSON schema data types
+    choices: Optional[List[primitives]]
+    default: Optional[primitives]
     
     class Config:
         title = 'CLAMS App Runtime Parameter'
@@ -138,14 +130,15 @@ class AppMetadata(pydantic.BaseModel):
                 self.output.append(Output(at_type=str(at_type), properties=dict(properties)))
             else:
                 self.output.append(Output(at_type=str(at_type)))
-    
-    def add_parameter(self, name: str, description: str, value_spec: Union[dict, RuntimeParameterValue]):
-        if type(value_spec) == dict:
-            value_spec = RuntimeParameterValue(**value_spec)
-        if name not in [param.name for param in self.parameters]:
-            self.parameters.append(RuntimeParameter(name=name, description=description, value=value_spec))
         else:
-            raise ValueError('name already exist')
+            raise ValueError(f"output '{at_type}' already exist.")
+    
+    def add_parameter(self, **parameter_spec):
+        new_param = RuntimeParameter(**parameter_spec)
+        if new_param.name not in [param.name for param in self.parameters]:
+            self.parameters.append(new_param)
+        else:
+            raise ValueError(f"parameter '{new_param.name}' already exist.")
 
 if __name__ == '__main__':
     print(AppMetadata.schema_json(indent=2))

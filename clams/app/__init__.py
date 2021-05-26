@@ -27,7 +27,7 @@ class ClamsApp(ABC):
         self.annotate_param_spec = {'pretty': bool}
         python_type = {"boolean": bool, "number": float, "integer": int, "string": str}
         for param_spec in self.metadata.parameters:
-            self.annotate_param_spec[param_spec.name] = python_type[param_spec.value.datatype]
+            self.annotate_param_spec[param_spec.name] = python_type[param_spec.type]
 
     def appmetadata(self, **kwargs) -> str:
         """

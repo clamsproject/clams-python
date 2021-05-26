@@ -9,7 +9,7 @@ from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View
 
 import clams.app
 import clams.restify
-from clams.appmetadata import AppMetadata, Input, Output, RuntimeParameter, RuntimeParameterValue
+from clams.appmetadata import AppMetadata
 
 
 
@@ -20,7 +20,7 @@ class ExampleInputMMIF(object):
     def get_rawmmif() -> Mmif:
         mmif = Mmif(validate=False, frozen=False)
 
-        vdoc = Document({'@type': DocumentTypes.VideoDocument.value,
+        vdoc = Document({'@type': DocumentTypes.VideoDocument,
                          'properties':
                              {'id': 'v1', 'location': "/dummy/dir/dummy.file.mp4"}})
         mmif.add_document(vdoc)
@@ -65,8 +65,8 @@ class ExampleClamsApp(clams.app.ClamsApp):
             app_version=exampleappversion,
             license="MIT",
             identifier=f"https://apps.clams.ai/example/{exampleappversion}",
-            input=[Input(at_type=DocumentTypes.AudioDocument.value)],
-            output=[Output(at_type=AnnotationTypes.TimeFrame)],
+            input=[{'at_type': DocumentTypes.AudioDocument}],
+            output=[{'at_type': AnnotationTypes.TimeFrame}],
         )
         return metadata
     
@@ -112,7 +112,7 @@ class TestClamsApp(unittest.TestCase):
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['output']), 2)
         # this should not be added as a duplicate
-        self.app.metadata.add_input(at_type=DocumentTypes.AudioDocument.value)
+        self.app.metadata.add_input(at_type=DocumentTypes.AudioDocument)
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['input']), 1)
         self.assertTrue('properties' not in metadata['input'][0])
@@ -125,12 +125,12 @@ class TestClamsApp(unittest.TestCase):
         # now parameters
         # using a custom class
         self.app.metadata.add_parameter(
-            'raise_error', 'force raise a ValueError',
-            RuntimeParameterValue(datatype='boolean', default='false'))
+            name='raise_error', description='force raise a ValueError', 
+            type='boolean', default='false')
         # using python dict
         self.app.metadata.add_parameter(
-            'multiple_choice', 'meaningless multiple choice option',
-            {'datatype': 'integer', 'choices': [1, 2, 3, 4, 5], 'default': 3})
+            name='multiple_choice', description='meaningless multiple choice option',
+            type='integer', choices=[1, 2, 3, 4, 5], default=3)
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['parameters']), 2)
         
