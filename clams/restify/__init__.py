@@ -95,12 +95,7 @@ class ClamsHTTPApi(Resource):
             return self.json_to_response(self.cla.annotate(in_mmif,
                                                            **params))
         except Exception as e:
-            code = 400
-            if type(e) == TypeError:
-                code = 415
-            elif type(e) == FileNotFoundError:
-                code = 404
-            return self.json_to_response(self.cla.record_error(in_mmif, params).serialize(), status=code)
+            return self.json_to_response(self.cla.record_error(in_mmif, params).serialize(), status=500)
 
     put = post
 
