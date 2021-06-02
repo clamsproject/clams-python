@@ -166,8 +166,8 @@ class TestClamsApp(unittest.TestCase):
         try: 
             out_mmif = self.app.annotate(in_mmif, **params)
         except Exception as e:
-            out_mmif_from_str = self.app.record_error(self.in_mmif, params)
-            out_mmif_from_mmif = self.app.record_error(in_mmif, params)
+            out_mmif_from_str = self.app.set_error_view(self.in_mmif, params)
+            out_mmif_from_mmif = self.app.set_error_view(in_mmif, params)
             self.assertEqual(out_mmif_from_mmif, out_mmif_from_str)
             out_mmif = out_mmif_from_str
         self.assertIsNotNone(out_mmif)
@@ -223,13 +223,13 @@ class TestRestifier(unittest.TestCase):
         # this should raise TypeError because the ExampleClamsApp._annotate() doesn't take kwargs at all
         query_string = {'pretty': True, 'random': 'random'}
         res = self.app.put('/', data=mmif, headers=headers, query_string=query_string)
-        self.assertEqual(res.status_code, 415, res.get_data(as_text=True))
+        self.assertEqual(res.status_code, 500, res.get_data(as_text=True))
 
     def test_can_output_error(self):
         mmif = ExampleInputMMIF.get_mmif()
         query_string = {'pretty': True, 'raise_error': True}
         res = self.app.put('/', data=mmif, query_string=query_string)
-        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.status_code, 500)
         res_mmif = Mmif(res.get_data())
         self.assertEqual(len(res_mmif.views), 1)
         self.assertEqual(len(list(res_mmif.views)[0].annotations), 0)
