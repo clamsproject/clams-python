@@ -33,14 +33,60 @@ class Restifier(object):
         api = Api(self.flask_app)
         api.add_resource(ClamsHTTPApi, '/',
                          resource_class_args=[self.cla])
-
-    def run(self):
+    
+    def run(self, **options):
         """
-        Run the flask wrapper and and start listening to requests.
+        Starts a development server. See :meth:`serve_development`.
+        
+        :param options: any additional options to pass to the web server.
+        """
+        self.serve_development(**options)
+        
+    def serve_production(self, **options):
+        """
+        Runs the CLAMS app as a flask webapp, using a production-ready web server (gunicorn, https://docs.gunicorn.org/en/stable/#).
+        
+        :param options: any additional options to pass to the web server.
+        """
+        import gunicorn.app.base
+        import multiprocessing
+
+        def number_of_workers():
+            return (multiprocessing.cpu_count() * 2) + 1  # +1 to make sure at least two workers are running
+        
+        class ProductionApplication(gunicorn.app.base.BaseApplication):
+
+            def __init__(self, app, host, port, **options):
+                self.options = {
+                    'bind': f'{host}:{port}',
+                    'workers': number_of_workers(),
+                    'threads': 2,
+                }
+                self.options.update(options)
+                self.application = app
+                super().__init__()
+
+            def load_config(self):
+                config = {key: value for key, value in self.options.items()
+                          if key in self.cfg.settings and value is not None}
+                for key, value in config.items():
+                    self.cfg.set(key.lower(), value)
+
+            def load(self):
+                return self.application
+
+        ProductionApplication(self.flask_app, self.host, self.port, **options).run()
+
+    def serve_development(self, **options):
+        """
+        Runs the CLAMS app as a flask webapp, using flask built-in development server (https://werkzeug.palletsprojects.com/en/2.0.x/).
+        
+        :param options: any additional options to pass to the web server.
         """
         self.flask_app.run(host=self.host,
                            port=self.port,
-                           debug=self.debug)
+                           debug=self.debug, 
+                           **options)
 
     def test_client(self):
         """
