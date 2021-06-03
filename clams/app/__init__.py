@@ -37,9 +37,9 @@ class ClamsApp(ABC):
         """
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
         if pretty:
-            return self.metadata.json(exclude_unset=True, by_alias=True, indent=2)
+            return self.metadata.json(exclude_defaults=True, by_alias=True, indent=2)
         else:
-            return self.metadata.json(exclude_unset=True, by_alias=True)
+            return self.metadata.json(exclude_defaults=True, by_alias=True)
 
     @abstractmethod
     def _appmetadata(self) -> AppMetadata:

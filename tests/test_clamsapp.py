@@ -105,7 +105,7 @@ class TestClamsApp(unittest.TestCase):
         self.assertTrue('properties' not in metadata['output'][0])
         self.assertTrue('properties' not in metadata['input'][0])
         self.assertTrue(metadata['input'][0]['required'])
-        self.assertEqual(len(metadata['parameters']), 0)
+        self.assertFalse('parameters' in metadata)
         
         # test add_X methods
         self.app.metadata.add_output(AnnotationTypes.BoundingBox)

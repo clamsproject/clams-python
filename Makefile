@@ -39,11 +39,12 @@ $(generatedcode): VERSION
 
 docs: VERSION $(generatedcode)
 	rm -rf documentation/_build docs
+	python3 clams/appmetadata/__init__.py > documentation/appmetadata.jsonschema
 	python3 setup.py build_sphinx -a
 	mv documentation/_build/html docs
+	mv documentation/appmetadata.jsonschema docs/
 	touch docs/.nojekyll
 	echo 'sdk.clams.ai' > docs/CNAME
-	python3 clams/appmetadata/__init__.py > docs/appmetadata.jsonschema
 
 package: VERSION
 	pip install --upgrade -r requirements.dev

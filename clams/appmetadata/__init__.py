@@ -1,4 +1,4 @@
-from typing import Optional, Union, Dict, List
+from typing import Union, Dict, List
 
 import mmif
 import pydantic
@@ -8,10 +8,14 @@ from typing_extensions import Literal
 import clams
 
 primitives = Union[int, float, str, bool]
+# these names are taken from the JSON schema data types
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
 
 
-class BaseModel(pydantic.BaseModel):
+def get_mmif_specver():
+    return mmif.__specver__
+
+class _BaseModel(pydantic.BaseModel):
     
     class Config:
         def schema_extra(schema, model) -> None:
@@ -19,15 +23,12 @@ class BaseModel(pydantic.BaseModel):
                 prop.pop('title', None)
 
 
-class _Output(BaseModel):
+class Output(_BaseModel):
     """
     Defines a data model that describes output specification of a CLAMS app
     """
-    at_type: pydantic.AnyHttpUrl = pydantic.Field(
-        ...,
-        alias="@type"
-    )
-    properties: Dict[str, str] = {}
+    at_type: pydantic.AnyHttpUrl = pydantic.Field(..., alias="@type", description="The type of the object. Must be a IRI string.")
+    properties: Dict[str, str] = pydantic.Field({}, description="(optional) Specification for type properties, if any.")
     
     @pydantic.validator('at_type', pre=True)
     def at_type_must_be_str(cls, v):
@@ -41,11 +42,11 @@ class _Output(BaseModel):
         allow_population_by_field_name = True
 
                 
-class _Input(_Output):
+class Input(Output):
     """
     Defines a data model that describes input specification of a CLAMS app
     """
-    required: bool = None
+    required: bool = pydantic.Field(None, description="(optional) Indicating whether this input type is mandatory or optional.")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -58,48 +59,38 @@ class _Input(_Output):
         allow_population_by_field_name = True
 
 
-class _RuntimeParameter(BaseModel):
+class RuntimeParameter(_BaseModel):
     """
     Defines a data model that describes a single runtime configuration of a CLAMS app. 
     Usually, an app keeps a list of these configuration specifications in the 
     ``parameters`` field. 
     """
-    name: str
-    description: str
-    type: param_value_types  # these names are taken from the JSON schema data types
-    choices: Optional[List[primitives]]
-    default: Optional[primitives]
+    name: str = pydantic.Field(..., description="A short name of the parameter (works as a key).")
+    description: str = pydantic.Field(..., description="A longer description of the parameter (what it does, how to use, etc.).")
+    type: param_value_types = pydantic.Field(..., description=f"Type of the parameter value the app expects. Must be one of {param_value_types.__values__}.")  # pytype: disable=attribute-error
+    choices: List[primitives] = pydantic.Field(None, description="(optional) List of string values that can be accepted.")
+    default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters.")
     
     class Config:
         title = 'CLAMS App Runtime Parameter'
         extra = 'forbid'
         
-
+        
 class AppMetadata(pydantic.BaseModel):
     """
     Defines a data model that describes a CLAMS app
     """
-    name: str
-    description: str
-    app_version: str
-    mmif_version: str = None
-    wrapper_version: Optional[str]
-    license: str
-    wrapper_license: Optional[str]
-    identifier: pydantic.AnyHttpUrl
-    input: List[_Input] = None
-    output: List[_Output] = None
-    parameters: List[_RuntimeParameter] = None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.mmif_version = mmif.__version__
-        if self.input is None:
-            self.input = []
-        if self.output is None:
-            self.output = []
-        if self.parameters is None:
-            self.parameters = []
+    name: str = pydantic.Field(..., description="A short name of the app.")
+    description: str = pydantic.Field(..., description="A longer description of the app (what it does, how to use, etc.).")
+    app_version: str = pydantic.Field(..., description="Version of the app.")
+    mmif_version: str = pydantic.Field(default_factory=get_mmif_specver, description="Version of MMIF specification the app. When the metadata is generated using clams-python SDK, this field is automatically filled in.")
+    wrappee_version: str = pydantic.Field(None, description="(optional) Version of wrapped software, if the app is working as a wrapper. ")
+    license: str = pydantic.Field(..., description="License information of the app.")
+    wrappee_license: str = pydantic.Field(None, description="(optional) License information of wrapped software, if the app is working as a wrapper. ")
+    identifier: pydantic.AnyHttpUrl = pydantic.Field(..., description="IRI-formatted unique identifier for the app.")
+    input: List[Input] = pydantic.Field([], description="List of input types. Must have at least one.")
+    output: List[Output] = pydantic.Field([], description="List of output types. Must have at least one.")
+    parameters: List[RuntimeParameter] = pydantic.Field([], description="List of runtime parameters. Can be empty.")
 
     class Config:
         title = "CLAMS AppMetadata"
@@ -114,7 +105,7 @@ class AppMetadata(pydantic.BaseModel):
             schema['$comment'] = f"clams-python SDK {clams.__version__} was used to generate this schema"  # this is only to hold version information
         
     def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = True, **properties):
-        new_inp = _Input(at_type=at_type, required=required)
+        new_inp = Input(at_type=at_type, required=required)
         if len(properties) > 0:
             new_inp.properties = properties
         if new_inp not in self.input:
@@ -127,14 +118,14 @@ class AppMetadata(pydantic.BaseModel):
     def add_output(self, at_type: Union[str, vocabulary.ThingTypesBase], **properties):
         if at_type not in [output.at_type for output in self.output]:
             if len(properties) > 0:
-                self.output.append(_Output(at_type=str(at_type), properties=dict(properties)))
+                self.output.append(Output(at_type=str(at_type), properties=dict(properties)))
             else:
-                self.output.append(_Output(at_type=str(at_type)))
+                self.output.append(Output(at_type=str(at_type)))
         else:
             raise ValueError(f"output '{at_type}' already exist.")
     
     def add_parameter(self, **parameter_spec):
-        new_param = _RuntimeParameter(**parameter_spec)
+        new_param = RuntimeParameter(**parameter_spec)
         if new_param.name not in [param.name for param in self.parameters]:
             self.parameters.append(new_param)
         else:
