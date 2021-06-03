@@ -2,13 +2,15 @@ import json
 import os
 import tempfile
 import unittest
+from typing import Union
 
+import jsonschema
 from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View
 
 import clams.app
 import clams.restify
+from clams.appmetadata import AppMetadata
 
-AT_TYPE = AnnotationTypes.TimeFrame
 
 
 class ExampleInputMMIF(object):
@@ -18,7 +20,7 @@ class ExampleInputMMIF(object):
     def get_rawmmif() -> Mmif:
         mmif = Mmif(validate=False, frozen=False)
 
-        vdoc = Document({'@type': DocumentTypes.VideoDocument.value,
+        vdoc = Document({'@type': DocumentTypes.VideoDocument,
                          'properties':
                              {'id': 'v1', 'location': "/dummy/dir/dummy.file.mp4"}})
         mmif.add_document(vdoc)
@@ -54,22 +56,27 @@ class TestSerialization(unittest.TestCase):
 
 class ExampleClamsApp(clams.app.ClamsApp):
 
-    def _appmetadata(self):
-        return {"name": "Tesseract OCR",
-                "version": "x.y.z",
-                "iri": "https://app.clams.ai/tesseract-ocr/x.y.z",
-                "description": "A dummy tool for testing",
-                "vendor": "Team CLAMS",
-                "requires": [],
-                "produces": [AT_TYPE.value]}
-
+    def _appmetadata(self) -> Union[dict, AppMetadata]:
+        
+        exampleappversion = '0.0.1'
+        metadata = AppMetadata(
+            name="Example CLAMS App for testing",
+            description="This app doesn't do anything",
+            app_version=exampleappversion,
+            license="MIT",
+            identifier=f"https://apps.clams.ai/example/{exampleappversion}",
+            output=[{'@type': AnnotationTypes.TimeFrame}],
+        )
+        metadata.add_input(DocumentTypes.AudioDocument)
+        return metadata
+    
     def _annotate(self, mmif, raise_error=False):
         if type(mmif) is not Mmif:
             mmif = Mmif(mmif, validate=False)
         new_view = mmif.new_view()
         self.sign_view(new_view, {'raise_error': raise_error})
-        new_view.new_contain(AT_TYPE, {"producer": "dummy-producer"})
-        ann = new_view.new_annotation('a1', AT_TYPE)
+        new_view.new_contain(AnnotationTypes.TimeFrame, {"producer": "dummy-producer"})
+        ann = new_view.new_annotation('a1', AnnotationTypes.TimeFrame)
         ann.add_property("f1", "hello_world")
         if raise_error:
             raise ValueError
@@ -77,15 +84,59 @@ class ExampleClamsApp(clams.app.ClamsApp):
 
 
 class TestClamsApp(unittest.TestCase):
+    
     def setUp(self):
+        self.appmetadataschema = json.loads(AppMetadata.schema_json())
         self.app = ExampleClamsApp()
         self.in_mmif = ExampleInputMMIF.get_mmif()
 
-    def test_appmedata(self):
-        metadata = self.app.appmetadata
-        # TODO (krim @ 9/3/19): more robust test cases
-        self.assertIsNotNone(metadata)
+    def test_jsonschema_export(self):
+        # TODO (krim @ 4/20/21): there may be a better test for this...
+        self.assertIsNotNone(self.appmetadataschema)
 
+    def test_appmetadata(self):
+        # base metadata setting is done in the ExampleClamsApp class
+        # here we will try to add more fields to the metadata and test them
+        
+        # test base metadata
+        metadata = json.loads(self.app.appmetadata())
+        self.assertEqual(len(metadata['output']), 1)
+        self.assertEqual(len(metadata['input']), 1)
+        self.assertTrue('properties' not in metadata['output'][0])
+        self.assertTrue('properties' not in metadata['input'][0])
+        self.assertTrue(metadata['input'][0]['required'])
+        self.assertFalse('parameters' in metadata)
+        
+        # test add_X methods
+        self.app.metadata.add_output(AnnotationTypes.BoundingBox)
+        metadata = json.loads(self.app.appmetadata())
+        self.assertEqual(len(metadata['output']), 2)
+        # this should not be added as a duplicate
+        self.app.metadata.add_input(at_type=DocumentTypes.AudioDocument)
+        metadata = json.loads(self.app.appmetadata())
+        self.assertEqual(len(metadata['input']), 1)
+        self.assertTrue('properties' not in metadata['input'][0])
+        # adding input with properties
+        self.app.metadata.add_input(at_type=AnnotationTypes.TimeFrame, frameType='speech')
+        metadata = json.loads(self.app.appmetadata())
+        self.assertEqual(len(metadata['input']), 2)
+        self.assertTrue('properties' in metadata['input'][1])
+        self.assertEqual(len(metadata['input'][1]['properties']), 1)
+        # now parameters
+        # using a custom class
+        self.app.metadata.add_parameter(
+            name='raise_error', description='force raise a ValueError', 
+            type='boolean', default='false')
+        # using python dict
+        self.app.metadata.add_parameter(
+            name='multiple_choice', description='meaningless multiple choice option',
+            type='integer', choices=[1, 2, 3, 4, 5], default=3)
+        metadata = json.loads(self.app.appmetadata())
+        self.assertEqual(len(metadata['parameters']), 2)
+        
+        # finally for an eye exam
+        print(self.app.appmetadata(pretty=True))
+        
     def test_annotate(self):
         out_mmif = self.app.annotate(self.in_mmif)
         # TODO (krim @ 9/3/19): more robust test cases
@@ -115,12 +166,14 @@ class TestClamsApp(unittest.TestCase):
         try: 
             out_mmif = self.app.annotate(in_mmif, **params)
         except Exception as e:
-            out_mmif = self.app.set_error_view(in_mmif, params)
+            out_mmif_from_str = self.app.set_error_view(self.in_mmif, params)
+            out_mmif_from_mmif = self.app.set_error_view(in_mmif, params)
+            self.assertEqual(out_mmif_from_mmif, out_mmif_from_str)
+            out_mmif = out_mmif_from_str
         self.assertIsNotNone(out_mmif)
         last_view: View = next(reversed(out_mmif.views))
         self.assertEqual(len(last_view.metadata.contains), 0)
         self.assertEqual(len(last_view.metadata.error), 2)
-        print(out_mmif.serialize(pretty=True))
 
 
 class TestRestifier(unittest.TestCase):

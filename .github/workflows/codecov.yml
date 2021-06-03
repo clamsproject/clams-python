@@ -16,11 +16,8 @@ jobs:
     - name: Run test and generate coverage report
       working-directory: .
       run: |
-        pip install -r requirements.txt
-        pip install -r requirements.dev
         echo "codecov.dev" > VERSION
-        python setup.py sdist
-        python -m pytest --doctest-modules --cov=clams/ --cov-report=xml
+        make test
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:

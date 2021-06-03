@@ -233,7 +233,7 @@ def generate_source_mmif(documents, prefix=None):
         elif prefix and not path.isabs(location):
             location = path.join(prefix, location)
         doc = template.substitute(
-            at_type=at_types[mime.split('/', maxsplit=1)[0]].value,
+            at_type=str(at_types[mime.split('/', maxsplit=1)[0]]),
             aid=f'd{doc_id}',
             mime=mime,
             location=location
