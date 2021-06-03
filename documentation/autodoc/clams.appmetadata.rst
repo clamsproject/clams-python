@@ -1,10 +1,8 @@
 clams.appmetadata package
-====================
+=========================
 
 Module contents
 ---------------
 
-.. automodule:: clams.appmetadata
+.. autoclass:: clams.appmetadata.AppMetadata
    :members:
-   :undoc-members:
-   :show-inheritance:

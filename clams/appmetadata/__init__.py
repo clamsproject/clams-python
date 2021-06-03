@@ -78,7 +78,12 @@ class RuntimeParameter(_BaseModel):
         
 class AppMetadata(pydantic.BaseModel):
     """
-    Defines a data model that describes a CLAMS app
+    Defines a data model that describes a CLAMS app. 
+    Can be initialized by simply passing all required key-value pairs. If you 
+    have a pre-generated metadata as an external file, you can read in the file 
+    as a ``dict`` and use it as keyword arguments for initialization. 
+    
+    Please refer to <:ref:`appmetadata`> for the metadata specification. 
     """
     name: str = pydantic.Field(..., description="A short name of the app.")
     description: str = pydantic.Field(..., description="A longer description of the app (what it does, how to use, etc.).")
@@ -105,6 +110,13 @@ class AppMetadata(pydantic.BaseModel):
             schema['$comment'] = f"clams-python SDK {clams.__version__} was used to generate this schema"  # this is only to hold version information
         
     def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = True, **properties):
+        """
+        Helper method to add an element to the ``input`` list. 
+        
+        :param at_type: ``@type`` of the input object
+        :param required: whether this type is mandatory or optional 
+        :param properties: additional property specifications
+        """
         new_inp = Input(at_type=at_type, required=required)
         if len(properties) > 0:
             new_inp.properties = properties
@@ -116,6 +128,12 @@ class AppMetadata(pydantic.BaseModel):
                 pass
         
     def add_output(self, at_type: Union[str, vocabulary.ThingTypesBase], **properties):
+        """
+        Helper method to add an element to the ``output`` list. 
+        
+        :param at_type: ``@type`` of the input object
+        :param properties: additional property specifications
+        """
         if at_type not in [output.at_type for output in self.output]:
             if len(properties) > 0:
                 self.output.append(Output(at_type=str(at_type), properties=dict(properties)))
@@ -125,6 +143,11 @@ class AppMetadata(pydantic.BaseModel):
             raise ValueError(f"output '{at_type}' already exist.")
     
     def add_parameter(self, **parameter_spec):
+        """
+        Helper method to add an element to the ``parameters`` list. 
+        
+        :param parameter_spec: key-value pairs that specify a RuntimeParameter. See ``RuntimeParameter`` section of <:ref:`appmetadata`> for keys and values that are accepted.
+        """
         new_param = RuntimeParameter(**parameter_spec)
         if new_param.name not in [param.name for param in self.parameters]:
             self.parameters.append(new_param)

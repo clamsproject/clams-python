@@ -10,6 +10,13 @@ The CLAMS project has many moving parts to make various computational analysis t
 
 A CLAMS app can be any software that performs automated contents analysis on text, audio, and/or image/video data stream. An app must use `MMIF <https://mmif.clams.ai>`_ as I/O format. When deployed into a CLAMS appliance, an app needs be running as a webapp wrapped in a docker container. In this documentation, we will explain what Python API's and HTTP API's an app must implement. 
 
+Quick Links
+-----------
+
+* `CLAMS App Metadata jsonschema <appmetadata.jsonschema>`_. 
+* `MMIF specification documentation <https://mmif.clams.ai/>`_. 
+* `mmif-python API documentation <https://clams.ai/mmif-python/>`_. 
+
 Prerequisites
 -------------
 
@@ -59,19 +66,22 @@ For more information on the relation between ``mmif-python`` versions and MMIF s
 
 CLAMS App API
 -------------
-A CLAMS Python app is a python class that implements and exposes two core methods; ``annotate()``, ``appmetadata()``. And a good place to start writing a CLAMS app is to start with inheriting :class:`clams.app.ClamsApp`.
-
-If you're using :class:`clams.app.ClamsApp` as a super class of your app, you need to implement two methods :meth:`~clams.app.ClamsApp._appmetadata` and :meth:`~clams.app.ClamsApp._annotate`. Because following public methods in the class internally call those private methods respectively. 
+A CLAMS Python app is a python class that implements and exposes two core methods; ``annotate()``, ``appmetadata()``. 
 
 * :meth:`~clams.app.ClamsApp.appmetadata`: Returns JSON-formatted :class:`str` that contains metadata about the app. 
 * :meth:`~clams.app.ClamsApp.annotate`: Takes a MMIF as the only input and processes the MMIF input, then returns serialized MMIF :class:`str`.
+
+A good place to start writing a CLAMS app is to start with inheriting :class:`clams.app.ClamsApp`. And if you're doing so, you might want to implement two private methods instead of two public methods above. That's because the implementation of the public methods in the super class internally call these private methods respectively. 
+
+* :meth:`~clams.app.ClamsApp._appmetadata` (using a :py:class:`~mmif.serialize.mmif.Mmif` object) and 
+* :meth:`~clams.app.ClamsApp._annotate` (using a :class:`~clams.appmetadata.AppMetadata` object)  
 
 We provide a tutorial for writing with a real world example at <:ref:`tutorial`>. We highly recommend you to go through it. 
 
 Note on App metadata
 ^^^^^^^^^^^^^^^^^^^^^
 App metadata is a map where important information about the app itself is stored as key-value pairs. 
-The specification is provided as a JSON schema at `here <appmetadata.jsonschema>`_. 
+See <:ref:`appmetadata`> for the specification. 
 In the future the app metadata will be used for automatic generation of CLAMS App index in the :ref:`appdirectory`, as well as automatic integration to Galaxy in the appliance deployment. 
 
 HTTP webapp

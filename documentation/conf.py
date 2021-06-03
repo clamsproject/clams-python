@@ -13,6 +13,7 @@
 import os
 import sys
 import datetime
+import mmif
 sys.path.insert(0, os.path.abspath(os.path.join('.', 'documentation')))
 
 
@@ -33,14 +34,16 @@ extensions = [
         'sphinx.ext.linkcode',
         'sphinx.ext.intersphinx',
         'sphinx_rtd_theme',
-        'm2r2']
+        'sphinx-jsonschema',
+        'm2r2'
+]
 #  autodoc_typehints = 'description'
 source_suffix = [".rst", ".md"]
 
 # mapping for external documentations
 intersphinx_mapping = {
         'python': ('https://docs.python.org/3', None),
-        'mmif': ('https://clamsproject.github.io/mmif-python', None)
+        'mmif': (f'https://clamsproject.github.io/mmif-python/{mmif.__version__}', None)
         }
 
 
