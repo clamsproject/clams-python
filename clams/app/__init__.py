@@ -1,16 +1,15 @@
+import os
 import sys
 from abc import ABC, abstractmethod
-import json
-import os
-from urllib import parse as urlparser
 from contextlib import contextmanager
-
+from urllib import parse as urlparser
 
 __all__ = ['ClamsApp']
 
 from typing import Union, Any, Optional
 
 from mmif import Mmif, Document, DocumentTypes, View
+from clams.appmetadata import AppMetadata
 
 
 class ClamsApp(ABC):
@@ -19,14 +18,16 @@ class ClamsApp(ABC):
     this class and then can be used with classes in :mod:`.restify` to work as
     web applications.
     """
+
     def __init__(self):
-        # TODO (krim @ 10/9/20): eventually we might end up with a python class
-        # for this metadata (with a JSON schema)
-        self.metadata: dict = self._appmetadata()
+        self.metadata: AppMetadata = self._appmetadata()
         super().__init__()
         # data type specification for common parameters
         self.metadata_param_spec = {'pretty': bool}
         self.annotate_param_spec = {'pretty': bool}
+        python_type = {"boolean": bool, "number": float, "integer": int, "string": str}
+        for param_spec in self.metadata.parameters:
+            self.annotate_param_spec[param_spec.name] = python_type[param_spec.type]
 
     def appmetadata(self, **kwargs) -> str:
         """
@@ -34,19 +35,18 @@ class ClamsApp(ABC):
 
         :return: Serialized JSON string of the metadata
         """
-        # TODO (krim @ 10/9/20): when self.metadata is no longer a `dict`
-        # this method might needs to be changed to properly serialize input
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
         if pretty:
-            return json.dumps(self.metadata, indent=4)
+            return self.metadata.json(exclude_defaults=True, by_alias=True, indent=2)
         else:
-            return json.dumps(self.metadata)
+            return self.metadata.json(exclude_defaults=True, by_alias=True)
 
     @abstractmethod
-    def _appmetadata(self) -> dict:
+    def _appmetadata(self) -> AppMetadata:
         """
         An abstract method to generate (or load if stored elsewhere) the app metadata
-        at runtime. All CLAMS app must implement this.
+        at runtime. All CLAMS app must implement this. For metadata specification, 
+        see `https://sdk.clams.ai/appmetadata.jsonschema <../appmetadata.jsonschema>`_. 
 
         :return: A Python object of the metadata, must be JSON-serializable
         """
@@ -93,10 +93,10 @@ class ClamsApp(ABC):
         """
         if view.is_frozen():
             raise ValueError("can't modify an old view")
-        view.metadata['app'] = self.metadata['iri']
-        view.metadata['parameter'] = runtime_params
+        view.metadata.app = self.metadata.identifier
+        view.metadata.parameter = runtime_params
         
-    def record_error(self, mmif: Union[str, dict, Mmif], runtime_params: dict) -> Mmif:
+    def set_error_view(self, mmif: Union[str, dict, Mmif], runtime_params: dict) -> Mmif:
         """
         A method to record an error instead of annotation results in the view
         this app generated. For logging purpose, the runtime parameters used
@@ -111,7 +111,7 @@ class ClamsApp(ABC):
             mmif = Mmif(mmif)
         error_view: Optional[View] = None
         for view in reversed(mmif.views):
-            if view.metadata.app == self.metadata['iri']:
+            if view.metadata.app == self.metadata.identifier:
                 error_view = view
                 break
         if error_view is None:
@@ -121,6 +121,8 @@ class ClamsApp(ABC):
         error_view.set_error(f'{exc_info[0]}: {exc_info[1]}',
                              '\t\n'.join(traceback.format_tb(exc_info[2])))
         return mmif
+    
+    record_error = set_error_view
 
     @staticmethod
     def validate_document_locations(mmif: Union[str, Mmif]) -> None:
