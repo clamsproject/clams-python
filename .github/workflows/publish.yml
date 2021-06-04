@@ -20,6 +20,7 @@ jobs:
         echo "VERSION=$(echo "${{ github.ref }}" | cut -d/ -f3)" >> $GITHUB_ENV
     - name: build a sdist
       run: |
+        echo ${{ env.VERSION }} > VERSION
         make package
     - name: build HTML documentation 
       run: |
