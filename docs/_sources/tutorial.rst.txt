@@ -222,29 +222,34 @@ Steps 1 and 2 are still a bit unconstrained at this point.
 1.1 ``_appmetadata``
 ^^^^^^^^^^^^^^^^^^^^^
 
-This method should just return a dictionary containing the metadata
-relevant to your app. Metadata format will be standardized at a later
-date but for now is rather informal
+This method should just return a :class:`clams.appmetadata.AppMetadata` .
+containing the metadata relevant to your app. 
 
 .. code:: python
 
    class Kaldi(ClamsApp):
 
-       def _appmetadata(self) -> dict:
-           return {
-               "name": "Kaldi Wrapper",
-               "description": "This tool wraps the Kaldi ASR tool",
-               "vendor": "Team CLAMS",
-               "iri": f"http://mmif.clams.ai/apps/kaldi/{APP_VERSION}",
-               "wrappee": WRAPPED_IMAGE,
-               "requires": [DocumentTypes.AudioDocument.value],
-               "produces": [
-                   DocumentTypes.TextDocument.value,
-                   AnnotationTypes.TimeFrame.value,
-                   AnnotationTypes.Alignment.value,
-                   Uri.TOKEN
-               ]
-           }
+       def _appmetadata(self) -> AppMetadata:
+           app_version = '0.0.1'
+           kaldi_version = 'v1'
+           metadata = AppMetadata(
+              name="Kaldi Wrapper",
+              description="This tool wraps the Kaldi ASR tool",
+              app_version=app_version,
+              wrapper_version=kaldi_version
+              license="MIT",
+              identifier=f"https://apps.clams.ai/apps/kaldi/{exampleappversion}",
+           )
+           metadata.add_input(DocumentTypes.AudioDocument)
+           metadata.add_output(DocumentTypes.TextDocument)
+           metadata.add_output(AnnotationTypes.TimeFrame)
+           metadata.add_output(AnnotationTypes.Alignment)
+           metadata.add_output(Uri.TOKEN)
+           return metadata
+
+One can initiate a :class:`~clams.appmetadata.AppMetadata` object simply passing key-value pairs. 
+Also the class provides helper methods for structured fields (``input``, ``output``, and ``parameters``), so it is highly recommended to read the class documentation before you start specifying an app metadata.
+To see what fields need to be specified in the app metadata, see <:ref:`appmetadata`>. 
 
 .. _header-n47:
 
