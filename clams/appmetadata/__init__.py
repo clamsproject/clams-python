@@ -1,3 +1,4 @@
+import os
 from typing import Union, Dict, List
 
 import mmif
@@ -5,12 +6,23 @@ import pydantic
 from mmif import vocabulary
 from typing_extensions import Literal
 
-import clams
-
 primitives = Union[int, float, str, bool]
 # these names are taken from the JSON schema data types
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
 
+
+def get_clams_pyver():
+    # real hack to avoid import clams as a package in gh-action workflow
+    try:
+        import clams
+        return clams.__version__
+    except ImportError:
+        version_fname = os.path.join(os.path.dirname(__file__), '..', '..', 'VERSION')
+        if os.path.exists(version_fname):
+            with open(version_fname) as version_f:
+                return version_f.read().strip()
+        else:
+            raise Exception('cannot find clams-python version')
 
 def get_mmif_specver():
     return mmif.__specver__
@@ -107,7 +119,7 @@ class AppMetadata(pydantic.BaseModel):
             for prop in schema.get('properties', {}).values():
                 prop.pop('title', None)
             schema['$schema'] = "http://json-schema.org/draft-07/schema#"  # currently pydantic doesn't natively support the $schema field. See https://github.com/samuelcolvin/pydantic/issues/1478
-            schema['$comment'] = f"clams-python SDK {clams.__version__} was used to generate this schema"  # this is only to hold version information
+            schema['$comment'] = f"clams-python SDK {get_clams_pyver()} was used to generate this schema"  # this is only to hold version information
         
     def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = True, **properties):
         """

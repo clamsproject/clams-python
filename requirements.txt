@@ -3,5 +3,5 @@ Flask-RESTful==0.3.8
 gunicorn==20.1.0
 mmif-python==0.3.3
 lapps==0.0.2
-pydantic==1.7.3
+pydantic==1.8.2
 jsonschema==3.2.0

@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>clams.app package &mdash; clams-python  documentation</title>
   
@@ -16,7 +16,10 @@
 
   
   
+
   
+  
+
   
 
   
@@ -51,7 +54,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> clams-python
+            <a href="../index.html" class="icon icon-home"> clams-python
           
 
           
@@ -61,7 +64,7 @@
             
             
               <div class="version">
-                0.2.0
+                0.2.4
               </div>
             
           
@@ -143,6 +146,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -156,7 +161,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
         
       </li>
     
@@ -175,16 +180,82 @@
 <dl class="py class">
 <dt id="clams.app.ClamsApp">
 <em class="property">class </em><code class="sig-prename descclassname">clams.app.</code><code class="sig-name descname">ClamsApp</code><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></a></p>
+<p>An abstract class to define API’s for ClamsApps. A CLAMS app should inherit
+this class and then can be used with classes in <a class="reference internal" href="clams.restify.html#module-clams.restify" title="clams.restify"><code class="xref py py-mod docutils literal notranslate"><span class="pre">restify</span></code></a> to work as
+web applications.</p>
 <dl class="py method">
-<dt id="clams.app.ClamsApp.annotate">
-<code class="sig-name descname">annotate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mmif</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>dict<span class="p">, </span>mmif.serialize.mmif.Mmif<span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; str<a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp.annotate" title="Permalink to this definition">¶</a></dt>
-<dd><p>A wrapper around <code class="docutils literal notranslate"><span class="pre">_annotate</span></code> method where some common operations invoked by kwargs are implemented.</p>
+<dt id="clams.app.ClamsApp._annotate">
+<em class="property">abstract </em><code class="sig-name descname">_annotate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mmif</span><span class="p">:</span> <span class="n">Union<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><span class="p">, </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)">dict</a><span class="p">, </span><a class="reference external" href="https://clams.ai/mmif-python/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v0.3.3)">mmif.serialize.mmif.Mmif</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">runtime_params</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://clams.ai/mmif-python/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v0.3.3)">mmif.serialize.mmif.Mmif</a><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp._annotate" title="Permalink to this definition">¶</a></dt>
+<dd><p>An abstract method to generate (or load if stored elsewhere) the app metadata
+at runtime. All CLAMS app must implement this.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mmif</strong> – </p></li>
-<li><p><strong>kwargs</strong> – </p></li>
+<li><p><strong>mmif</strong> – An input MMIF object to annotate</p></li>
+<li><p><strong>runtime_params</strong> – An arbitrary set of k-v pairs to configure the app at runtime</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A <a class="reference external" href="https://clams.ai/mmif-python/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v0.3.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mmif</span></code></a> object of the annotated output, ready for serialization</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="clams.app.ClamsApp._appmetadata">
+<em class="property">abstract </em><code class="sig-name descname">_appmetadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)">dict</a><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp._appmetadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>An abstract method to generate (or load if stored elsewhere) the app metadata
+at runtime. All CLAMS app must implement this.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A Python object of the metadata, must be JSON-serializable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="clams.app.ClamsApp.annotate">
+<code class="sig-name descname">annotate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mmif</span><span class="p">:</span> <span class="n">Union<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><span class="p">, </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)">dict</a><span class="p">, </span><a class="reference external" href="https://clams.ai/mmif-python/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v0.3.3)">mmif.serialize.mmif.Mmif</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">runtime_params</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp.annotate" title="Permalink to this definition">¶</a></dt>
+<dd><p>A public method to invoke the primary app function. It’s essentially a
+wrapper around <a class="reference internal" href="#clams.app.ClamsApp._annotate" title="clams.app.ClamsApp._annotate"><code class="xref py py-func docutils literal notranslate"><span class="pre">_annotate()</span></code></a> method where some common operations
+(that are invoked by keyword arguments) are implemented.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mmif</strong> – An input MMIF object to annotate</p></li>
+<li><p><strong>runtime_params</strong> – An arbitrary set of k-v pairs to configure the app at runtime</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Serialized JSON string of the output of the app</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="clams.app.ClamsApp.appmetadata">
+<code class="sig-name descname">appmetadata</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp.appmetadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>A public method to get metadata for this app as a string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Serialized JSON string of the metadata</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="clams.app.ClamsApp.open_document_location">
+<em class="property">static </em><code class="sig-name descname">open_document_location</code><span class="sig-paren">(</span><em class="sig-param">document: Union[str, mmif.serialize.annotation.Document], opener: Any = &lt;built-in function open&gt;, **openerargs</em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp.open_document_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>A context-providing file opener. A user can provide their own opener
+class/method and parameters. By default, with will use python built-in
+<cite>open</cite> to open the location of the document.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>document</strong> – A <a class="reference external" href="https://clams.ai/mmif-python/autodoc/mmif.serialize.html#mmif.serialize.annotation.Document" title="(in mmif-python v0.3.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Document</span></code></a> object that has <code class="docutils literal notranslate"><span class="pre">location</span></code></p></li>
+<li><p><strong>opener</strong> – A Python class or method that can be used to open a file (e.g. <a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html">PIL.Image</a> for an image file)</p></li>
+<li><p><strong>openerargs</strong> – Parameters that are passed to the <code class="docutils literal notranslate"><span class="pre">opener</span></code></p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -194,14 +265,50 @@
 </dd></dl>
 
 <dl class="py method">
-<dt id="clams.app.ClamsApp.appmetadata">
-<code class="sig-name descname">appmetadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp.appmetadata" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="clams.app.ClamsApp.record_error">
+<code class="sig-name descname">record_error</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mmif</span><span class="p">:</span> <span class="n">Union<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><span class="p">, </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)">dict</a><span class="p">, </span><a class="reference external" href="https://clams.ai/mmif-python/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v0.3.3)">mmif.serialize.mmif.Mmif</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">runtime_params</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)">dict</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://clams.ai/mmif-python/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v0.3.3)">mmif.serialize.mmif.Mmif</a><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp.record_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>A method to record an error instead of annotation results in the view
+this app generated. For logging purpose, the runtime parameters used
+when the error occurred must be passed as well.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mmif</strong> – input MMIF object</p></li>
+<li><p><strong>runtime_params</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An output MMIF with a new view with the error encoded in the view metadata</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
-<dt id="clams.app.ClamsApp.validate_document_files">
-<em class="property">static </em><code class="sig-name descname">validate_document_files</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mmif</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>mmif.serialize.mmif.Mmif<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp.validate_document_files" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="clams.app.ClamsApp.sign_view">
+<code class="sig-name descname">sign_view</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">view</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://clams.ai/mmif-python/autodoc/mmif.serialize.html#mmif.serialize.view.View" title="(in mmif-python v0.3.3)">mmif.serialize.view.View</a></span></em>, <em class="sig-param"><span class="n">runtime_params</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)">dict</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)">None</a><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp.sign_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>A method to “sign” a new view that this app creates at the beginning of annotation.
+Signing will populate the view metadata with information and configuration of this app.
+The parameters passed to the <a class="reference internal" href="#clams.app.ClamsApp._annotate" title="clams.app.ClamsApp._annotate"><code class="xref py py-func docutils literal notranslate"><span class="pre">_annotate()</span></code></a> must be
+passed to this method. This means all parameters for “common” configuration that
+are consumed in <a class="reference internal" href="#clams.app.ClamsApp.annotate" title="clams.app.ClamsApp.annotate"><code class="xref py py-func docutils literal notranslate"><span class="pre">annotate()</span></code></a> should not be recorded in the
+view metadata.
+:param view: a view to sign
+:param runtime_params: runtime configuration of the app as k-v pairs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="clams.app.ClamsApp.validate_document_locations">
+<em class="property">static </em><code class="sig-name descname">validate_document_locations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mmif</span><span class="p">:</span> <span class="n">Union<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><span class="p">, </span><a class="reference external" href="https://clams.ai/mmif-python/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v0.3.3)">mmif.serialize.mmif.Mmif</a><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)">None</a><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/app/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.app.ClamsApp.validate_document_locations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate files encoded in the input MMIF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mmif</strong> – An input MMIF with zero or more <a class="reference external" href="https://clams.ai/mmif-python/autodoc/mmif.serialize.html#mmif.serialize.annotation.Document" title="(in mmif-python v0.3.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Document</span></code></a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.9)"><strong>FileNotFoundError</strong></a> – When any of files is not found at its location</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -213,37 +320,29 @@
            
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="clams.source.html" class="btn btn-neutral float-right" title="clams.source package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="clams.restify.html" class="btn btn-neutral float-left" title="clams.restify package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+        <a href="clams.source.html" class="btn btn-neutral float-right" title="clams.source package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="clams.restify.html" class="btn btn-neutral float-left" title="clams.restify package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2020, Brandeis LLC
+        &#169; Copyright 2021, Brandeis LLC.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
