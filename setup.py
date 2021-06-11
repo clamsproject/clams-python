@@ -34,7 +34,7 @@ init_mod.close()
 
 
 class DoNothing(distutils.cmd.Command):
-    description = "run base code until `setuptools.setup(` line and exits 0."
+    description = "run base code until `setuptools.setup()` line and exits 0."
     user_options = []
 
     def initialize_options(self) -> None:
@@ -57,7 +57,7 @@ setuptools.setup(
     description="A collection of APIs to develop CLAMS app for python",
     long_description=long_desc,
     long_description_content_type="text/markdown",
-    url="https://www.clams.ai",
+    url="https://clams.ai",
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Framework :: Flask',
