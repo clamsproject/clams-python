@@ -31,7 +31,7 @@ jobs:
         git config --local user.name "clams-bot"
     - name: commit the built documentation 
       run: |
-        git add docs
+        git add docs documentation
         git add -u docs
         git commit -m 'adding HTML documentation for publication'
     - name: push the documentation commit

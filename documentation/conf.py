@@ -10,10 +10,13 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
-import os
-import sys
 import datetime
+import os
+import shutil
+import sys
+
 import mmif
+
 sys.path.insert(0, os.path.abspath(os.path.join('.', 'documentation')))
 
 
@@ -79,3 +82,20 @@ def linkcode_resolve(domain, info):
         return None
     filename = info['module'].replace('.', '/')
     return f"https://github.com/clamsproject/clams-python/tree/master/{filename}/__init__.py"
+
+
+def update_target_spec():
+    target_vers_csv = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'target-versions.csv')
+    with open("../VERSION", 'r') as version_f:
+        version = version_f.read().strip()
+    mmifver = mmif.__version__
+    specver = mmif.__specver__
+    with open(target_vers_csv) as in_f, open(f'{target_vers_csv}.new', 'w') as out_f:
+        lines = in_f.readlines()
+        if not lines[1].startswith(f"`{version}"):
+            lines.insert(1, f"`{version} <https://pypi.org/project/clams-python/{version}/>`_,`{mmifver} <https://pypi.org/project/mmif-python/{mmifver}/>`_,`{specver} <https://mmif.clams.ai/{specver}/>`_\n")
+        for line in lines:
+            out_f.write(line)
+        shutil.move(out_f.name, in_f.name)
+
+update_target_spec()
