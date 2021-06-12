@@ -5,7 +5,8 @@ import unittest
 from typing import Union
 
 import jsonschema
-from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View
+import pytest
+from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver__
 
 import clams.app
 import clams.restify
@@ -136,6 +137,25 @@ class TestClamsApp(unittest.TestCase):
         
         # finally for an eye exam
         print(self.app.appmetadata(pretty=True))
+
+    def test__check_mmif_compatibility(self):
+        maj, min, pat = list(map(int, __specver__.split('.')))
+        self.assertTrue(self.app._check_mmif_compatibility('0.4.3', '0.4.8'))
+        self.assertTrue(self.app._check_mmif_compatibility('0.4.3', '0.4.1'))
+        self.assertTrue(self.app._check_mmif_compatibility('0.4.3.dev1', '0.4.3'))
+        self.assertFalse(self.app._check_mmif_compatibility('0.4.3', '0.5.8'))
+        self.assertFalse(self.app._check_mmif_compatibility('0.4.3', '1.5.8'))
+        in_mmif = ExampleInputMMIF.get_rawmmif()
+        compat_ver = f"{maj}.{min}.{pat+10}"
+        incompat_ver = f"{maj}.{min+2}.{pat}"
+        in_mmif.metadata.mmif = f"http://mmif.clams.ai/{compat_ver}"
+        try:
+            self.app.annotate(in_mmif)
+        except ValueError:
+            pytest.fail(f"current app ({__specver__}) should be able to process compatible input {compat_ver}.")
+        in_mmif.metadata.mmif = f"http://mmif.clams.ai/{incompat_ver}"
+        with pytest.raises(ValueError):
+            self.app.annotate(in_mmif)
         
     def test_annotate(self):
         out_mmif = self.app.annotate(self.in_mmif)
