@@ -71,7 +71,7 @@ class ClamsApp(ABC):
         pretty = runtime_params.pop('pretty') if 'pretty' in runtime_params else False
         if not isinstance(mmif, Mmif):
             mmif = Mmif(mmif)
-        input_specver = mmif.metadata.mmif.rsplit('/')[-1]
+        input_specver = mmif.metadata.mmif.rsplit('/')[-1]  # pytype: disable=attribute-error
         if 'dev' not in __specver__ :
             if not self._check_mmif_compatibility(__specver__, input_specver):
                 raise ValueError(f"Input MMIF file (versioned: {input_specver} is not compatible with the app "

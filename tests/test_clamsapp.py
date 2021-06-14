@@ -77,7 +77,7 @@ class ExampleClamsApp(clams.app.ClamsApp):
         new_view = mmif.new_view()
         self.sign_view(new_view, {'raise_error': raise_error})
         new_view.new_contain(AnnotationTypes.TimeFrame, {"producer": "dummy-producer"})
-        ann = new_view.new_annotation('a1', AnnotationTypes.TimeFrame)
+        ann = new_view.new_annotation(AnnotationTypes.TimeFrame, 'a1')
         ann.add_property("f1", "hello_world")
         if raise_error:
             raise ValueError

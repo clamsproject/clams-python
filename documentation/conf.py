@@ -74,6 +74,7 @@ html_theme = 'sphinx_rtd_theme'
 # hide document source view link at the top 
 html_show_sourcelink = False
 
+
 # function used by `linkcode` extension
 def linkcode_resolve(domain, info):
     if domain != 'py':
