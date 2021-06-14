@@ -1,5 +1,13 @@
 name: test and send code coverage to codecov.io
-on: [push]
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
 jobs:
   test-and-codecov:
     runs-on: ubuntu-latest
