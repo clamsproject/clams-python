@@ -1,12 +1,13 @@
 from clams.app import *
-from clams.app import __all__ as serve_all
+from clams.app import __all__ as app_all
+from clams.appmetadata import AppMetadata
 from clams.restify import Restifier
 from clams import source
 from clams.source import PipelineSource
 from clams.ver import __version__
 from mmif import __specver__
 
-__all__ = ['Restifier', 'PipelineSource'] + serve_all
+__all__ = [AppMetadata, 'Restifier', 'PipelineSource'] + app_all
 version_template = "{} (based on MMIF spec: {})"
 
 
