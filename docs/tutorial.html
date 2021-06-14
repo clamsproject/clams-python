@@ -40,7 +40,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="clams package" href="modules.html" />
-    <link rel="prev" title="CLAMS app directory" href="appdirectory.html" /> 
+    <link rel="prev" title="CLAMS App Directory" href="appdirectory.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.2.4
+                0.4.0
               </div>
             
           
@@ -92,7 +92,9 @@
               <p class="caption"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="appdirectory.html">CLAMS app directory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="target-versions.html">Target MMIF Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appmetadata.html">CLAMS App Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appdirectory.html">CLAMS App Directory</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial: writing a CLAMS app</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#the-example-kaldi">The Example: Kaldi</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#a-sample-kaldi-transcript">A sample Kaldi transcript</a></li>
@@ -372,28 +374,32 @@ clams-python package.</p>
 <p>Steps 1 and 2 are still a bit unconstrained at this point.</p>
 <div class="section" id="appmetadata">
 <span id="header-n44"></span><h4>1.1 <code class="docutils literal notranslate"><span class="pre">_appmetadata</span></code><a class="headerlink" href="#appmetadata" title="Permalink to this headline">¶</a></h4>
-<p>This method should just return a dictionary containing the metadata
-relevant to your app. Metadata format will be standardized at a later
-date but for now is rather informal</p>
+<p>This method should just return a <a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata" title="clams.appmetadata.AppMetadata"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.appmetadata.AppMetadata</span></code></a> .
+containing the metadata relevant to your app.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Kaldi</span><span class="p">(</span><span class="n">ClamsApp</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">_appmetadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Kaldi Wrapper&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;This tool wraps the Kaldi ASR tool&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="s2">&quot;Team CLAMS&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;iri&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;http://mmif.clams.ai/apps/kaldi/</span><span class="si">{</span><span class="n">APP_VERSION</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;wrappee&quot;</span><span class="p">:</span> <span class="n">WRAPPED_IMAGE</span><span class="p">,</span>
-            <span class="s2">&quot;requires&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">DocumentTypes</span><span class="o">.</span><span class="n">AudioDocument</span><span class="o">.</span><span class="n">value</span><span class="p">],</span>
-            <span class="s2">&quot;produces&quot;</span><span class="p">:</span> <span class="p">[</span>
-                <span class="n">DocumentTypes</span><span class="o">.</span><span class="n">TextDocument</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-                <span class="n">AnnotationTypes</span><span class="o">.</span><span class="n">TimeFrame</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-                <span class="n">AnnotationTypes</span><span class="o">.</span><span class="n">Alignment</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-                <span class="n">Uri</span><span class="o">.</span><span class="n">TOKEN</span>
-            <span class="p">]</span>
-        <span class="p">}</span>
+    <span class="k">def</span> <span class="nf">_appmetadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppMetadata</span><span class="p">:</span>
+        <span class="n">app_version</span> <span class="o">=</span> <span class="s1">&#39;0.0.1&#39;</span>
+        <span class="n">kaldi_version</span> <span class="o">=</span> <span class="s1">&#39;v1&#39;</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">AppMetadata</span><span class="p">(</span>
+           <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Kaldi Wrapper&quot;</span><span class="p">,</span>
+           <span class="n">description</span><span class="o">=</span><span class="s2">&quot;This tool wraps the Kaldi ASR tool&quot;</span><span class="p">,</span>
+           <span class="n">app_version</span><span class="o">=</span><span class="n">app_version</span><span class="p">,</span>
+           <span class="n">wrapper_version</span><span class="o">=</span><span class="n">kaldi_version</span>
+           <span class="n">license</span><span class="o">=</span><span class="s2">&quot;MIT&quot;</span><span class="p">,</span>
+           <span class="n">identifier</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;https://apps.clams.ai/apps/kaldi/</span><span class="si">{</span><span class="n">exampleappversion</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">add_input</span><span class="p">(</span><span class="n">DocumentTypes</span><span class="o">.</span><span class="n">AudioDocument</span><span class="p">)</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">DocumentTypes</span><span class="o">.</span><span class="n">TextDocument</span><span class="p">)</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">AnnotationTypes</span><span class="o">.</span><span class="n">TimeFrame</span><span class="p">)</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">AnnotationTypes</span><span class="o">.</span><span class="n">Alignment</span><span class="p">)</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">Uri</span><span class="o">.</span><span class="n">TOKEN</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">metadata</span>
 </pre></div>
 </div>
+<p>One can initiate a <a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata" title="clams.appmetadata.AppMetadata"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppMetadata</span></code></a> object simply passing key-value pairs.
+Also the class provides helper methods for structured fields (<code class="docutils literal notranslate"><span class="pre">input</span></code>, <code class="docutils literal notranslate"><span class="pre">output</span></code>, and <code class="docutils literal notranslate"><span class="pre">parameters</span></code>), so it is highly recommended to read the class documentation before you start specifying an app metadata.
+To see what fields need to be specified in the app metadata, see &lt;<a class="reference internal" href="appmetadata.html#appmetadata"><span class="std std-ref">CLAMS App Metadata</span></a>&gt;.</p>
 </div>
 <div class="section" id="annotate-mmif">
 <span id="header-n47"></span><h4>1.2 <code class="docutils literal notranslate"><span class="pre">_annotate(mmif)</span></code><a class="headerlink" href="#annotate-mmif" title="Permalink to this headline">¶</a></h4>
@@ -682,7 +688,7 @@ container should start up your Flask server. In this case, it runs
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
         <a href="modules.html" class="btn btn-neutral float-right" title="clams package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="appdirectory.html" class="btn btn-neutral float-left" title="CLAMS app directory" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="appdirectory.html" class="btn btn-neutral float-left" title="CLAMS App Directory" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

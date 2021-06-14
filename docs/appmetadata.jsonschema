@@ -1,0 +1,196 @@
+{
+  "title": "CLAMS AppMetadata",
+  "description": "Defines a data model that describes a CLAMS app. \nCan be initialized by simply passing all required key-value pairs. If you \nhave a pre-generated metadata as an external file, you can read in the file \nas a ``dict`` and use it as keyword arguments for initialization. \n\nPlease refer to <:ref:`appmetadata`> for the metadata specification. ",
+  "type": "object",
+  "properties": {
+    "name": {
+      "description": "A short name of the app.",
+      "type": "string"
+    },
+    "description": {
+      "description": "A longer description of the app (what it does, how to use, etc.).",
+      "type": "string"
+    },
+    "app_version": {
+      "description": "Version of the app.",
+      "type": "string"
+    },
+    "mmif_version": {
+      "description": "Version of MMIF specification the app. When the metadata is generated using clams-python SDK, this field is automatically filled in.",
+      "type": "string"
+    },
+    "wrappee_version": {
+      "description": "(optional) Version of wrapped software, if the app is working as a wrapper. ",
+      "type": "string"
+    },
+    "license": {
+      "description": "License information of the app.",
+      "type": "string"
+    },
+    "wrappee_license": {
+      "description": "(optional) License information of wrapped software, if the app is working as a wrapper. ",
+      "type": "string"
+    },
+    "identifier": {
+      "description": "IRI-formatted unique identifier for the app.",
+      "minLength": 1,
+      "maxLength": 65536,
+      "format": "uri",
+      "type": "string"
+    },
+    "input": {
+      "description": "List of input types. Must have at least one.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Input"
+      }
+    },
+    "output": {
+      "description": "List of output types. Must have at least one.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Output"
+      }
+    },
+    "parameters": {
+      "description": "List of runtime parameters. Can be empty.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/RuntimeParameter"
+      }
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "app_version",
+    "license",
+    "identifier"
+  ],
+  "additionalProperties": false,
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "clams-python SDK 0.4.0 was used to generate this schema",
+  "definitions": {
+    "Input": {
+      "title": "CLAMS Input Specification",
+      "description": "Defines a data model that describes input specification of a CLAMS app",
+      "type": "object",
+      "properties": {
+        "@type": {
+          "description": "The type of the object. Must be a IRI string.",
+          "minLength": 1,
+          "maxLength": 65536,
+          "format": "uri",
+          "type": "string"
+        },
+        "properties": {
+          "description": "(optional) Specification for type properties, if any.",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "required": {
+          "description": "(optional) Indicating whether this input type is mandatory or optional.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "@type"
+      ],
+      "additionalProperties": false
+    },
+    "Output": {
+      "title": "CLAMS Output Specification",
+      "description": "Defines a data model that describes output specification of a CLAMS app",
+      "type": "object",
+      "properties": {
+        "@type": {
+          "description": "The type of the object. Must be a IRI string.",
+          "minLength": 1,
+          "maxLength": 65536,
+          "format": "uri",
+          "type": "string"
+        },
+        "properties": {
+          "description": "(optional) Specification for type properties, if any.",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "@type"
+      ],
+      "additionalProperties": false
+    },
+    "RuntimeParameter": {
+      "title": "CLAMS App Runtime Parameter",
+      "description": "Defines a data model that describes a single runtime configuration of a CLAMS app. \nUsually, an app keeps a list of these configuration specifications in the \n``parameters`` field. ",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "A short name of the parameter (works as a key).",
+          "type": "string"
+        },
+        "description": {
+          "description": "A longer description of the parameter (what it does, how to use, etc.).",
+          "type": "string"
+        },
+        "type": {
+          "description": "Type of the parameter value the app expects. Must be one of ('integer', 'number', 'string', 'boolean').",
+          "enum": [
+            "integer",
+            "number",
+            "string",
+            "boolean"
+          ],
+          "type": "string"
+        },
+        "choices": {
+          "description": "(optional) List of string values that can be accepted.",
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "default": {
+          "description": "(optional) Default value for the parameter. Only valid for optional parameters.",
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "type"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
