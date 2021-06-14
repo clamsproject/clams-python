@@ -55,14 +55,21 @@ Because API's of the ``mmf`` package is well documented in the `mmif-python webs
 
 Note on versions
 ^^^^^^^^^^^^^^^^
-``clams-python`` is under active development, so is ``mmif-python``, which is a separate PyPI distribution package providing Python classes and methods to handle MMIF json string. Because of this rapid version cycles, it is often the case that a MMIF file of a certain version does not work with CLAMS SDK that is based on a different version of ``mmif-python`` from the version of the MMIF file. In every MMIF files, there must be the MMIF version encoded at the top of the file. Please keep in mind the versions you're using and be careful not to mix and match different versions. To see the MMIF specification version supported by the installed ``mmif-python`` package, look at ``mmif.__specver__`` variable.
+``clams-python`` is under active development, so is ``mmif-python``, which is a separate PyPI distribution package providing Python classes and methods to handle MMIF JSON string. Because of this rapid version cycles, it is possible that a MMIF file of a specific version does not work with a CLAMS app that is based on a incompatible version of ``mmif-python``. In every MMIF files, there must be the MMIF version encoded at the top of the file. Please keep in mind the versions of Python libraries you're using and their target specification version. To see the MMIF specification version targeted by the installed ``mmif-python`` package, look at ``mmif.__specver__`` variable (installing ``clams-python`` will also install ``mmif-python``).
 
 .. code-block:: python
 
     import mmif
     mmif.__specver__
 
-For more information on the relation between ``mmif-python`` versions and MMIF specification versions, please take time to read our decision on the subject `here <https://mmif.clams.ai/versioning/>`_.
+A CLAMS app must report which MMIF specification version it targets in its metadata (see :ref:`appmetadata`). And when an app targets a specific version, it means; 
+
+#. the app can only process input MMIF files that are compatible with the target version.
+#. the app will output MMIF files exactly versioned as the target version.
+
+Finally, for two different specifications to be compatible to each other, their ``major`` and ``minor`` version numbers should be the same. For example, ``0.4.2`` is compatible either with ``0.4.10`` or ``0.4.0``, but is not compatible with ``0.3.0`` or ``0.7.2``. 
+
+For more information on the relation between ``mmif-python`` versions and MMIF specification versions, or MMIF version compatibility, please take time to read our decision on the subject `here <https://mmif.clams.ai/versioning/>`_. You can also find a table with all public ``clams-python`` packages and their target MMIF versions in :ref:`target-versions`. This is a seemingly complicated issue, but also is very crucial to build CLAMS as a platform. 
 
 CLAMS App API
 -------------

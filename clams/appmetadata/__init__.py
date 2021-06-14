@@ -24,8 +24,10 @@ def get_clams_pyver():
         else:
             raise Exception('cannot find clams-python version')
 
+
 def get_mmif_specver():
     return mmif.__specver__
+
 
 class _BaseModel(pydantic.BaseModel):
     
