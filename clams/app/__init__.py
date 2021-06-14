@@ -8,7 +8,7 @@ __all__ = ['ClamsApp']
 
 from typing import Union, Any, Optional
 
-from mmif import Mmif, Document, DocumentTypes, View
+from mmif import Mmif, Document, DocumentTypes, View, __specver__
 from clams.appmetadata import AppMetadata
 
 
@@ -52,6 +52,10 @@ class ClamsApp(ABC):
         """
         raise NotImplementedError()
 
+    @staticmethod
+    def _check_mmif_compatibility(target_specver, input_specver):
+        return target_specver.split('.')[:2] == input_specver.split('.')[:2]
+
     def annotate(self, mmif: Union[str, dict, Mmif], **runtime_params) -> str:
         """
         A public method to invoke the primary app function. It's essentially a
@@ -65,6 +69,14 @@ class ClamsApp(ABC):
         # TODO (krim @ 12/17/20): add documentation on what are "common" operations
         # should pop all "common" parameters before passing the args to _annotate()
         pretty = runtime_params.pop('pretty') if 'pretty' in runtime_params else False
+        if not isinstance(mmif, Mmif):
+            mmif = Mmif(mmif)
+        input_specver = mmif.metadata.mmif.rsplit('/')[-1]  # pytype: disable=attribute-error
+        if 'dev' not in __specver__ :
+            if not self._check_mmif_compatibility(__specver__, input_specver):
+                raise ValueError(f"Input MMIF file (versioned: {input_specver} is not compatible with the app "
+                                 f"targeting at {__specver__}. Make sure apps in the pipeline is all compatible. See "
+                                 f"https://mmif.clams.ai/versioning/ for information about MMIF compatibility. ") 
         annotated = self._annotate(mmif, **runtime_params)
         return annotated.serialize(pretty=pretty)
 
