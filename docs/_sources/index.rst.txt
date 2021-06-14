@@ -8,6 +8,7 @@ Welcome to CLAMS Python SDK documentation!
   :caption: Contents
 
   introduction
+  target-versions
   appmetadata
   appdirectory
   tutorial
