@@ -92,7 +92,7 @@ class ClamsApp(ABC):
         """
         raise NotImplementedError()
 
-    def sign_view(self, view: View, runtime_params: dict) -> None:
+    def sign_view(self, view: View, runtime_params: dict = {}) -> None:
         """
         A method to "sign" a new view that this app creates at the beginning of annotation.
         Signing will populate the view metadata with information and configuration of this app.
@@ -106,7 +106,8 @@ class ClamsApp(ABC):
         if view.is_frozen():
             raise ValueError("can't modify an old view")
         view.metadata.app = self.metadata.identifier
-        view.metadata.parameter = runtime_params
+        if len(runtime_params) > 0:
+            view.metadata.parameter = runtime_params
         
     def set_error_view(self, mmif: Union[str, dict, Mmif], runtime_params: dict) -> Mmif:
         """
