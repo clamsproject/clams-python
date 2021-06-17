@@ -4,11 +4,20 @@ from typing import Union, Dict, List
 import mmif
 import pydantic
 from mmif import vocabulary
-from typing_extensions import Literal
+import sys
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 primitives = Union[int, float, str, bool]
 # these names are taken from the JSON schema data types
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
+
+if sys.version_info >= (3, 7):
+    param_value_types_values = param_value_types.__args__  # pytype: disable=attribute-error
+else:
+    param_value_types_values = param_value_types.__values__  # pytype: disable=attribute-error
 
 
 def get_clams_pyver():
@@ -81,7 +90,7 @@ class RuntimeParameter(_BaseModel):
     """
     name: str = pydantic.Field(..., description="A short name of the parameter (works as a key).")
     description: str = pydantic.Field(..., description="A longer description of the parameter (what it does, how to use, etc.).")
-    type: param_value_types = pydantic.Field(..., description=f"Type of the parameter value the app expects. Must be one of {param_value_types.__values__}.")  # pytype: disable=attribute-error
+    type: param_value_types = pydantic.Field(..., description=f"Type of the parameter value the app expects. Must be one of {param_value_types_values}.") 
     choices: List[primitives] = pydantic.Field(None, description="(optional) List of string values that can be accepted.")
     default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters.")
     
