@@ -1,12 +1,12 @@
 import argparse
-import json
 import itertools
+import json
+import sys
 from os import path
 from typing import Union, Generator, List, Optional, Iterable
 
 from mmif import Mmif, Document, DocumentTypes, __specver__
 from mmif.serialize.mmif import MmifMetadata
-
 
 __all__ = ['PipelineSource']
 
@@ -172,31 +172,7 @@ class PipelineSource:
             yield self.produce()
 
 
-def prep_argparser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'documents',
-        default='',
-        action='store',
-        nargs='+',
-        help="This list of documents should be colon-joined pairs of document types and file paths. A document type "
-             "can be one of ``audio``, ``video``, ``text``, ``image``, or a MIME type string (such as video/mp4). The "
-             "output will be a MMIF file containing a document for each of those file paths, with the appropriate "
-             "``@type`` and MIME type (if given), printed to the standard output. "
-    )
-    parser.add_argument(
-        '-p', '--prefix',
-        default=None,
-        metavar='PATH',
-        nargs='?',
-        help='An absolute path to use as prefix for document file paths. When prefix is set, document file paths MUST '
-             'be relative. This can be useful when creating source MMIF files from a system that\'s different from '
-             'the system that actually runs the pipeline (e.g. in a docker container).'
-    )
-    return parser
-
-
-def generate_source_mmif(documents, prefix=None):
+def generate_source_mmif(documents, prefix=None, **ignored):
     from string import Template
     at_types = {
         'video': DocumentTypes.VideoDocument,
@@ -242,7 +218,45 @@ def generate_source_mmif(documents, prefix=None):
     return pl.produce().serialize(pretty=True)
 
 
+def prep_argparser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'documents',
+        default=None,
+        action='store',
+        nargs='+',
+        help="This list of documents should be colon-joined pairs of document types and file paths. A document type "
+             "can be one of ``audio``, ``video``, ``text``, ``image``, or a MIME type string (such as video/mp4). The "
+             "output will be a MMIF file containing a document for each of those file paths, with the appropriate "
+             "``@type`` and MIME type (if given), printed to the standard output. "
+    )
+    parser.add_argument(
+        '-p', '--prefix',
+        default=None,
+        metavar='PATH',
+        nargs='?',
+        help='An absolute path to use as prefix for document file paths. When prefix is set, document file paths MUST '
+             'be relative. This can be useful when creating source MMIF files from a system that\'s different from '
+             'the system that actually runs the pipeline (e.g. in a docker container).'
+    )
+    parser.add_argument(
+        '-o', '--output',
+        default=None,
+        action='store',
+        nargs='?',
+        help='A name of a file to capture a generated MMIF json. When not given, MMIF is printed to stdout.'
+    )
+    return parser
+
+
+def main(args):
+    if args.output:
+        out_f = open(args.output, 'w')
+    else:
+        out_f = sys.stdout
+    out_f.write(generate_source_mmif(**vars(args)))
+
 if __name__ == '__main__':
     parser = prep_argparser()
     args = parser.parse_args()
-    print(generate_source_mmif(**vars(args)))
+    main(args)
