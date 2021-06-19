@@ -72,7 +72,7 @@
   ],
   "additionalProperties": false,
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$comment": "clams-python SDK 0.4.2 was used to generate this schema",
+  "$comment": "clams-python SDK 0.4.3 was used to generate this schema",
   "definitions": {
     "Input": {
       "title": "CLAMS Input Specification",
@@ -171,7 +171,7 @@
           }
         },
         "default": {
-          "description": "(optional) Default value for the parameter. Only valid for optional parameters.",
+          "description": "(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'.",
           "anyOf": [
             {
               "type": "integer"
