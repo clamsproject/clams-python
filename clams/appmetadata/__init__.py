@@ -92,7 +92,7 @@ class RuntimeParameter(_BaseModel):
     description: str = pydantic.Field(..., description="A longer description of the parameter (what it does, how to use, etc.).")
     type: param_value_types = pydantic.Field(..., description=f"Type of the parameter value the app expects. Must be one of {param_value_types_values}.") 
     choices: List[primitives] = pydantic.Field(None, description="(optional) List of string values that can be accepted.")
-    default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters.")
+    default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'.")
     
     class Config:
         title = 'CLAMS App Runtime Parameter'
@@ -140,15 +140,17 @@ class AppMetadata(pydantic.BaseModel):
         :param required: whether this type is mandatory or optional 
         :param properties: additional property specifications
         """
-        new_inp = Input(at_type=at_type, required=required)
+        new = Input(at_type=at_type, required=required)
         if len(properties) > 0:
-            new_inp.properties = properties
-        if new_inp not in self.input:
-            self.input.append(new_inp)
+            new.properties = properties
+        if new not in self.input:
+            self.input.append(new)
             if not required:
                 # TODO (krim @ 5/12/21): automatically add *optional* input types to parameter
                 # see https://github.com/clamsproject/clams-python/issues/29 for discussion
                 pass
+        else:
+            raise ValueError(f"Cannot add a duplicate input '{new}'.")
         
     def add_output(self, at_type: Union[str, vocabulary.ThingTypesBase], **properties):
         """
@@ -157,21 +159,20 @@ class AppMetadata(pydantic.BaseModel):
         :param at_type: ``@type`` of the input object
         :param properties: additional property specifications
         """
-        if at_type not in [output.at_type for output in self.output]:
-            if len(properties) > 0:
-                self.output.append(Output(at_type=str(at_type), properties=dict(properties)))
-            else:
-                self.output.append(Output(at_type=str(at_type)))
+        new = Output(at_type=at_type)
+        if len(properties) > 0:
+            new.properties = properties
+        if new not in self.output:
+            self.output.append(new)
         else:
-            raise ValueError(f"output '{at_type}' already exist.")
-    
-    def add_parameter(self, **parameter_spec):
+            raise ValueError(f"Cannot add a duplicate output '{new}'.")
+
+    def add_parameter(self, name: str, description: str, type: param_value_types,
+                      choices: List[primitives] = None, default: primitives = None):
         """
         Helper method to add an element to the ``parameters`` list. 
-        
-        :param parameter_spec: key-value pairs that specify a RuntimeParameter. See ``RuntimeParameter`` section of <:ref:`appmetadata`> for keys and values that are accepted.
         """
-        new_param = RuntimeParameter(**parameter_spec)
+        new_param = RuntimeParameter(name=name, description=description, type=type, choices=choices, default=default)
         if new_param.name not in [param.name for param in self.parameters]:
             self.parameters.append(new_param)
         else:

@@ -69,6 +69,8 @@ class ExampleClamsApp(clams.app.ClamsApp):
             output=[{'@type': AnnotationTypes.TimeFrame}],
         )
         metadata.add_input(DocumentTypes.AudioDocument)
+        metadata.add_parameter(name='raise_error', description='force raise a ValueError',
+                               type='boolean', default='false')
         return metadata
     
     def _annotate(self, mmif, raise_error=False):
@@ -76,7 +78,7 @@ class ExampleClamsApp(clams.app.ClamsApp):
             mmif = Mmif(mmif, validate=False)
         new_view = mmif.new_view()
         self.sign_view(new_view, {'raise_error': raise_error})
-        new_view.new_contain(AnnotationTypes.TimeFrame, {"producer": "dummy-producer"})
+        new_view.new_contain(AnnotationTypes.TimeFrame, **{"producer": "dummy-producer"})
         ann = new_view.new_annotation(AnnotationTypes.TimeFrame, 'a1')
         ann.add_property("f1", "hello_world")
         if raise_error:
@@ -106,14 +108,18 @@ class TestClamsApp(unittest.TestCase):
         self.assertTrue('properties' not in metadata['output'][0])
         self.assertTrue('properties' not in metadata['input'][0])
         self.assertTrue(metadata['input'][0]['required'])
-        self.assertFalse('parameters' in metadata)
         
         # test add_X methods
-        self.app.metadata.add_output(AnnotationTypes.BoundingBox)
+        self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='text')
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['output']), 2)
-        # this should not be added as a duplicate
-        self.app.metadata.add_input(at_type=DocumentTypes.AudioDocument)
+        # these should not be added as a duplicate
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_input(at_type=DocumentTypes.AudioDocument)
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='text')
+        # but this should 
+        self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='face')
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['input']), 1)
         self.assertTrue('properties' not in metadata['input'][0])
@@ -125,9 +131,11 @@ class TestClamsApp(unittest.TestCase):
         self.assertEqual(len(metadata['input'][1]['properties']), 1)
         # now parameters
         # using a custom class
-        self.app.metadata.add_parameter(
-            name='raise_error', description='force raise a ValueError', 
-            type='boolean', default='false')
+        # this should conflict with existing parameter
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_parameter(
+                name='raise_error', description='force raise a ValueError', 
+                type='boolean', default='false')
         # using python dict
         self.app.metadata.add_parameter(
             name='multiple_choice', description='meaningless multiple choice option',
@@ -179,6 +187,15 @@ class TestClamsApp(unittest.TestCase):
         mmif = ExampleInputMMIF.get_rawmmif()
         with self.app.open_document_location(mmif.documents['i1'], Image.open) as f:
             self.assertEqual(f.size, (200, 71))
+            
+    def test_get_configuration(self):
+        self.app.metadata.parameters = []
+        self.app.metadata.add_parameter('param1', 'first_param', 'string')
+        self.app.metadata.add_parameter('param2', 'second_param', 'string', default='second_default')
+        conf = self.app.get_configuration(param1='okay', non_parameter='should be ignored')
+        self.assertEqual(len(conf), 2)
+        with self.assertRaises(ValueError):
+            self.app.get_configuration(param2='okay')
             
     def test_error_handling(self):
         params = {'raise_error': True}

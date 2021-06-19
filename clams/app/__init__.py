@@ -91,8 +91,19 @@ class ClamsApp(ABC):
         :return: A :class:`~mmif.serialize.mmif.Mmif` object of the annotated output, ready for serialization
         """
         raise NotImplementedError()
+    
+    def get_configuration(self, **runtime_params):
+        conf = {}
+        for parameter in self.metadata.parameters:
+            if parameter.name in runtime_params:
+                conf[parameter.name] = str(runtime_params[parameter.name])
+            elif parameter.default:
+                conf[parameter.name] = parameter.default
+            else:
+                raise ValueError(f"Cannot find configuration for parameter \"{parameter.name}\".")
+        return conf
 
-    def sign_view(self, view: View, runtime_params: dict = {}) -> None:
+    def sign_view(self, view: View, runtime_conf: dict = None) -> None:
         """
         A method to "sign" a new view that this app creates at the beginning of annotation.
         Signing will populate the view metadata with information and configuration of this app.
@@ -101,22 +112,22 @@ class ClamsApp(ABC):
         are consumed in :func:`~clams.app.ClamsApp.annotate` should not be recorded in the
         view metadata.
         :param view: a view to sign
-        :param runtime_params: runtime configuration of the app as k-v pairs
+        :param runtime_conf: runtime configuration of the app as k-v pairs
         """
         if view.is_frozen():
             raise ValueError("can't modify an old view")
         view.metadata.app = self.metadata.identifier
-        if len(runtime_params) > 0:
-            view.metadata.parameter = runtime_params
+        if runtime_conf is not None:
+            view.metadata.add_parameters(**{k: str(v) for k, v in runtime_conf.items()})
         
-    def set_error_view(self, mmif: Union[str, dict, Mmif], runtime_params: dict) -> Mmif:
+    def set_error_view(self, mmif: Union[str, dict, Mmif], runtime_conf: dict = None) -> Mmif:
         """
         A method to record an error instead of annotation results in the view
         this app generated. For logging purpose, the runtime parameters used
         when the error occurred must be passed as well.
 
         :param mmif: input MMIF object
-        :param runtime_params:
+        :param runtime_conf: parameters passed to annotate when the app encountered the error
         :return: An output MMIF with a new view with the error encoded in the view metadata
         """
         import traceback
@@ -129,7 +140,7 @@ class ClamsApp(ABC):
                 break
         if error_view is None:
             error_view = mmif.new_view()
-            self.sign_view(error_view, runtime_params)
+            self.sign_view(error_view, runtime_conf)
         exc_info = sys.exc_info()
         error_view.set_error(f'{exc_info[0]}: {exc_info[1]}',
                              '\t\n'.join(traceback.format_tb(exc_info[2])))

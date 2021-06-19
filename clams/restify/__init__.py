@@ -1,4 +1,3 @@
-import traceback
 from typing import Dict
 
 from flask import Flask, request, Response
@@ -138,10 +137,9 @@ class ClamsHTTPApi(Resource):
         in_mmif = Mmif(request.get_data())
         params = self.annotate_param_caster.cast(request.args)
         try:
-            return self.json_to_response(self.cla.annotate(in_mmif,
-                                                           **params))
+            return self.json_to_response(self.cla.annotate(in_mmif, **params))
         except Exception as e:
-            return self.json_to_response(self.cla.record_error(in_mmif, params).serialize(), status=500)
+            return self.json_to_response(self.cla.record_error(in_mmif, params).serialize(pretty=True), status=500)
 
     put = post
 
