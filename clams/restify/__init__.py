@@ -166,8 +166,8 @@ class ParameterCaster(object):
             if k in self.param_spec:
                 if self.param_spec[k] == bool:
                     casted[k] = self.bool_param(v)
-            else:
-                casted[k] = v
+                else:
+                    casted[k] = v
         return casted
 
     @staticmethod
