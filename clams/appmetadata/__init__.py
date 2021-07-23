@@ -119,6 +119,7 @@ class AppMetadata(pydantic.BaseModel):
     input: List[Input] = pydantic.Field([], description="List of input types. Must have at least one.")
     output: List[Output] = pydantic.Field([], description="List of output types. Must have at least one.")
     parameters: List[RuntimeParameter] = pydantic.Field([], description="List of runtime parameters. Can be empty.")
+    dependencies: List[str] = pydantic.Field(None, description="List of software dependencies of the app. This list is completely optional, as in most cases such dependencies are specified in a separate file in the codebase of the app (for example, ``requirements.txt`` file for a Python app, or ``pom.xml`` file for a maven-based Java app). List elements must be strings, not any kind of structured data. Thus, it is recommended to include a package name and its version in the string value at the minimum (e.g., ``clams-python==1.2.3``).")
 
     class Config:
         title = "CLAMS AppMetadata"

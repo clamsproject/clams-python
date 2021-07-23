@@ -67,6 +67,7 @@ class ExampleClamsApp(clams.app.ClamsApp):
             license="MIT",
             identifier=f"https://apps.clams.ai/example/{exampleappversion}",
             output=[{'@type': AnnotationTypes.TimeFrame}],
+            dependencies=['clams-python==develop-ver', 'mmif-pyhon==0.0.999']
         )
         metadata.add_input(DocumentTypes.AudioDocument)
         metadata.add_parameter(name='raise_error', description='force raise a ValueError',
