@@ -103,7 +103,7 @@ class ClamsApp(ABC):
                 raise ValueError(f"Cannot find configuration for parameter \"{parameter.name}\".")
         return conf
 
-    def sign_view(self, view: View, runtime_conf: dict = None) -> None:
+    def sign_view(self, view: View, runtime_conf: Optional[dict] = None) -> None:
         """
         A method to "sign" a new view that this app creates at the beginning of annotation.
         Signing will populate the view metadata with information and configuration of this app.
@@ -120,7 +120,7 @@ class ClamsApp(ABC):
         if runtime_conf is not None:
             view.metadata.add_parameters(**{k: str(v) for k, v in runtime_conf.items()})
         
-    def set_error_view(self, mmif: Union[str, dict, Mmif], runtime_conf: dict = None) -> Mmif:
+    def set_error_view(self, mmif: Union[str, dict, Mmif], runtime_conf: Optional[dict] = None) -> Mmif:
         """
         A method to record an error instead of annotation results in the view
         this app generated. For logging purpose, the runtime parameters used
