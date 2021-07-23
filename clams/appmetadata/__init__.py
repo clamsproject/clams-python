@@ -1,5 +1,5 @@
 import os
-from typing import Union, Dict, List
+from typing import Union, Dict, List, Optional
 
 import mmif
 import pydantic
@@ -116,6 +116,7 @@ class AppMetadata(pydantic.BaseModel):
     app_license: str = pydantic.Field(..., description="License information of the app.")
     analyzer_license: str = pydantic.Field(None, description="(optional) License information of an analyzer software, if the app is working as a wrapper for one. ")
     identifier: pydantic.AnyHttpUrl = pydantic.Field(..., description="IRI-formatted unique identifier for the app.")
+    url: pydantic.AnyHttpUrl = pydantic.Field(..., description="A public repository where the app's source code (git-based) and/or installation specification is available. ")
     input: List[Input] = pydantic.Field([], description="List of input types. Must have at least one.")
     output: List[Output] = pydantic.Field([], description="List of output types. Must have at least one.")
     parameters: List[RuntimeParameter] = pydantic.Field([], description="List of runtime parameters. Can be empty.")
@@ -168,7 +169,7 @@ class AppMetadata(pydantic.BaseModel):
             raise ValueError(f"Cannot add a duplicate output '{new}'.")
 
     def add_parameter(self, name: str, description: str, type: param_value_types,
-                      choices: List[primitives] = None, default: primitives = None):
+                      choices: Optional[List[primitives]] = None, default: primitives = None):
         """
         Helper method to add an element to the ``parameters`` list. 
         """

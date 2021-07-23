@@ -64,9 +64,10 @@ class ExampleClamsApp(clams.app.ClamsApp):
             name="Example CLAMS App for testing",
             description="This app doesn't do anything",
             app_version=exampleappversion,
-            license="MIT",
+            app_license="MIT",
             identifier=f"https://apps.clams.ai/example/{exampleappversion}",
             output=[{'@type': AnnotationTypes.TimeFrame}],
+            url="https://fakegithub.com/some/repository"
         )
         metadata.add_input(DocumentTypes.AudioDocument)
         metadata.add_parameter(name='raise_error', description='force raise a ValueError',
