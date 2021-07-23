@@ -92,7 +92,7 @@ class RuntimeParameter(_BaseModel):
     description: str = pydantic.Field(..., description="A longer description of the parameter (what it does, how to use, etc.).")
     type: param_value_types = pydantic.Field(..., description=f"Type of the parameter value the app expects. Must be one of {param_value_types_values}.") 
     choices: List[primitives] = pydantic.Field(None, description="(optional) List of string values that can be accepted.")
-    default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'.")
+    default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'. The value must be a string, that is if you want to set a default value for a boolean parameter, be careful to use \'true\' or \'false\' as the value. ")
     
     class Config:
         title = 'CLAMS App Runtime Parameter'
@@ -112,9 +112,9 @@ class AppMetadata(pydantic.BaseModel):
     description: str = pydantic.Field(..., description="A longer description of the app (what it does, how to use, etc.).")
     app_version: str = pydantic.Field(..., description="Version of the app.")
     mmif_version: str = pydantic.Field(default_factory=get_mmif_specver, description="Version of MMIF specification the app. When the metadata is generated using clams-python SDK, this field is automatically filled in.")
-    wrappee_version: str = pydantic.Field(None, description="(optional) Version of wrapped software, if the app is working as a wrapper. ")
-    license: str = pydantic.Field(..., description="License information of the app.")
-    wrappee_license: str = pydantic.Field(None, description="(optional) License information of wrapped software, if the app is working as a wrapper. ")
+    analyzer_version: str = pydantic.Field(None, description="(optional) Version of an analyzer software, if the app is working as a wrapper for one. ")
+    app_license: str = pydantic.Field(..., description="License information of the app.")
+    analyzer_license: str = pydantic.Field(None, description="(optional) License information of an analyzer software, if the app is working as a wrapper for one. ")
     identifier: pydantic.AnyHttpUrl = pydantic.Field(..., description="IRI-formatted unique identifier for the app.")
     input: List[Input] = pydantic.Field([], description="List of input types. Must have at least one.")
     output: List[Output] = pydantic.Field([], description="List of output types. Must have at least one.")
