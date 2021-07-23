@@ -143,6 +143,13 @@ class TestClamsApp(unittest.TestCase):
             type='integer', choices=[1, 2, 3, 4, 5], default=3)
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['parameters']), 2)
+        # now more additional metadata
+        self.app.metadata.add_more('one', 'more')
+        self.assertEqual(self.app.metadata.more['one'], 'more')
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_more('one', 'thing')
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_more('one', '')
         
         # finally for an eye exam
         print(self.app.appmetadata(pretty=True))

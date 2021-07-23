@@ -119,7 +119,8 @@ class AppMetadata(pydantic.BaseModel):
     input: List[Input] = pydantic.Field([], description="List of input types. Must have at least one.")
     output: List[Output] = pydantic.Field([], description="List of output types. Must have at least one.")
     parameters: List[RuntimeParameter] = pydantic.Field([], description="List of runtime parameters. Can be empty.")
-    dependencies: List[str] = pydantic.Field(None, description="List of software dependencies of the app. This list is completely optional, as in most cases such dependencies are specified in a separate file in the codebase of the app (for example, ``requirements.txt`` file for a Python app, or ``pom.xml`` file for a maven-based Java app). List elements must be strings, not any kind of structured data. Thus, it is recommended to include a package name and its version in the string value at the minimum (e.g., ``clams-python==1.2.3``).")
+    dependencies: List[str] = pydantic.Field(None, description="(optional) List of software dependencies of the app. This list is completely optional, as in most cases such dependencies are specified in a separate file in the codebase of the app (for example, ``requirements.txt`` file for a Python app, or ``pom.xml`` file for a maven-based Java app). List elements must be strings, not any kind of structured data. Thus, it is recommended to include a package name and its version in the string value at the minimum (e.g., ``clams-python==1.2.3``).")
+    more: Dict[str, str] = pydantic.Field(None, description="(optional) A string-to-string map that can be used to store any additional metadata of the app.")
 
     class Config:
         title = "CLAMS AppMetadata"
@@ -178,6 +179,23 @@ class AppMetadata(pydantic.BaseModel):
             self.parameters.append(new_param)
         else:
             raise ValueError(f"parameter '{new_param.name}' already exist.")
+        
+    def add_more(self, key:str, value:str):
+        """
+        Helper method to add a k-v pair to the ``more`` map. 
+        :param key: key of an additional metadata
+        :param value: value of the additional metadata
+        """
+        if len(key) > 0 and len(value) > 0: 
+            if self.more is None:
+                self.more = {}
+            if key not in self.more:
+                self.more[key] = value
+            else:
+                raise ValueError(f"'{key}' is already being used in the appmetadata!")
+        else:
+            raise ValueError("Key and value should not be empty!")
+        
 
 if __name__ == '__main__':
     print(AppMetadata.schema_json(indent=2))
