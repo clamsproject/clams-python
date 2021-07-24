@@ -19,20 +19,27 @@
       "description": "Version of MMIF specification the app. When the metadata is generated using clams-python SDK, this field is automatically filled in.",
       "type": "string"
     },
-    "wrappee_version": {
-      "description": "(optional) Version of wrapped software, if the app is working as a wrapper. ",
+    "analyzer_version": {
+      "description": "(optional) Version of an analyzer software, if the app is working as a wrapper for one. ",
       "type": "string"
     },
-    "license": {
+    "app_license": {
       "description": "License information of the app.",
       "type": "string"
     },
-    "wrappee_license": {
-      "description": "(optional) License information of wrapped software, if the app is working as a wrapper. ",
+    "analyzer_license": {
+      "description": "(optional) License information of an analyzer software, if the app is working as a wrapper for one. ",
       "type": "string"
     },
     "identifier": {
       "description": "IRI-formatted unique identifier for the app.",
+      "minLength": 1,
+      "maxLength": 65536,
+      "format": "uri",
+      "type": "string"
+    },
+    "url": {
+      "description": "A public repository where the app's source code (git-based) and/or installation specification is available. ",
       "minLength": 1,
       "maxLength": 65536,
       "format": "uri",
@@ -61,18 +68,33 @@
       "items": {
         "$ref": "#/definitions/RuntimeParameter"
       }
+    },
+    "dependencies": {
+      "description": "(optional) List of software dependencies of the app. This list is completely optional, as in most cases such dependencies are specified in a separate file in the codebase of the app (for example, ``requirements.txt`` file for a Python app, or ``pom.xml`` file for a maven-based Java app). List elements must be strings, not any kind of structured data. Thus, it is recommended to include a package name and its version in the string value at the minimum (e.g., ``clams-python==1.2.3``).",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "more": {
+      "description": "(optional) A string-to-string map that can be used to store any additional metadata of the app.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
     }
   },
   "required": [
     "name",
     "description",
     "app_version",
-    "license",
-    "identifier"
+    "app_license",
+    "identifier",
+    "url"
   ],
   "additionalProperties": false,
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$comment": "clams-python SDK 0.4.4 was used to generate this schema",
+  "$comment": "clams-python SDK 0.5.0 was used to generate this schema",
   "definitions": {
     "Input": {
       "title": "CLAMS Input Specification",
@@ -171,7 +193,7 @@
           }
         },
         "default": {
-          "description": "(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'.",
+          "description": "(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'. The value must be a string, that is if you want to set a default value for a boolean parameter, be careful to use 'true' or 'false' as the value. ",
           "anyOf": [
             {
               "type": "integer"
