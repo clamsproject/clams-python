@@ -166,8 +166,14 @@ class ParameterCaster(object):
             if k in self.param_spec:
                 if self.param_spec[k] == bool:
                     casted[k] = self.bool_param(v)
-            else:
-                casted[k] = v
+                elif self.param_spec[k] == float:
+                    casted[k] = self.float_param(v)
+                elif self.param_spec[k] == int:
+                    casted[k] = self.int_param(v)
+                elif self.param_spec[k] == str:
+                    casted[k] = self.str_param(v)
+                else:
+                    casted[k] = v
         return casted
 
     @staticmethod
@@ -176,3 +182,24 @@ class ParameterCaster(object):
         Helper function to convert string values to bool type.
         """
         return False if value in (False, 0, 'False', 'false', '0') else True
+
+    @staticmethod
+    def float_param(value):
+        """
+        Helper function to convert string values to float type.
+        """
+        return float(value)
+
+    @staticmethod
+    def int_param(value):
+        """
+        Helper function to convert string values to int type.
+        """
+        return int(value)
+
+    @staticmethod
+    def str_param(value):
+        """
+        Helper function to convert string values to string type.
+        """
+        return value
