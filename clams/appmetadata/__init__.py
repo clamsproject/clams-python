@@ -1,5 +1,5 @@
 import os
-from typing import Union, Dict, List
+from typing import Union, Dict, List, Optional
 
 import mmif
 import pydantic
@@ -92,7 +92,7 @@ class RuntimeParameter(_BaseModel):
     description: str = pydantic.Field(..., description="A longer description of the parameter (what it does, how to use, etc.).")
     type: param_value_types = pydantic.Field(..., description=f"Type of the parameter value the app expects. Must be one of {param_value_types_values}.") 
     choices: List[primitives] = pydantic.Field(None, description="(optional) List of string values that can be accepted.")
-    default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'.")
+    default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'. The value must be a string, that is if you want to set a default value for a boolean parameter, be careful to use \'true\' or \'false\' as the value. ")
     
     class Config:
         title = 'CLAMS App Runtime Parameter'
@@ -112,13 +112,16 @@ class AppMetadata(pydantic.BaseModel):
     description: str = pydantic.Field(..., description="A longer description of the app (what it does, how to use, etc.).")
     app_version: str = pydantic.Field(..., description="Version of the app.")
     mmif_version: str = pydantic.Field(default_factory=get_mmif_specver, description="Version of MMIF specification the app. When the metadata is generated using clams-python SDK, this field is automatically filled in.")
-    wrappee_version: str = pydantic.Field(None, description="(optional) Version of wrapped software, if the app is working as a wrapper. ")
-    license: str = pydantic.Field(..., description="License information of the app.")
-    wrappee_license: str = pydantic.Field(None, description="(optional) License information of wrapped software, if the app is working as a wrapper. ")
+    analyzer_version: str = pydantic.Field(None, description="(optional) Version of an analyzer software, if the app is working as a wrapper for one. ")
+    app_license: str = pydantic.Field(..., description="License information of the app.")
+    analyzer_license: str = pydantic.Field(None, description="(optional) License information of an analyzer software, if the app is working as a wrapper for one. ")
     identifier: pydantic.AnyHttpUrl = pydantic.Field(..., description="IRI-formatted unique identifier for the app.")
+    url: pydantic.AnyHttpUrl = pydantic.Field(..., description="A public repository where the app's source code (git-based) and/or installation specification is available. ")
     input: List[Input] = pydantic.Field([], description="List of input types. Must have at least one.")
     output: List[Output] = pydantic.Field([], description="List of output types. Must have at least one.")
     parameters: List[RuntimeParameter] = pydantic.Field([], description="List of runtime parameters. Can be empty.")
+    dependencies: List[str] = pydantic.Field(None, description="(optional) List of software dependencies of the app. This list is completely optional, as in most cases such dependencies are specified in a separate file in the codebase of the app (for example, ``requirements.txt`` file for a Python app, or ``pom.xml`` file for a maven-based Java app). List elements must be strings, not any kind of structured data. Thus, it is recommended to include a package name and its version in the string value at the minimum (e.g., ``clams-python==1.2.3``).")
+    more: Dict[str, str] = pydantic.Field(None, description="(optional) A string-to-string map that can be used to store any additional metadata of the app.")
 
     class Config:
         title = "CLAMS AppMetadata"
@@ -168,7 +171,7 @@ class AppMetadata(pydantic.BaseModel):
             raise ValueError(f"Cannot add a duplicate output '{new}'.")
 
     def add_parameter(self, name: str, description: str, type: param_value_types,
-                      choices: List[primitives] = None, default: primitives = None):
+                      choices: Optional[List[primitives]] = None, default: primitives = None):
         """
         Helper method to add an element to the ``parameters`` list. 
         """
@@ -177,6 +180,23 @@ class AppMetadata(pydantic.BaseModel):
             self.parameters.append(new_param)
         else:
             raise ValueError(f"parameter '{new_param.name}' already exist.")
+        
+    def add_more(self, key:str, value:str):
+        """
+        Helper method to add a k-v pair to the ``more`` map. 
+        :param key: key of an additional metadata
+        :param value: value of the additional metadata
+        """
+        if len(key) > 0 and len(value) > 0: 
+            if self.more is None:
+                self.more = {}
+            if key not in self.more:
+                self.more[key] = value
+            else:
+                raise ValueError(f"'{key}' is already being used in the appmetadata!")
+        else:
+            raise ValueError("Key and value should not be empty!")
+        
 
 if __name__ == '__main__':
     print(AppMetadata.schema_json(indent=2))
