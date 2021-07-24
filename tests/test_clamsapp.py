@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import tempfile
 import unittest
 from typing import Union
@@ -10,6 +11,7 @@ from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver
 
 import clams.app
 import clams.restify
+from clams.restify import ParameterCaster
 from clams.appmetadata import AppMetadata
 
 
@@ -266,7 +268,7 @@ class TestRestifier(unittest.TestCase):
         # TODO (krim @ 12/17/20): __eq__() is not working as expected, possibly realted to https://github.com/clamsproject/mmif/issues/131
         # self.assertEqual(pretty_to_mmif, unpretty_to_mmif)
 
-        # this should raise TypeError because the ExampleClamsApp._annotate() doesn't take kwargs at all
+        # this should raise KeyError because the ExampleClamsApp._annotate() doesn't take kwargs at all
         query_string = {'pretty': True, 'random': 'random'}
         res = self.app.put('/', data=mmif, headers=headers, query_string=query_string)
         self.assertEqual(res.status_code, 500, res.get_data(as_text=True))
@@ -285,6 +287,31 @@ class TestRestifier(unittest.TestCase):
         self.assertEqual(len(res_mmif_json['views'][0]['annotations']), 0)
         self.assertFalse('contains' in res_mmif_json['views'][0]['metadata'])
         self.assertTrue('error' in res_mmif_json['views'][0]['metadata'])
+
+
+class TestParameterCaster(unittest.TestCase):
+    
+    def setUp(self) -> None:
+        self.param_spec = {'str_param': str, 'number_param': float, 'int_param': int, 'bool_param': bool}
+        
+    def test_cast(self):
+        caster = ParameterCaster(self.param_spec)
+        params = {
+            'str_param': "a_string", 
+            'number_param': "1.11", 
+            'int_param': str(sys.maxsize), 
+            'bool_param': 'true',
+        }
+        self.assertTrue(all(map(lambda x: isinstance(x, str), params.values())))
+        casted = caster.cast(params)
+        self.assertEqual(casted['str_param'], params['str_param'])
+        self.assertEqual(casted['number_param'], 1.11)
+        self.assertTrue(isinstance(casted['int_param'], int))
+        self.assertTrue(casted['bool_param'])
+        params['unknown'] = 'dunno'
+        with self.assertRaises(KeyError):
+            caster.cast(params)
+        
 
 if __name__ == '__main__':
     unittest.main()
