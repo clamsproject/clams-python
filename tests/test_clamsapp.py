@@ -67,6 +67,7 @@ class ExampleClamsApp(clams.app.ClamsApp):
             app_license="MIT",
             identifier=f"https://apps.clams.ai/example/{exampleappversion}",
             output=[{'@type': AnnotationTypes.TimeFrame}],
+            dependencies=['clams-python==develop-ver', 'mmif-pyhon==0.0.999'],
             url="https://fakegithub.com/some/repository"
         )
         metadata.add_input(DocumentTypes.AudioDocument)
@@ -143,6 +144,13 @@ class TestClamsApp(unittest.TestCase):
             type='integer', choices=[1, 2, 3, 4, 5], default=3)
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['parameters']), 2)
+        # now more additional metadata
+        self.app.metadata.add_more('one', 'more')
+        self.assertEqual(self.app.metadata.more['one'], 'more')
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_more('one', 'thing')
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_more('one', '')
         
         # finally for an eye exam
         print(self.app.appmetadata(pretty=True))
