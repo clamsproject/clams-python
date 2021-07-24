@@ -67,7 +67,7 @@ class ExampleClamsApp(clams.app.ClamsApp):
             app_license="MIT",
             identifier=f"https://apps.clams.ai/example/{exampleappversion}",
             output=[{'@type': AnnotationTypes.TimeFrame}],
-            dependencies=['clams-python==develop-ver', 'mmif-pyhon==0.0.999']
+            dependencies=['clams-python==develop-ver', 'mmif-pyhon==0.0.999'],
             url="https://fakegithub.com/some/repository"
         )
         metadata.add_input(DocumentTypes.AudioDocument)
