@@ -157,9 +157,11 @@ class ParameterCaster(object):
     def cast(self, args):
         """
         Given parameter specification, tries to cast values of args to specified Python data types.
+        If the parameter key is not specified in the app metadata, a ``TypeError` is raised. 
 
         :param args: k-v pairs
         :return: A new dictionary of type-casted args
+        :raises: KeyError: when parameter is unknown
         """
         casted = {}
         for k, v in args.items():
@@ -174,6 +176,8 @@ class ParameterCaster(object):
                     casted[k] = self.str_param(v)
                 else:
                     casted[k] = v
+            else:
+                raise KeyError(f"An unknown configuration is passed as a parameter: {k} = {v}")
         return casted
 
     @staticmethod
