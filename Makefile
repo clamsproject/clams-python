@@ -26,8 +26,6 @@ all: version test build
 develop: devversion package test
 	python3 setup.py develop --uninstall
 	python3 setup.py develop
-	twine upload --repository-url http://morbius.cs-i.brandeis.edu:8081/repository/pypi-develop/ \
-		-u clamsuploader -p $$CLAMSUPLOADERPASSWORD dist/$(sdistname)-`cat VERSION`.tar.gz
 
 publish: distclean version package test 
 	test `git branch --show-current` = "master"
@@ -81,7 +79,7 @@ increase_dev = $(call macro,$(1)).$(call micro,$(1)).$(call patch,$(1)).dev$$(($
 devversion: VERSION.dev VERSION; cat VERSION
 version: VERSION; cat VERSION
 
-VERSION.dev: devver := $(shell curl -s -X GET 'http://morbius.cs-i.brandeis.edu:8081/service/rest/v1/search?name=$(sdistname)' | jq '. | .items[].version' -r | sort -V | tail -n 1)
+VERSION.dev: devver := $(shell curl --silent "https://api.github.com/repos/clamsproject/clams-python/git/refs/tags" | grep '"ref":' | sed -E 's/.+refs\/tags\/([0-9.]+)",/\1/g' | sort | tail -n 1)
 VERSION.dev:
 	if [[ $(devver) == *.dev* ]]; then echo $(call increase_dev,$(devver)) ; else echo $(call add_dev,$(call increase_patch, $(devver))); fi \
 	> VERSION.dev
