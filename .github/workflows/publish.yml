@@ -22,6 +22,7 @@ jobs:
       run: |
         echo ${{ env.VERSION }} > VERSION
         make package
+        make test
     - name: build HTML documentation 
       run: |
         make docs
