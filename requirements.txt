@@ -1,5 +1,6 @@
-Flask==1.1.0
+Flask==1.1.4
 Flask-RESTful==0.3.8
+markupsafe==2.0.1
 gunicorn==20.1.0
 mmif-python==0.4.6
 lapps==0.0.2
