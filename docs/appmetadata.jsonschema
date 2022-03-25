@@ -94,7 +94,7 @@
   ],
   "additionalProperties": false,
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$comment": "clams-python SDK 0.5.0 was used to generate this schema",
+  "$comment": "clams-python SDK 0.5.1 was used to generate this schema",
   "definitions": {
     "Input": {
       "title": "CLAMS Input Specification",
