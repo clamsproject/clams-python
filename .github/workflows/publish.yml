@@ -22,6 +22,7 @@ jobs:
       run: |
         echo ${{ env.VERSION }} > VERSION
         make package
+        make test
     - name: build HTML documentation 
       run: |
         make docs
@@ -42,6 +43,3 @@ jobs:
     - name: upload to the official pypi
       run: |
         twine upload -u __token__ -p ${{ secrets.PYPITOKEN }} dist/clams-python-${{ env.VERSION }}.tar.gz 
-    - name: upload to the brandeis pypi
-      run: |
-        twine upload --repository-url http://morbius.cs-i.brandeis.edu:8081/repository/pypi-develop/ -u clamsuploader -p ${{ secrets.CLAMSUPLOADERPASSWORD }} dist/clams-python-${{ env.VERSION }}.tar.gz
