@@ -41,6 +41,7 @@ def get_mmif_specver():
 class _BaseModel(pydantic.BaseModel):
     
     class Config:
+        @staticmethod
         def schema_extra(schema, model) -> None:
             for prop in schema.get('properties', {}).values():
                 prop.pop('title', None)
