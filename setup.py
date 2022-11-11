@@ -78,7 +78,7 @@ setuptools.setup(
         }
     },
     install_requires=requires,
-    python_requires='>=3.6',
+    python_requires='>=3.8',
     packages=setuptools.find_packages(),
     entry_points={
         'console_scripts': [
