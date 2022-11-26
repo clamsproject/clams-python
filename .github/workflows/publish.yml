@@ -7,14 +7,14 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OS: linux
-      PYTHON: '3.6'
+      PYTHON: '3.8'
     steps:
     - name: checkout the repo 
       uses: actions/checkout@v2
     - name: setup python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: 3.8
     - name: set VERSION value
       run: |
         echo "VERSION=$(echo "${{ github.ref }}" | cut -d/ -f3)" >> $GITHUB_ENV

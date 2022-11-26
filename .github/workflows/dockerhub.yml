@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OS: linux
-      PYTHON: '3.6'
+      PYTHON: '3.8'
     needs: ['set-version', 'check-deployment']
     steps:
     - name: checkout the repo 
@@ -45,7 +45,7 @@ jobs:
     - name: setup python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: 3.8
     - name: set up QEMU
       uses: docker/setup-qemu-action@v1
     - name: set up docker buildx
