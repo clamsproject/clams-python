@@ -18,14 +18,26 @@ class ClamsApp(ABC):
     this class and then can be used with classes in :mod:`.restify` to work as
     web applications.
     """
+    # A set of "universal runtime parameters that can be used for both GET and POST anytime".
+    # The behavioral changes based on these parameters must be implemented on the SDK level. 
+    universal_parameters = [
+        {
+            'name': 'pretty', 'type': 'boolean', 'choices': None, 'default': False,
+            'description': 'The JSON body of the HTTP response will be re-formatted with 2-space indentation',
+        },
+    ]
 
     def __init__(self):
         self.metadata: AppMetadata = self._appmetadata()
         super().__init__()
         # data type specification for common parameters
-        self.metadata_param_spec = {'pretty': bool}
-        self.annotate_param_spec = {'pretty': bool}
         python_type = {"boolean": bool, "number": float, "integer": int, "string": str}
+
+        self.metadata_param_spec = {}
+        self.annotate_param_spec = {}
+        for param in ClamsApp.universal_parameters:
+            self.metadata.add_parameter(**param)
+            self.metadata_param_spec[param['name']] = python_type[param['type']]
         for param_spec in self.metadata.parameters:
             self.annotate_param_spec[param_spec.name] = python_type[param_spec.type]
 

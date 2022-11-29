@@ -145,7 +145,7 @@ class TestClamsApp(unittest.TestCase):
             name='multiple_choice', description='meaningless multiple choice option',
             type='integer', choices=[1, 2, 3, 4, 5], default=3)
         metadata = json.loads(self.app.appmetadata())
-        self.assertEqual(len(metadata['parameters']), 2)
+        self.assertEqual(len(metadata['parameters']), 2 + len(self.app.universal_parameters))
         # now more additional metadata
         self.app.metadata.add_more('one', 'more')
         self.assertEqual(self.app.metadata.more['one'], 'more')
