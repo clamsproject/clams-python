@@ -308,9 +308,15 @@ class TestParameterCaster(unittest.TestCase):
         self.assertEqual(casted['number_param'], 1.11)
         self.assertTrue(isinstance(casted['int_param'], int))
         self.assertTrue(casted['bool_param'])
-        params['unknown'] = 'dunno'
-        with self.assertRaises(KeyError):
+        unknown_param_key = 'unknown'
+        unknown_param_val = 'dunno'
+        params[unknown_param_key] = unknown_param_val
+        with pytest.warns() as w:
             caster.cast(params)
+        self.assertTrue(len(w), 1)
+        self.assertTrue(unknown_param_key in str(w[0].message))
+        self.assertTrue(unknown_param_val in str(w[0].message))
+        self.assertTrue('undefined' in str(w[0].message))
         
 
 if __name__ == '__main__':
