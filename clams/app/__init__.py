@@ -79,8 +79,7 @@ class ClamsApp(ABC):
         :return: Serialized JSON string of the output of the app
         """
         # TODO (krim @ 12/17/20): add documentation on what are "common" operations
-        # should pop all "common" parameters before passing the args to _annotate()
-        pretty = runtime_params.pop('pretty') if 'pretty' in runtime_params else False
+        pretty = runtime_params.get('pretty', False)
         if not isinstance(mmif, Mmif):
             mmif = Mmif(mmif)
         input_specver = mmif.metadata.mmif.rsplit('/')[-1]  # pytype: disable=attribute-error
