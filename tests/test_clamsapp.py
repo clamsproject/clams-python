@@ -77,15 +77,15 @@ class ExampleClamsApp(clams.app.ClamsApp):
                                type='boolean', default='false')
         return metadata
     
-    def _annotate(self, mmif, raise_error=False):
+    def _annotate(self, mmif, **kwargs):
         if type(mmif) is not Mmif:
             mmif = Mmif(mmif, validate=False)
         new_view = mmif.new_view()
-        self.sign_view(new_view, {'raise_error': raise_error})
+        self.sign_view(new_view, kwargs)
         new_view.new_contain(AnnotationTypes.TimeFrame, **{"producer": "dummy-producer"})
         ann = new_view.new_annotation(AnnotationTypes.TimeFrame, 'a1')
         ann.add_property("f1", "hello_world")
-        if raise_error:
+        if 'raise_error' in kwargs and kwargs['raise_error']:
             raise ValueError
         return mmif
 
@@ -209,7 +209,7 @@ class TestClamsApp(unittest.TestCase):
             self.app.get_configuration(param2='okay')
             
     def test_error_handling(self):
-        params = {'raise_error': True}
+        params = {'raise_error': True, 'pretty': True}
         in_mmif = Mmif(self.in_mmif)
         try: 
             out_mmif = self.app.annotate(in_mmif, **params)
@@ -268,10 +268,17 @@ class TestRestifier(unittest.TestCase):
         # TODO (krim @ 12/17/20): __eq__() is not working as expected, possibly realted to https://github.com/clamsproject/mmif/issues/131
         # self.assertEqual(pretty_to_mmif, unpretty_to_mmif)
 
-        # this should raise KeyError because the ExampleClamsApp._annotate() doesn't take kwargs at all
-        query_string = {'pretty': True, 'random': 'random'}
-        res = self.app.put('/', data=mmif, headers=headers, query_string=query_string)
-        self.assertEqual(res.status_code, 500, res.get_data(as_text=True))
+        # this should give three warnings because the ExampleClamsApp._annotate() 
+        # doesn't take 'randomN' parameters
+        query_string = {'pretty': True, 
+                        'random1': 'value1',
+                        'random2': 'value2',
+                        'random3': 'value3',
+                        }
+        with pytest.warns() as w:
+            res = self.app.put('/', data=mmif, headers=headers, query_string=query_string)
+        self.assertEqual(len(w), 3)
+        self.assertEqual(res.status_code, 200, res.get_data(as_text=True))
 
     def test_can_output_error(self):
         mmif = ExampleInputMMIF.get_mmif()
