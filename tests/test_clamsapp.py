@@ -295,6 +295,12 @@ class TestRestifier(unittest.TestCase):
         self.assertFalse('contains' in res_mmif_json['views'][0]['metadata'])
         self.assertTrue('error' in res_mmif_json['views'][0]['metadata'])
 
+    def test_error_on_ill_mmif(self):
+        mmif_str = '{"top string": "this is not a mmif"}'
+        res = self.app.put('/', data=mmif_str)
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.mimetype, 'text/plain')
+
 
 class TestParameterCaster(unittest.TestCase):
     

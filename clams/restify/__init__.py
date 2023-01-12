@@ -1,5 +1,6 @@
 from typing import Dict
 
+import jsonschema
 from flask import Flask, request, Response
 from flask_restful import Resource, Api
 
@@ -134,12 +135,16 @@ class ClamsHTTPApi(Resource):
 
         :return: Returns MMIF output from a ClamsApp in a HTTP response.
         """
-        in_mmif = Mmif(request.get_data())
-        params = self.annotate_param_caster.cast(request.args)
+        raw_data = request.get_data()
+        raw_params = request.args
         try:
-            return self.json_to_response(self.cla.annotate(in_mmif, **params))
+            mmif = Mmif(raw_data)
+        except jsonschema.exceptions.ValidationError as e:
+            return Response(response="Invalid input data. See below for validation error.\n\n" + str(e), status=500, mimetype='text/plain')
+        try:
+            return self.json_to_response(self.cla.annotate(raw_data, **self.annotate_param_caster.cast(raw_params)))
         except Exception as e:
-            return self.json_to_response(self.cla.record_error(in_mmif, params).serialize(pretty=True), status=500)
+            return self.json_to_response(self.cla.record_error(raw_data, self.annotate_param_caster.cast(raw_params)).serialize(pretty=True), status=500)
 
     put = post
 
