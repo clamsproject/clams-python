@@ -2,8 +2,7 @@ pytype
 pytest
 pytest-cov
 twine
-# 3.3.0 has a bug that makes m2r2 not running
-sphinx<3.3.0
+sphinx
 sphinx-rtd-theme
 sphinx-jsonschema
 autodoc
