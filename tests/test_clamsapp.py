@@ -21,7 +21,7 @@ class ExampleInputMMIF(object):
 
     @staticmethod
     def get_rawmmif() -> Mmif:
-        mmif = Mmif(validate=False, frozen=False)
+        mmif = Mmif(validate=False)
 
         vdoc = Document({'@type': DocumentTypes.VideoDocument,
                          'properties':
