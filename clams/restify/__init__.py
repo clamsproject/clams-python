@@ -3,10 +3,9 @@ from typing import Dict
 import jsonschema
 from flask import Flask, request, Response
 from flask_restful import Resource, Api
+from mmif import Mmif
 
 from clams.app import ClamsApp
-
-from mmif import Mmif
 
 
 class Restifier(object):
@@ -162,6 +161,10 @@ class ParameterCaster(object):
     def cast(self, args):
         """
         Given parameter specification, tries to cast values of args to specified Python data types.
+        Note that this caster does not handle "unexpected" parameters came as an input. 
+        Handling (raising an exception or issuing a warning upon receiving) an unexpected runtime parameter 
+        must be done within the app itself.
+        Thus, when a key is not found in the parameter specifications, it should just pass it as a vanilla string.
 
         :param args: k-v pairs
         :return: A new dictionary of type-casted args
@@ -177,11 +180,8 @@ class ParameterCaster(object):
                     casted[k] = self.int_param(v)
                 elif self.param_spec[k] == str:
                     casted[k] = self.str_param(v)
-                else:
-                    casted[k] = v
             else:
-                import warnings
-                warnings.warn(f'An undefined parameter {k} (value: {v}) is passed')
+                casted[k] = v
                 
         return casted
 

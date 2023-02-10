@@ -3,6 +3,7 @@ import os
 import sys
 import tempfile
 import unittest
+import warnings
 from typing import Union
 
 import pytest
@@ -266,17 +267,26 @@ class TestRestifier(unittest.TestCase):
         # TODO (krim @ 12/17/20): __eq__() is not working as expected, possibly realted to https://github.com/clamsproject/mmif/issues/131
         # self.assertEqual(pretty_to_mmif, unpretty_to_mmif)
 
-        # this should give three warnings because the ExampleClamsApp._annotate() 
-        # doesn't take 'randomN' parameters
-        query_string = {'pretty': True, 
+    def test_can_output_warnings(self):
+        mmif = ExampleInputMMIF.get_mmif()
+        headers = {"Content-Type": "Application/json"}
+
+        # the ExampleClamsApp._annotate() doesn't take 'randomN' parameters
+        query_string = {'pretty': True,
                         'random1': 'value1',
                         'random2': 'value2',
                         'random3': 'value3',
                         }
-        with pytest.warns() as w:
-            res = self.app.put('/', data=mmif, headers=headers, query_string=query_string)
-        self.assertEqual(len(w), 3)
-        self.assertEqual(res.status_code, 200, res.get_data(as_text=True))
+        res = self.app.put('/', data=mmif, headers=headers, query_string=query_string)
+        # BUT it should still return 200
+        self.assertEqual(res.status_code, 200)
+        # with three warnings (r1, r2, r3)
+        req_mmif = Mmif(mmif)
+        res_mmif = Mmif(res.get_data(as_text=True))
+        self.assertEqual(len(req_mmif.views), len(res_mmif.views) - 2)
+        ## warning should be placed in the end of all other views that the app generates 
+        self.assertTrue('warnings' in list(res_mmif.views)[-1].metadata)
+        self.assertTrue(list(res_mmif.views)[-1].metadata.warnings)
 
     def test_can_output_error(self):
         mmif = ExampleInputMMIF.get_mmif()
@@ -322,12 +332,10 @@ class TestParameterCaster(unittest.TestCase):
         unknown_param_key = 'unknown'
         unknown_param_val = 'dunno'
         params[unknown_param_key] = unknown_param_val
-        with pytest.warns() as w:
+        # must not throw any error or warning upon receiving unknown parameters
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             caster.cast(params)
-        self.assertTrue(len(w), 1)
-        self.assertTrue(unknown_param_key in str(w[0].message))
-        self.assertTrue(unknown_param_val in str(w[0].message))
-        self.assertTrue('undefined' in str(w[0].message))
         
 
 if __name__ == '__main__':
