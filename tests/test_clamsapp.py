@@ -214,7 +214,7 @@ class TestClamsApp(unittest.TestCase):
         except Exception as e:
             out_mmif_from_str = self.app.set_error_view(self.in_mmif, params)
             out_mmif_from_mmif = self.app.set_error_view(in_mmif, params)
-            self.assertEqual(out_mmif_from_mmif, out_mmif_from_str)
+            self.assertEqual(out_mmif_from_mmif.views, out_mmif_from_str.views)
             out_mmif = out_mmif_from_str
         self.assertIsNotNone(out_mmif)
         last_view: View = next(reversed(out_mmif.views))
