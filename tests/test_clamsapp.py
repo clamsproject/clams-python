@@ -5,15 +5,13 @@ import tempfile
 import unittest
 from typing import Union
 
-import jsonschema
 import pytest
 from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver__
 
 import clams.app
 import clams.restify
-from clams.restify import ParameterCaster
 from clams.appmetadata import AppMetadata
-
+from clams.restify import ParameterCaster
 
 
 class ExampleInputMMIF(object):
@@ -21,7 +19,7 @@ class ExampleInputMMIF(object):
 
     @staticmethod
     def get_rawmmif() -> Mmif:
-        mmif = Mmif(validate=False, frozen=False)
+        mmif = Mmif(validate=False)
 
         vdoc = Document({'@type': DocumentTypes.VideoDocument,
                          'properties':
@@ -216,7 +214,7 @@ class TestClamsApp(unittest.TestCase):
         except Exception as e:
             out_mmif_from_str = self.app.set_error_view(self.in_mmif, params)
             out_mmif_from_mmif = self.app.set_error_view(in_mmif, params)
-            self.assertEqual(out_mmif_from_mmif, out_mmif_from_str)
+            self.assertEqual(out_mmif_from_mmif.views, out_mmif_from_str.views)
             out_mmif = out_mmif_from_str
         self.assertIsNotNone(out_mmif)
         last_view: View = next(reversed(out_mmif.views))

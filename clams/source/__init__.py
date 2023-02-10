@@ -85,7 +85,7 @@ class PipelineSource:
         Call this method if you want to reset the PipelineSource
         without producing a MMIF object with produce().
         """
-        self.mmif = Mmif(self.mmif_start, frozen=False)
+        self.mmif = Mmif(self.mmif_start)
 
     def produce(self) -> Mmif:
         """
@@ -97,7 +97,6 @@ class PipelineSource:
         :return: the current MMIF object that has been prepared
         """
         source = self.mmif
-        source.freeze_documents()
         self.prime()
         return source
 
