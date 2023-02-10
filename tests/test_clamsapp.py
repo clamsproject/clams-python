@@ -3,6 +3,7 @@ import os
 import sys
 import tempfile
 import unittest
+import warnings
 from typing import Union
 
 import pytest
@@ -75,15 +76,15 @@ class ExampleClamsApp(clams.app.ClamsApp):
                                type='boolean', default='false')
         return metadata
     
-    def _annotate(self, mmif, raise_error=False):
+    def _annotate(self, mmif, **kwargs):
         if type(mmif) is not Mmif:
             mmif = Mmif(mmif, validate=False)
         new_view = mmif.new_view()
-        self.sign_view(new_view, {'raise_error': raise_error})
+        self.sign_view(new_view, kwargs)
         new_view.new_contain(AnnotationTypes.TimeFrame, **{"producer": "dummy-producer"})
         ann = new_view.new_annotation(AnnotationTypes.TimeFrame, 'a1')
         ann.add_property("f1", "hello_world")
-        if raise_error:
+        if 'raise_error' in kwargs and kwargs['raise_error']:
             raise ValueError
         return mmif
 
@@ -207,7 +208,7 @@ class TestClamsApp(unittest.TestCase):
             self.app.get_configuration(param2='okay')
             
     def test_error_handling(self):
-        params = {'raise_error': True}
+        params = {'raise_error': True, 'pretty': True}
         in_mmif = Mmif(self.in_mmif)
         try: 
             out_mmif = self.app.annotate(in_mmif, **params)
@@ -266,10 +267,26 @@ class TestRestifier(unittest.TestCase):
         # TODO (krim @ 12/17/20): __eq__() is not working as expected, possibly realted to https://github.com/clamsproject/mmif/issues/131
         # self.assertEqual(pretty_to_mmif, unpretty_to_mmif)
 
-        # this should raise KeyError because the ExampleClamsApp._annotate() doesn't take kwargs at all
-        query_string = {'pretty': True, 'random': 'random'}
+    def test_can_output_warnings(self):
+        mmif = ExampleInputMMIF.get_mmif()
+        headers = {"Content-Type": "Application/json"}
+
+        # the ExampleClamsApp._annotate() doesn't take 'randomN' parameters
+        query_string = {'pretty': True,
+                        'random1': 'value1',
+                        'random2': 'value2',
+                        'random3': 'value3',
+                        }
         res = self.app.put('/', data=mmif, headers=headers, query_string=query_string)
-        self.assertEqual(res.status_code, 500, res.get_data(as_text=True))
+        # BUT it should still return 200
+        self.assertEqual(res.status_code, 200)
+        # with three warnings (r1, r2, r3)
+        req_mmif = Mmif(mmif)
+        res_mmif = Mmif(res.get_data(as_text=True))
+        self.assertEqual(len(req_mmif.views), len(res_mmif.views) - 2)
+        ## warning should be placed in the end of all other views that the app generates 
+        self.assertTrue('warnings' in list(res_mmif.views)[-1].metadata)
+        self.assertTrue(list(res_mmif.views)[-1].metadata.warnings)
 
     def test_can_output_error(self):
         mmif = ExampleInputMMIF.get_mmif()
@@ -285,6 +302,12 @@ class TestRestifier(unittest.TestCase):
         self.assertEqual(len(res_mmif_json['views'][0]['annotations']), 0)
         self.assertFalse('contains' in res_mmif_json['views'][0]['metadata'])
         self.assertTrue('error' in res_mmif_json['views'][0]['metadata'])
+
+    def test_error_on_ill_mmif(self):
+        mmif_str = '{"top string": "this is not a mmif"}'
+        res = self.app.put('/', data=mmif_str)
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.mimetype, 'text/plain')
 
 
 class TestParameterCaster(unittest.TestCase):
@@ -306,8 +329,12 @@ class TestParameterCaster(unittest.TestCase):
         self.assertEqual(casted['number_param'], 1.11)
         self.assertTrue(isinstance(casted['int_param'], int))
         self.assertTrue(casted['bool_param'])
-        params['unknown'] = 'dunno'
-        with self.assertRaises(KeyError):
+        unknown_param_key = 'unknown'
+        unknown_param_val = 'dunno'
+        params[unknown_param_key] = unknown_param_val
+        # must not throw any error or warning upon receiving unknown parameters
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             caster.cast(params)
         
 

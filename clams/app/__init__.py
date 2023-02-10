@@ -1,5 +1,6 @@
 import os
 import sys
+import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from urllib import parse as urlparser
@@ -79,8 +80,7 @@ class ClamsApp(ABC):
         :return: Serialized JSON string of the output of the app
         """
         # TODO (krim @ 12/17/20): add documentation on what are "common" operations
-        # should pop all "common" parameters before passing the args to _annotate()
-        pretty = runtime_params.pop('pretty') if 'pretty' in runtime_params else False
+        pretty = runtime_params.get('pretty', False)
         if not isinstance(mmif, Mmif):
             mmif = Mmif(mmif)
         input_specver = mmif.metadata.mmif.rsplit('/')[-1]  # pytype: disable=attribute-error
@@ -89,7 +89,18 @@ class ClamsApp(ABC):
                 raise ValueError(f"Input MMIF file (versioned: {input_specver} is not compatible with the app "
                                  f"targeting at {__specver__}. Make sure apps in the pipeline is all compatible. See "
                                  f"https://mmif.clams.ai/versioning/ for information about MMIF compatibility. ") 
-        annotated = self._annotate(mmif, **runtime_params)
+        issued_warnings = []
+        for key in runtime_params:
+            if key not in self.annotate_param_spec:
+                issued_warnings.append(UserWarning(f'An undefined parameter {key} (value: {runtime_params[key]}) is passed'))
+        with warnings.catch_warnings(record=True) as ws:
+            annotated = self._annotate(mmif, **runtime_params)
+            if ws:
+                issued_warnings.extend(ws)
+        if issued_warnings:
+            warnings_view = annotated.new_view()
+            self.sign_view(warnings_view)
+            warnings_view.metadata.warnings = issued_warnings
         return annotated.serialize(pretty=pretty)
 
     @abstractmethod
@@ -141,7 +152,7 @@ class ClamsApp(ABC):
         :return: An output MMIF with a new view with the error encoded in the view metadata
         """
         import traceback
-        if isinstance(mmif, str) or isinstance(mmif, dict):
+        if isinstance(mmif, bytes) or isinstance(mmif, str) or isinstance(mmif, dict):
             mmif = Mmif(mmif)
         error_view: Optional[View] = None
         for view in reversed(mmif.views):
