@@ -126,8 +126,6 @@ class ClamsApp(ABC):
         :param view: a view to sign
         :param runtime_conf: runtime configuration of the app as k-v pairs
         """
-        if view.is_frozen():
-            raise ValueError("can't modify an old view")
         view.metadata.app = self.metadata.identifier
         if runtime_conf is not None:
             view.metadata.add_parameters(**{k: str(v) for k, v in runtime_conf.items()})
