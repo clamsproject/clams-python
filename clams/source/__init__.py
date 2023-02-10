@@ -97,7 +97,6 @@ class PipelineSource:
         :return: the current MMIF object that has been prepared
         """
         source = self.mmif
-        source.freeze_documents()
         self.prime()
         return source
 

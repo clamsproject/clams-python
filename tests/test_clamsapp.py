@@ -5,15 +5,13 @@ import tempfile
 import unittest
 from typing import Union
 
-import jsonschema
 import pytest
 from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver__
 
 import clams.app
 import clams.restify
-from clams.restify import ParameterCaster
 from clams.appmetadata import AppMetadata
-
+from clams.restify import ParameterCaster
 
 
 class ExampleInputMMIF(object):
