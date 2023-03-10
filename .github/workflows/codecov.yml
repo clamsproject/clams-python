@@ -10,28 +10,5 @@ on:
       - develop
 jobs:
   test-and-codecov:
-    runs-on: ubuntu-latest
-    env:
-      OS: linux
-      PYTHON: '3.8'
-    steps:
-    - name: checkout the repo 
-      uses: actions/checkout@v2
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: Run test and generate coverage report
-      working-directory: .
-      run: |
-        echo "codecov.dev" > VERSION
-        make test
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        env_vars: OS,PYTHON
-        name: coverage
-        fail_ci_if_error: true
-        path_to_write_report: ./codecov_report.gz
+    - name: test and check coverage
+      uses: clamsproject/.github/.github/workflows/sdk-codecov.yml@main

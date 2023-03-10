@@ -4,42 +4,5 @@ on:
     tags: '[0-9]+.[0-9]+.[0-9]+'
 jobs:
   build-and-upload:
-    runs-on: ubuntu-latest
-    env:
-      OS: linux
-      PYTHON: '3.8'
-    steps:
-    - name: checkout the repo 
-      uses: actions/checkout@v2
-    - name: setup python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: set VERSION value
-      run: |
-        echo "VERSION=$(echo "${{ github.ref }}" | cut -d/ -f3)" >> $GITHUB_ENV
-    - name: build a sdist
-      run: |
-        echo ${{ env.VERSION }} > VERSION
-        make package
-        make test
-    - name: build HTML documentation 
-      run: |
-        make docs
-    - name: configure clamsbot git user
-      run: |
-        git config --local user.email "admin@clams.ai"
-        git config --local user.name "clams-bot"
-    - name: commit the built documentation 
-      run: |
-        git add docs documentation
-        git add -u docs
-        git commit -m 'adding HTML documentation for publication'
-    - name: push the documentation commit
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GH_CLAMSBOT_TOKEN }}
-        branch: master
-    - name: upload to the official pypi
-      run: |
-        twine upload -u __token__ -p ${{ secrets.PYPITOKEN }} dist/clams-python-${{ env.VERSION }}.tar.gz 
+    - name: documentation and pypi
+      uses: clamsproject/.github/.github/workflows/sdk-publish.yml@main
