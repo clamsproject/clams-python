@@ -1,36 +1,77 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorial: writing a CLAMS app &mdash; clams-python  documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  
+  <title>Tutorial: writing a CLAMS app &mdash; clams-python  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-    <script src="_static/js/theme.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="clams package" href="modules.html" />
     <link rel="prev" title="CLAMS App Directory" href="appdirectory.html" /> 
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
+
+   
   <div class="wy-grid-for-nav">
+    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
+          
+
+          
             <a href="index.html" class="icon icon-home"> clams-python
+          
+
+          
           </a>
+
+          
+            
+            
               <div class="version">
-                0.5.1
+                0.5.2
               </div>
+            
+          
+
+          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -38,8 +79,19 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p><span class="caption-text">Contents</span></p>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="target-versions.html">Target MMIF Versions</a></li>
@@ -67,40 +119,80 @@
 </ul>
 </li>
 </ul>
-<p><span class="caption-text">API documentation:</span></p>
+<p class="caption" role="heading"><span class="caption-text">API documentation:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">clams package</a></li>
 </ul>
 
+            
+          
         </div>
+        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">clams-python</a>
+        
       </nav>
 
+
       <div class="wy-nav-content">
+        
         <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
+    
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
       <li>Tutorial: writing a CLAMS app</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
+        
+          
+        
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
+            
   <section id="tutorial-writing-a-clams-app">
-<span id="tutorial"></span><span id="header-n0"></span><h1>Tutorial: writing a CLAMS app<a class="headerlink" href="#tutorial-writing-a-clams-app" title="Permalink to this headline"></a></h1>
+<span id="tutorial"></span><span id="header-n0"></span><h1>Tutorial: writing a CLAMS app<a class="headerlink" href="#tutorial-writing-a-clams-app" title="Permalink to this heading">¶</a></h1>
 <p>A short demonstration of how to wrap an existing processing tool as a
 CLAMS application</p>
 <section id="the-example-kaldi">
-<span id="header-n3"></span><h2>The Example: Kaldi<a class="headerlink" href="#the-example-kaldi" title="Permalink to this headline"></a></h2>
+<span id="header-n3"></span><h2>The Example: Kaldi<a class="headerlink" href="#the-example-kaldi" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>We wrapped the Kaldi ASR tool</p></li>
 <li><p>More specifically, we wrapped the Kaldi + Pop Up Archive docker image
@@ -115,156 +207,156 @@ clamsproject organization for more examples.</p></li>
 </ul>
 </section>
 <section id="a-sample-kaldi-transcript">
-<span id="header-n13"></span><h2>A sample Kaldi transcript<a class="headerlink" href="#a-sample-kaldi-transcript" title="Permalink to this headline"></a></h2>
+<span id="header-n13"></span><h2>A sample Kaldi transcript<a class="headerlink" href="#a-sample-kaldi-transcript" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-  <span class="s2">&quot;words&quot;</span><span class="o">:</span> <span class="p">[</span>
-    <span class="p">{</span>
-      <span class="s2">&quot;word&quot;</span><span class="o">:</span> <span class="s2">&quot;ah&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;time&quot;</span><span class="o">:</span> <span class="mf">0.07</span><span class="p">,</span>
-      <span class="s2">&quot;duration&quot;</span><span class="o">:</span> <span class="s2">&quot;2.59&quot;</span>
-    <span class="p">},</span>
-    <span class="p">{</span>
-      <span class="s2">&quot;word&quot;</span><span class="o">:</span> <span class="s2">&quot;oh&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;time&quot;</span><span class="o">:</span> <span class="mf">2.66</span><span class="p">,</span>
-      <span class="s2">&quot;duration&quot;</span><span class="o">:</span> <span class="s2">&quot;5.93&quot;</span>
-    <span class="p">},</span>
-    <span class="p">{</span>
-      <span class="s2">&quot;word&quot;</span><span class="o">:</span> <span class="s2">&quot;yeah&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;time&quot;</span><span class="o">:</span> <span class="mf">8.59</span><span class="p">,</span>
-      <span class="s2">&quot;duration&quot;</span><span class="o">:</span> <span class="s2">&quot;0.67&quot;</span>
-    <span class="p">}</span>
-  <span class="p">]</span>
+<span class="w">  </span><span class="s2">&quot;words&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;ah&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;time&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0.07</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;duration&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;2.59&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;oh&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;time&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">2.66</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;duration&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;5.93&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;yeah&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;time&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">8.59</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;duration&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;0.67&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 </section>
 <section id="translated-into-a-mmif-view">
-<span id="header-n15"></span><h2>…translated into a MMIF view<a class="headerlink" href="#translated-into-a-mmif-view" title="Permalink to this headline"></a></h2>
+<span id="header-n15"></span><h2>…translated into a MMIF view<a class="headerlink" href="#translated-into-a-mmif-view" title="Permalink to this heading">¶</a></h2>
 <p>First, the front matter:</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-  <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;v_0&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;metadata&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;app&quot;</span><span class="o">:</span> <span class="s2">&quot;http://mmif.clams.ai/apps/kaldi/0.1.0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;contains&quot;</span><span class="o">:</span> <span class="p">{</span>
-      <span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TextDocument&quot;</span><span class="o">:</span> <span class="p">{},</span>
-      <span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="o">:</span> <span class="p">{},</span>
-      <span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="o">:</span> <span class="p">{</span>
-        <span class="s2">&quot;unit&quot;</span><span class="o">:</span> <span class="s2">&quot;milliseconds&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;document&quot;</span><span class="o">:</span> <span class="s2">&quot;d1&quot;</span>
-      <span class="p">},</span>
-      <span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="o">:</span> <span class="p">{}</span>
-    <span class="p">}</span>
-  <span class="p">},</span>
+<span class="w">  </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;v_0&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;metadata&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;app&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/apps/kaldi/0.1.0&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;contains&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TextDocument&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">      </span><span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">      </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;unit&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;milliseconds&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;document&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;d1&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
 <span class="p">...</span>
 </pre></div>
 </div>
 <p>Then, the first two annotations:</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-  <span class="s2">&quot;@type&quot;</span><span class="o">:</span> <span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TextDocument&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;text&quot;</span><span class="o">:</span> <span class="p">{</span>
-      <span class="s2">&quot;@value&quot;</span><span class="o">:</span> <span class="s2">&quot;ah oh yeah&quot;</span>
-    <span class="p">},</span>
-    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;td1&quot;</span>
-  <span class="p">}</span>
+<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TextDocument&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;text&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="s2">&quot;@value&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;ah oh yeah&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;td1&quot;</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">},</span>
 <span class="p">{</span>
-  <span class="s2">&quot;@type&quot;</span><span class="o">:</span> <span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;source&quot;</span><span class="o">:</span> <span class="s2">&quot;d1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;target&quot;</span><span class="o">:</span> <span class="s2">&quot;td1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;a1&quot;</span>
-  <span class="p">}</span>
+<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;d1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;td1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;a1&quot;</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">},</span>
 </pre></div>
 </div>
 <p>Then, three annotations for each word:</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-  <span class="s2">&quot;@type&quot;</span><span class="o">:</span> <span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;word&quot;</span><span class="o">:</span> <span class="s2">&quot;ah&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;start&quot;</span><span class="o">:</span> <span class="mf">0</span><span class="p">,</span>
-    <span class="s2">&quot;end&quot;</span><span class="o">:</span> <span class="mf">2</span><span class="p">,</span>
-    <span class="s2">&quot;document&quot;</span><span class="o">:</span> <span class="s2">&quot;v_0:td1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;t1&quot;</span>
-  <span class="p">}</span>
+<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;ah&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;document&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;v_0:td1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t1&quot;</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">},</span>
 <span class="p">{</span>
-  <span class="s2">&quot;@type&quot;</span><span class="o">:</span> <span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;frameType&quot;</span><span class="o">:</span> <span class="s2">&quot;speech&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;start&quot;</span><span class="o">:</span> <span class="mf">70</span><span class="p">,</span>
-    <span class="s2">&quot;end&quot;</span><span class="o">:</span> <span class="mf">2660</span><span class="p">,</span>
-    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;tf1&quot;</span>
-  <span class="p">}</span>
+<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;frameType&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;speech&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">70</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">2660</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf1&quot;</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">},</span>
 <span class="p">{</span>
-  <span class="s2">&quot;@type&quot;</span><span class="o">:</span> <span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;source&quot;</span><span class="o">:</span> <span class="s2">&quot;tf1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;target&quot;</span><span class="o">:</span> <span class="s2">&quot;t1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;a2&quot;</span>
-  <span class="p">}</span>
+<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;a2&quot;</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">},</span>
 <span class="p">{</span>
-  <span class="s2">&quot;@type&quot;</span><span class="o">:</span> <span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;word&quot;</span><span class="o">:</span> <span class="s2">&quot;oh&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;start&quot;</span><span class="o">:</span> <span class="mf">3</span><span class="p">,</span>
-    <span class="s2">&quot;end&quot;</span><span class="o">:</span> <span class="mf">5</span><span class="p">,</span>
-    <span class="s2">&quot;document&quot;</span><span class="o">:</span> <span class="s2">&quot;v_0:td1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;t2&quot;</span>
-  <span class="p">}</span>
+<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;oh&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">3</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">5</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;document&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;v_0:td1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t2&quot;</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">},</span>
 <span class="p">{</span>
-  <span class="s2">&quot;@type&quot;</span><span class="o">:</span> <span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;frameType&quot;</span><span class="o">:</span> <span class="s2">&quot;speech&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;start&quot;</span><span class="o">:</span> <span class="mf">2660</span><span class="p">,</span>
-    <span class="s2">&quot;end&quot;</span><span class="o">:</span> <span class="mf">8590</span><span class="p">,</span>
-    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;tf2&quot;</span>
-  <span class="p">}</span>
+<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;frameType&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;speech&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">2660</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">8590</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf2&quot;</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">},</span>
 <span class="p">{</span>
-  <span class="s2">&quot;@type&quot;</span><span class="o">:</span> <span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;source&quot;</span><span class="o">:</span> <span class="s2">&quot;tf2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;target&quot;</span><span class="o">:</span> <span class="s2">&quot;t2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;a3&quot;</span>
-  <span class="p">}</span>
+<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf2&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t2&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;a3&quot;</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">},</span>
 <span class="p">{</span>
-  <span class="s2">&quot;@type&quot;</span><span class="o">:</span> <span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;word&quot;</span><span class="o">:</span> <span class="s2">&quot;yeah&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;start&quot;</span><span class="o">:</span> <span class="mf">6</span><span class="p">,</span>
-    <span class="s2">&quot;end&quot;</span><span class="o">:</span> <span class="mf">10</span><span class="p">,</span>
-    <span class="s2">&quot;document&quot;</span><span class="o">:</span> <span class="s2">&quot;v_0:td1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;t3&quot;</span>
-  <span class="p">}</span>
+<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;yeah&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">6</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">10</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;document&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;v_0:td1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t3&quot;</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">},</span>
 <span class="p">{</span>
-  <span class="s2">&quot;@type&quot;</span><span class="o">:</span> <span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;frameType&quot;</span><span class="o">:</span> <span class="s2">&quot;speech&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;start&quot;</span><span class="o">:</span> <span class="mf">8590</span><span class="p">,</span>
-    <span class="s2">&quot;end&quot;</span><span class="o">:</span> <span class="mf">9260</span><span class="p">,</span>
-    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;tf3&quot;</span>
-  <span class="p">}</span>
+<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;frameType&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;speech&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">8590</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">9260</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf3&quot;</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">},</span>
 <span class="p">{</span>
-  <span class="s2">&quot;@type&quot;</span><span class="o">:</span> <span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;source&quot;</span><span class="o">:</span> <span class="s2">&quot;tf3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;target&quot;</span><span class="o">:</span> <span class="s2">&quot;t3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;a4&quot;</span>
-  <span class="p">}</span>
+<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf3&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t3&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;a4&quot;</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 </section>
 <section id="so-how-do-we-generate-this">
-<span id="header-n22"></span><h2>So, how do we generate this?<a class="headerlink" href="#so-how-do-we-generate-this" title="Permalink to this headline"></a></h2>
+<span id="header-n22"></span><h2>So, how do we generate this?<a class="headerlink" href="#so-how-do-we-generate-this" title="Permalink to this heading">¶</a></h2>
 <p>Three steps:</p>
 <ol class="arabic simple">
 <li><p>Setting up a CLAMS app in Python</p></li>
@@ -272,7 +364,7 @@ clamsproject organization for more examples.</p></li>
 <li><p>Making a Docker container</p></li>
 </ol>
 <section id="setting-up-a-clams-app-in-python">
-<span id="header-n31"></span><h3>1. Setting up a CLAMS app in Python<a class="headerlink" href="#setting-up-a-clams-app-in-python" title="Permalink to this headline"></a></h3>
+<span id="header-n31"></span><h3>1. Setting up a CLAMS app in Python<a class="headerlink" href="#setting-up-a-clams-app-in-python" title="Permalink to this heading">¶</a></h3>
 <p>Each CLAMS app should be a subclass of the <code class="docutils literal notranslate"><span class="pre">ClamsApp</span></code> class in the
 clams-python package.</p>
 <p>Things to do:</p>
@@ -283,7 +375,7 @@ clams-python package.</p>
 </ol>
 <p>Steps 1 and 2 are still a bit unconstrained at this point.</p>
 <section id="appmetadata">
-<span id="header-n44"></span><h4>1.1 <code class="docutils literal notranslate"><span class="pre">_appmetadata</span></code><a class="headerlink" href="#appmetadata" title="Permalink to this headline"></a></h4>
+<span id="header-n44"></span><h4>1.1 <code class="docutils literal notranslate"><span class="pre">_appmetadata</span></code><a class="headerlink" href="#appmetadata" title="Permalink to this heading">¶</a></h4>
 <p>This method should just return a <a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata" title="clams.appmetadata.AppMetadata"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.appmetadata.AppMetadata</span></code></a> .
 containing the metadata relevant to your app.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Kaldi</span><span class="p">(</span><span class="n">ClamsApp</span><span class="p">):</span>
@@ -312,7 +404,7 @@ Also the class provides helper methods for structured fields (<code class="docut
 To see what fields need to be specified in the app metadata, see &lt;<a class="reference internal" href="appmetadata.html#appmetadata"><span class="std std-ref">CLAMS App Metadata</span></a>&gt;.</p>
 </section>
 <section id="annotate-mmif">
-<span id="header-n47"></span><h4>1.2 <code class="docutils literal notranslate"><span class="pre">_annotate(mmif)</span></code><a class="headerlink" href="#annotate-mmif" title="Permalink to this headline"></a></h4>
+<span id="header-n47"></span><h4>1.2 <code class="docutils literal notranslate"><span class="pre">_annotate(mmif)</span></code><a class="headerlink" href="#annotate-mmif" title="Permalink to this heading">¶</a></h4>
 <p>This method should accept a MMIF file as its parameter, and should return
 a <code class="docutils literal notranslate"><span class="pre">Mmif</span></code> object with an additional <code class="docutils literal notranslate"><span class="pre">view</span></code> with annotation results.
 You will see that in the Kaldi wrapper’s method signature, there are
@@ -482,7 +574,7 @@ milliseconds from the JSON data, which is in start/duration form.</p>
 properties by using the <code class="docutils literal notranslate"><span class="pre">id</span></code> property of an <code class="docutils literal notranslate"><span class="pre">Annotation</span></code> object.</p>
 </section>
 <section id="flask-app">
-<span id="header-n87"></span><h4>1.3 Flask app<a class="headerlink" href="#flask-app" title="Permalink to this headline"></a></h4>
+<span id="header-n87"></span><h4>1.3 Flask app<a class="headerlink" href="#flask-app" title="Permalink to this heading">¶</a></h4>
 <p>We use the CLAMS RESTful API:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">kaldi_app</span> <span class="o">=</span> <span class="n">Kaldi</span><span class="p">()</span>
 <span class="n">annotate</span> <span class="o">=</span> <span class="n">kaldi_app</span><span class="o">.</span><span class="n">annotate</span>
@@ -515,13 +607,13 @@ though:</p>
 </section>
 </section>
 <section id="wrangling-data">
-<span id="header-n99"></span><h3>2. Wrangling data<a class="headerlink" href="#wrangling-data" title="Permalink to this headline"></a></h3>
+<span id="header-n99"></span><h3>2. Wrangling data<a class="headerlink" href="#wrangling-data" title="Permalink to this heading">¶</a></h3>
 <p>We have to turn MMIF into usable data for our tool to process, then turn
 the output of that tool back into MMIF.</p>
 <p>In the walkthrough of the <code class="docutils literal notranslate"><span class="pre">annotate</span></code> method, we saw both of these
 steps.</p>
 <section id="mmif-to-tool">
-<span id="header-n102"></span><h4>2.1 MMIF to tool<a class="headerlink" href="#mmif-to-tool" title="Permalink to this headline"></a></h4>
+<span id="header-n102"></span><h4>2.1 MMIF to tool<a class="headerlink" href="#mmif-to-tool" title="Permalink to this heading">¶</a></h4>
 <p>This Kaldi app operates on external files that the MMIF file points to,
 so all we needed to do was extract AudioDocuments from the MMIF
 documents list and locate their audio files.</p>
@@ -534,7 +626,7 @@ does just that!).</p>
 app, and can be less involved (as here) or much more involved.</p>
 </section>
 <section id="tool-to-mmif">
-<span id="header-n106"></span><h4>2.2 Tool to MMIF<a class="headerlink" href="#tool-to-mmif" title="Permalink to this headline"></a></h4>
+<span id="header-n106"></span><h4>2.2 Tool to MMIF<a class="headerlink" href="#tool-to-mmif" title="Permalink to this heading">¶</a></h4>
 <p>Kaldi generated JSON transcripts for us; we wanted to extract all the
 tokens from these transcripts and create several types of annotations in
 a new view.</p>
@@ -548,7 +640,7 @@ app’s output.</p>
 </section>
 </section>
 <section id="making-a-docker-container">
-<span id="header-n110"></span><h3>3. Making a Docker container<a class="headerlink" href="#making-a-docker-container" title="Permalink to this headline"></a></h3>
+<span id="header-n110"></span><h3>3. Making a Docker container<a class="headerlink" href="#making-a-docker-container" title="Permalink to this heading">¶</a></h3>
 <p>CLAMS apps will generally run as Flask servers in Docker containers.</p>
 <p>Writing a Dockerfile for your CLAMS app will likely be pretty simple. We
 have an image on Docker Hub that you can extend:
@@ -563,17 +655,17 @@ which has Kaldi and the Pop Up Archive model preinstalled.</p>
 <span class="c"># hipstas/kaldi-pop-up-archive:v1 uses Ubuntu 16.10 Yakkety, which is dead, so no apt repositories.</span>
 <span class="c"># Have to tell apt to use Ubuntu 18.04 Bionic&#39;s apt repositories, since that&#39;s the oldest LTS with</span>
 <span class="c"># Python 3.6. This is terrible!</span>
-<span class="k">RUN</span><span class="w"> </span>cp /etc/apt/sources.list /etc/apt/sources.list.old <span class="o">&amp;&amp;</span> <span class="se">\</span>
-    sed -i -e s/yakkety/bionic/g /etc/apt/sources.list
+<span class="k">RUN</span><span class="w"> </span>cp<span class="w"> </span>/etc/apt/sources.list<span class="w"> </span>/etc/apt/sources.list.old<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>sed<span class="w"> </span>-i<span class="w"> </span>-e<span class="w"> </span>s/yakkety/bionic/g<span class="w"> </span>/etc/apt/sources.list
 
 <span class="c"># may not want to do apt-get update if there are dependencies of</span>
 <span class="c"># the Kaldi image that rely on older versions of apt packages</span>
-<span class="k">RUN</span><span class="w"> </span>apt-get update <span class="o">&amp;&amp;</span> <span class="se">\</span>
-    apt-get install -y python3 python3-pip python3-setuptools
+<span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>python3<span class="w"> </span>python3-pip<span class="w"> </span>python3-setuptools
 
-<span class="k">COPY</span><span class="w"> </span>./ ./app
+<span class="k">COPY</span><span class="w"> </span>./<span class="w"> </span>./app
 <span class="k">WORKDIR</span><span class="w"> </span><span class="s">./app</span>
-<span class="k">RUN</span><span class="w"> </span>pip3 install -r requirements.txt
+<span class="k">RUN</span><span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
 
 <span class="k">ENTRYPOINT</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;python3&quot;</span><span class="p">]</span>
 <span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;app.py&quot;</span><span class="p">]</span>
@@ -593,33 +685,50 @@ container should start up your Flask server. In this case, it runs
 
 
            </div>
+           
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="appdirectory.html" class="btn btn-neutral float-left" title="CLAMS App Directory" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
         <a href="modules.html" class="btn btn-neutral float-right" title="clams package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="appdirectory.html" class="btn btn-neutral float-left" title="CLAMS App Directory" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, Brandeis LLC.</p>
-  </div>
+    <p>
+        &#169; Copyright 2023, Brandeis LLC.
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
         </div>
       </div>
+
     </section>
+
   </div>
-  <script>
+  
+
+  <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

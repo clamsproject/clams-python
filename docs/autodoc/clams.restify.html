@@ -1,36 +1,77 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>clams.restify package &mdash; clams-python  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  
+  <title>clams.restify package &mdash; clams-python  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-    <script src="../_static/js/theme.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="clams.app package" href="clams.app.html" />
     <link rel="prev" title="clams package" href="../modules.html" /> 
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
+
+   
   <div class="wy-grid-for-nav">
+    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
+          
+
+          
             <a href="../index.html" class="icon icon-home"> clams-python
+          
+
+          
           </a>
+
+          
+            
+            
               <div class="version">
-                0.5.1
+                0.5.2
               </div>
+            
+          
+
+          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -38,8 +79,19 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p><span class="caption-text">Contents</span></p>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../target-versions.html">Target MMIF Versions</a></li>
@@ -47,11 +99,16 @@
 <li class="toctree-l1"><a class="reference internal" href="../appdirectory.html">CLAMS App Directory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial: writing a CLAMS app</a></li>
 </ul>
-<p><span class="caption-text">API documentation:</span></p>
+<p class="caption" role="heading"><span class="caption-text">API documentation:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../modules.html">clams package</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">clams.restify package</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#module-clams.restify">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-clams.restify">Module contents</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#clams.restify.ClamsHTTPApi"><code class="docutils literal notranslate"><span class="pre">ClamsHTTPApi</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.restify.ParameterCaster"><code class="docutils literal notranslate"><span class="pre">ParameterCaster</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.restify.Restifier"><code class="docutils literal notranslate"><span class="pre">Restifier</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="clams.app.html">clams.app package</a></li>
@@ -61,92 +118,136 @@
 </li>
 </ul>
 
+            
+          
         </div>
+        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">clams-python</a>
+        
       </nav>
 
+
       <div class="wy-nav-content">
+        
         <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
+    
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
           <li><a href="../modules.html">clams package</a> &raquo;</li>
+        
       <li>clams.restify package</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
+        
+          
+        
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
+            
   <section id="clams-restify-package">
-<h1>clams.restify package<a class="headerlink" href="#clams-restify-package" title="Permalink to this headline"></a></h1>
+<h1>clams.restify package<a class="headerlink" href="#clams-restify-package" title="Permalink to this heading">¶</a></h1>
 <section id="module-clams.restify">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-clams.restify" title="Permalink to this headline"></a></h2>
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-clams.restify" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
-<dt id="clams.restify.ClamsHTTPApi">
-<em class="property">class </em><code class="sig-prename descclassname">clams.restify.</code><code class="sig-name descname">ClamsHTTPApi</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cla_instance</span><span class="p">:</span> <span class="n"><a class="reference internal" href="clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp">clams.app.ClamsApp</a></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">flask_restful.Resource</span></code></p>
+<dt class="sig sig-object py" id="clams.restify.ClamsHTTPApi">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">clams.restify.</span></span><span class="sig-name descname"><span class="pre">ClamsHTTPApi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cla_instance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><span class="pre">ClamsApp</span></a></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Resource</span></code></p>
 <p>ClamsHTTPApi provides mapping from HTTP verbs to Python API defined in <a class="reference internal" href="clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClamsApp</span></code></a>.</p>
 <p>Constructor takes an instance of <a class="reference internal" href="clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClamsApp</span></code></a>.</p>
 <dl class="py method">
-<dt id="clams.restify.ClamsHTTPApi.get">
-<code class="sig-name descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi.get" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.ClamsHTTPApi.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Response</span></span></span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi.get" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maps HTTP GET verb to <a class="reference internal" href="clams.app.html#clams.app.ClamsApp.appmetadata" title="clams.app.ClamsApp.appmetadata"><code class="xref py py-func docutils literal notranslate"><span class="pre">appmetadata()</span></code></a>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Returns app metadata in a HTTP response.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="clams.restify.ClamsHTTPApi.json_to_response">
-<em class="property">static </em><code class="sig-name descname">json_to_response</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">json_str</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)">str</a></span></em>, <em class="sig-param"><span class="n">status</span><span class="o">=</span><span class="default_value">200</span></em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi.json_to_response" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.ClamsHTTPApi.json_to_response">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">json_to_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">status</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">200</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Response</span></span></span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi.json_to_response" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper method to convert JSON output from a ClamsApp to a HTTP response.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>json_str</strong> – a serialized JSON .</p></li>
 <li><p><strong>status</strong> – a numerical HTTP code to respond.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A HTTP response ready to send.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="clams.restify.ClamsHTTPApi.methods">
-<code class="sig-name descname">methods</code><em class="property"> = {'GET', 'POST', 'PUT'}</em><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi.methods" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="clams.restify.ClamsHTTPApi.methods">
+<span class="sig-name descname"><span class="pre">methods</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.ClassVar" title="(in Python v3.11)"><span class="pre">ClassVar</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Collection" title="(in Python v3.11)"><span class="pre">Collection</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'GET',</span> <span class="pre">'POST',</span> <span class="pre">'PUT'}</span></em><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi.methods" title="Permalink to this definition">¶</a></dt>
+<dd><p>The methods this view is registered for. Uses the same default
+(<code class="docutils literal notranslate"><span class="pre">[&quot;GET&quot;,</span> <span class="pre">&quot;HEAD&quot;,</span> <span class="pre">&quot;OPTIONS&quot;]</span></code>) as <code class="docutils literal notranslate"><span class="pre">route</span></code> and
+<code class="docutils literal notranslate"><span class="pre">add_url_rule</span></code> by default.</p>
+</dd></dl>
 
 <dl class="py method">
-<dt id="clams.restify.ClamsHTTPApi.post">
-<code class="sig-name descname">post</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi.post" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.ClamsHTTPApi.post">
+<span class="sig-name descname"><span class="pre">post</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Response</span></span></span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi.post" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maps HTTP POST verb to <a class="reference internal" href="clams.app.html#clams.app.ClamsApp.annotate" title="clams.app.ClamsApp.annotate"><code class="xref py py-func docutils literal notranslate"><span class="pre">annotate()</span></code></a>.
 Note that for now HTTP PUT verbs is also mapped to <a class="reference internal" href="clams.app.html#clams.app.ClamsApp.annotate" title="clams.app.ClamsApp.annotate"><code class="xref py py-func docutils literal notranslate"><span class="pre">annotate()</span></code></a>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Returns MMIF output from a ClamsApp in a HTTP response.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="clams.restify.ClamsHTTPApi.put">
-<code class="sig-name descname">put</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi.put" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.ClamsHTTPApi.put">
+<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Response</span></span></span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ClamsHTTPApi.put" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maps HTTP POST verb to <a class="reference internal" href="clams.app.html#clams.app.ClamsApp.annotate" title="clams.app.ClamsApp.annotate"><code class="xref py py-func docutils literal notranslate"><span class="pre">annotate()</span></code></a>.
 Note that for now HTTP PUT verbs is also mapped to <a class="reference internal" href="clams.app.html#clams.app.ClamsApp.annotate" title="clams.app.ClamsApp.annotate"><code class="xref py py-func docutils literal notranslate"><span class="pre">annotate()</span></code></a>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Returns MMIF output from a ClamsApp in a HTTP response.</p>
 </dd>
 </dl>
@@ -155,70 +256,70 @@ Note that for now HTTP PUT verbs is also mapped to <a class="reference internal"
 </dd></dl>
 
 <dl class="py class">
-<dt id="clams.restify.ParameterCaster">
-<em class="property">class </em><code class="sig-prename descclassname">clams.restify.</code><code class="sig-name descname">ParameterCaster</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">param_spec</span><span class="p">:</span> <span class="n">Dict</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ParameterCaster" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dt class="sig sig-object py" id="clams.restify.ParameterCaster">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">clams.restify.</span></span><span class="sig-name descname"><span class="pre">ParameterCaster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.11)"><span class="pre">Dict</span></a></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ParameterCaster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A helper class to convert parameters passed by HTTP query strings to
 proper python data types.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>param_spec</strong> – A specification of a data types of parameters</p>
 </dd>
 </dl>
 <dl class="py method">
-<dt id="clams.restify.ParameterCaster.bool_param">
-<em class="property">static </em><code class="sig-name descname">bool_param</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ParameterCaster.bool_param" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.ParameterCaster.bool_param">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bool_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ParameterCaster.bool_param" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function to convert string values to bool type.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="clams.restify.ParameterCaster.cast">
-<code class="sig-name descname">cast</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ParameterCaster.cast" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.ParameterCaster.cast">
+<span class="sig-name descname"><span class="pre">cast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ParameterCaster.cast" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given parameter specification, tries to cast values of args to specified Python data types.
 If the parameter key is not specified in the app metadata, a <a href="#id1"><span class="problematic" id="id2">``</span></a>TypeError` is raised.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>args</strong> – k-v pairs</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new dictionary of type-casted args</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p>KeyError: when parameter is unknown</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="clams.restify.ParameterCaster.float_param">
-<em class="property">static </em><code class="sig-name descname">float_param</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ParameterCaster.float_param" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.ParameterCaster.float_param">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">float_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ParameterCaster.float_param" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function to convert string values to float type.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="clams.restify.ParameterCaster.int_param">
-<em class="property">static </em><code class="sig-name descname">int_param</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ParameterCaster.int_param" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.ParameterCaster.int_param">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">int_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ParameterCaster.int_param" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function to convert string values to int type.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="clams.restify.ParameterCaster.str_param">
-<em class="property">static </em><code class="sig-name descname">str_param</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.ParameterCaster.str_param" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.ParameterCaster.str_param">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">str_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.ParameterCaster.str_param" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function to convert string values to string type.</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
-<dt id="clams.restify.Restifier">
-<em class="property">class </em><code class="sig-prename descclassname">clams.restify.</code><code class="sig-name descname">Restifier</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app_instance</span><span class="p">:</span> <span class="n"><a class="reference internal" href="clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp">clams.app.ClamsApp</a></span></em>, <em class="sig-param"><span class="n">loopback</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)">bool</a></span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">port</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)">int</a></span> <span class="o">=</span> <span class="default_value">5000</span></em>, <em class="sig-param"><span class="n">debug</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)">bool</a></span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.Restifier" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dt class="sig sig-object py" id="clams.restify.Restifier">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">clams.restify.</span></span><span class="sig-name descname"><span class="pre">Restifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_instance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><span class="pre">ClamsApp</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">loopback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.Restifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Resitifier is a simple wrapper that takes a <a class="reference internal" href="clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClamsApp</span></code></a> object and
 turn it into a flaks-based HTTP server. For mapping between Python API and
 HTTP API, it relies on <a class="reference internal" href="#clams.restify.ClamsHTTPApi" title="clams.restify.ClamsHTTPApi"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClamsHTTPApi</span></code></a> class.</p>
 <p>Constructor takes a <a class="reference internal" href="clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClamsApp</span></code></a> instance and some options for flask configuration.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>app_instance</strong> – A <a class="reference internal" href="clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClamsApp</span></code></a> to wrap.</p></li>
 <li><p><strong>loopback</strong> – when True, the flask wrapper only listens to requests from localhost (used for debugging).</p></li>
@@ -228,41 +329,41 @@ HTTP API, it relies on <a class="reference internal" href="#clams.restify.ClamsH
 </dd>
 </dl>
 <dl class="py method">
-<dt id="clams.restify.Restifier.run">
-<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">options</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.Restifier.run" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.Restifier.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.Restifier.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Starts a development server. See <a class="reference internal" href="#clams.restify.Restifier.serve_development" title="clams.restify.Restifier.serve_development"><code class="xref py py-meth docutils literal notranslate"><span class="pre">serve_development()</span></code></a>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>options</strong> – any additional options to pass to the web server.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="clams.restify.Restifier.serve_development">
-<code class="sig-name descname">serve_development</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">options</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.Restifier.serve_development" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.Restifier.serve_development">
+<span class="sig-name descname"><span class="pre">serve_development</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.Restifier.serve_development" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs the CLAMS app as a flask webapp, using flask built-in development server (<a class="reference external" href="https://werkzeug.palletsprojects.com/en/2.0.x/">https://werkzeug.palletsprojects.com/en/2.0.x/</a>).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>options</strong> – any additional options to pass to the web server.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="clams.restify.Restifier.serve_production">
-<code class="sig-name descname">serve_production</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">options</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.Restifier.serve_production" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.Restifier.serve_production">
+<span class="sig-name descname"><span class="pre">serve_production</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.Restifier.serve_production" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs the CLAMS app as a flask webapp, using a production-ready web server (gunicorn, <a class="reference external" href="https://docs.gunicorn.org/en/stable">https://docs.gunicorn.org/en/stable</a>/#).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>options</strong> – any additional options to pass to the web server.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="clams.restify.Restifier.test_client">
-<code class="sig-name descname">test_client</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clams.restify.Restifier.test_client" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="clams.restify.Restifier.test_client">
+<span class="sig-name descname"><span class="pre">test_client</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/master/clams/restify/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.restify.Restifier.test_client" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <a class="reference external" href="https://flask.palletsprojects.com/en/1.1.x/testing/">flask test client</a>.</p>
 </dd></dl>
 
@@ -273,33 +374,50 @@ HTTP API, it relies on <a class="reference internal" href="#clams.restify.ClamsH
 
 
            </div>
+           
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../modules.html" class="btn btn-neutral float-left" title="clams package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
         <a href="clams.app.html" class="btn btn-neutral float-right" title="clams.app package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../modules.html" class="btn btn-neutral float-left" title="clams package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, Brandeis LLC.</p>
-  </div>
+    <p>
+        &#169; Copyright 2023, Brandeis LLC.
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
         </div>
       </div>
+
     </section>
+
   </div>
-  <script>
+  
+
+  <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

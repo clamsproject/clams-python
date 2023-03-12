@@ -1,4 +1,5 @@
 name: build docker images and upload to docker hub
+
 on: 
   push: 
     tags: '[0-9]+.[0-9]+.[0-9]+'
@@ -8,28 +9,13 @@ on:
         description: 'version to tag images'
         required: true
 jobs:
-  set-version:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.output.outputs.version }}
-    steps:
-    - name: set VERSION value from dispatch inputs
-      if: ${{ github.event_name == 'workflow_dispatch' }} 
-      run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-    - name: set VERSION value from pushed tag
-      if: ${{ github.event_name == 'push' }} 
-      run: echo "VERSION=$(echo "${{ github.ref }}" | cut -d/ -f3)" >> $GITHUB_ENV
-    - id: output
-      name: show result
-      run: echo "::debug::${{ env.VERSION }}" && echo "::set-output name=version::${{ env.VERSION }}"
   check-deployment:
     runs-on: ubuntu-latest
-    needs: ['set-version']
     steps:
     - name: wait up to 20 minutes for the new clams-python is deployed on pypi
       uses: nev7n/wait_for_response@v1
       with:
-        url: "https://pypi.org/project/clams-python/${{ needs.set-version.outputs.version }}/"
+        url: "https://pypi.org/project/clams-python/${{ github.event.inputs.version }}/"
         responseCode: 200
         timeout: 1200000
         interval: 5000
@@ -38,7 +24,7 @@ jobs:
     env:
       OS: linux
       PYTHON: '3.8'
-    needs: ['set-version', 'check-deployment']
+    needs: ['check-deployment']
     steps:
     - name: checkout the repo 
       uses: actions/checkout@v2
@@ -57,10 +43,15 @@ jobs:
         password: ${{ secrets.DOCKERHUB_CLAMSBOT_TOKEN }}
 
     - name: generate tags for the base docker image
-      id: base_docker_tags
-      uses: Surgo/docker-smart-tag-action@v1
+      id: meta
+      uses: docker/metadata-action@v4
       with:
-        docker_image: clamsproject/clams-python
+        images: ${{ github.repository }}
+        tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=semver,pattern=v{{major}}
     - name: build docker image and push to the hub using the tags
       id: base_docker_build
       uses: docker/build-push-action@v2
@@ -68,15 +59,11 @@ jobs:
         push: true
         context: docker
         file: ./docker/Dockerfile
-        tags: ${{ steps.base_docker_tags.outputs.tag }}
+        tags: ${{ steps.meta.outputs.tag }}
+        labels: ${{ steps.meta.outputs.labels }}
         build-args: |
-          clams_version=${{ needs.set-version.outputs.version }}
+          clams_version=${{ github.event.inputs.version }}
 
-    - name: generate tags for the tf2 docker image
-      id: tf2_docker_tags
-      uses: Surgo/docker-smart-tag-action@v1
-      with:
-        docker_image: clamsproject/clams-python-tf2
     - name: build tf2-enabled docker image and push to the hub using the tags
       id: tf2_docker_build
       uses: docker/build-push-action@v2
@@ -84,15 +71,11 @@ jobs:
         push: true
         context: docker
         file: ./docker/tf2.dockerfile
-        tags: ${{ steps.tf2_docker_tags.outputs.tag }}
+        tags: ${{ steps.meta.outputs.tag }}
+        labels: ${{ steps.meta.outputs.labels }}-tf2
         build-args: |
-          clams_version=${{ needs.set-version.outputs.version }}
+          clams_version=${{ github.event.inputs.version }}
 
-    - name: generate tags for the torch docker image
-      id: torch_docker_tags
-      uses: Surgo/docker-smart-tag-action@v1
-      with:
-        docker_image: clamsproject/clams-python-torch
     - name: build torch-enabled docker image and push to the hub using the tags
       id: torch_docker_build
       uses: docker/build-push-action@v2
@@ -100,15 +83,11 @@ jobs:
         push: true
         context: docker
         file: ./docker/torch.dockerfile
-        tags: ${{ steps.torch_docker_tags.outputs.tag }}
+        tags: ${{ steps.meta.outputs.tag }}
+        labels: ${{ steps.meta.outputs.labels }}-torch
         build-args: |
-          clams_version=${{ needs.set-version.outputs.version }}
+          clams_version=${{ github.event.inputs.version }}
 
-    - name: generate tags for the ffmpeg docker image
-      id: ffmpeg_docker_tags
-      uses: Surgo/docker-smart-tag-action@v1
-      with:
-        docker_image: clamsproject/clams-python-ffmpeg
     - name: build ffmpeg-enabled docker image and push to the hub using the tags
       id: ffmpeg_docker_build
       uses: docker/build-push-action@v2
@@ -116,15 +95,11 @@ jobs:
         push: true
         context: docker
         file: ./docker/ffmpeg.dockerfile
-        tags: ${{ steps.ffmpeg_docker_tags.outputs.tag }}
+        tags: ${{ steps.meta.outputs.tag }}
+        labels: ${{ steps.meta.outputs.labels }}-ffmpeg
         build-args: |
-          clams_version=${{ needs.set-version.outputs.version }}
+          clams_version=${{ github.event.inputs.version }}
 
-    - name: generate tags for the ffmpeg-tf2 docker image
-      id: ffmpeg_tf2_docker_tags
-      uses: Surgo/docker-smart-tag-action@v1
-      with:
-        docker_image: clamsproject/clams-python-ffmpeg-tf2
     - name: build ffmpeg-tf2-enabled docker image and push to the hub using the tags
       id: ffmpeg_tf2_docker_build
       uses: docker/build-push-action@v2
@@ -132,15 +107,11 @@ jobs:
         push: true
         context: docker
         file: ./docker/ffmpeg-tf2.dockerfile
-        tags: ${{ steps.ffmpeg_tf2_docker_tags.outputs.tag }}
+        tags: ${{ steps.meta.outputs.tag }}
+        labels: ${{ steps.meta.outputs.labels }}-ffmpeg-tf2
         build-args: |
-          clams_version=${{ needs.set-version.outputs.version }}
+          clams_version=${{ github.event.inputs.version }}
 
-    - name: generate tags for the ffmpeg-torch docker image
-      id: ffmpeg_torch_docker_tags
-      uses: Surgo/docker-smart-tag-action@v1
-      with:
-        docker_image: clamsproject/clams-python-ffmpeg-torch
     - name: build ffmpeg-torch-enabled docker image and push to the hub using the tags
       id: ffmpeg_torch_docker_build
       uses: docker/build-push-action@v2
@@ -148,15 +119,11 @@ jobs:
         push: true
         context: docker
         file: ./docker/ffmpeg-torch.dockerfile
-        tags: ${{ steps.ffmpeg_torch_docker_tags.outputs.tag }}
+        tags: ${{ steps.meta.outputs.tag }}
+        labels: ${{ steps.meta.outputs.labels }}-ffmpeg-torch
         build-args: |
-          clams_version=${{ needs.set-version.outputs.version }}
+          clams_version=${{ github.event.inputs.version }}
 
-    - name: generate tags for the opencv4 docker image
-      id: opencv4_docker_tags
-      uses: Surgo/docker-smart-tag-action@v1
-      with:
-        docker_image: clamsproject/clams-python-opencv4
     - name: build opencv4-enabled docker image and push to the hub using the tags
       id: opencv4_docker_build
       uses: docker/build-push-action@v2
@@ -164,15 +131,11 @@ jobs:
         push: true
         context: docker
         file: ./docker/opencv4.dockerfile
-        tags: ${{ steps.opencv4_docker_tags.outputs.tag }}
+        tags: ${{ steps.meta.outputs.tag }}
+        labels: ${{ steps.meta.outputs.labels }}-opencv4
         build-args: |
-          clams_version=${{ needs.set-version.outputs.version }}
+          clams_version=${{ github.event.inputs.version }}
 
-    - name: generate tags for the opencv4-tf2 docker image
-      id: opencv4_tf2_docker_tags
-      uses: Surgo/docker-smart-tag-action@v1
-      with:
-        docker_image: clamsproject/clams-python-opencv4-tf2
     - name: build opencv4-tf2-enabled docker image and push to the hub using the tags
       id: opencv4_tf2_docker_build
       uses: docker/build-push-action@v2
@@ -180,15 +143,11 @@ jobs:
         push: true
         context: docker
         file: ./docker/opencv4-tf2.dockerfile
-        tags: ${{ steps.opencv4_tf2_docker_tags.outputs.tag }}
+        tags: ${{ steps.meta.outputs.tag }}
+        labels: ${{ steps.meta.outputs.labels }}-opencv4-tf2
         build-args: |
-          clams_version=${{ needs.set-version.outputs.version }}
+          clams_version=${{ github.event.inputs.version }}
 
-    - name: generate tags for the opencv4-torch docker image
-      id: opencv4_torch_docker_tags
-      uses: Surgo/docker-smart-tag-action@v1
-      with:
-        docker_image: clamsproject/clams-python-opencv4-torch
     - name: build opencv4-torch-enabled docker image and push to the hub using the tags
       id: opencv4_torch_docker_build
       uses: docker/build-push-action@v2
@@ -196,6 +155,7 @@ jobs:
         push: true
         context: docker
         file: ./docker/opencv4-torch.dockerfile
-        tags: ${{ steps.opencv4_torch_docker_tags.outputs.tag }}
+        tags: ${{ steps.meta.outputs.tag }}
+        labels: ${{ steps.meta.outputs.labels }}-opencv4-torch
         build-args: |
-          clams_version=${{ needs.set-version.outputs.version }}
+          clams_version=${{ github.event.inputs.version }}
