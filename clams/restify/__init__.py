@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Union
 
 import jsonschema
 from flask import Flask, request, Response
@@ -121,7 +121,7 @@ class ClamsHTTPApi(Resource):
 
     def get(self) -> Response:
         """
-        Maps HTTP GET verb to :func:`~clams.app.ClamsApp.appmetadata`.
+        Maps HTTP GET verb to :meth:`~clams.app.ClamsApp.appmetadata`.
 
         :return: Returns app metadata in a HTTP response.
         """
@@ -129,8 +129,8 @@ class ClamsHTTPApi(Resource):
 
     def post(self) -> Response:
         """
-        Maps HTTP POST verb to :func:`~clams.app.ClamsApp.annotate`.
-        Note that for now HTTP PUT verbs is also mapped to :func:`~clams.app.ClamsApp.annotate`.
+        Maps HTTP POST verb to :meth:`~clams.app.ClamsApp.annotate`.
+        Note that for now HTTP PUT verbs is also mapped to :meth:`~clams.app.ClamsApp.annotate`.
 
         :return: Returns MMIF output from a ClamsApp in a HTTP response.
         """
@@ -155,13 +155,14 @@ class ParameterCaster(object):
 
     :param param_spec: A specification of a data types of parameters
     """
-    def __init__(self, param_spec: Dict):
+    def __init__(self, param_spec: Dict[str, type]):
         self.param_spec = param_spec
 
-    def cast(self, args):
+    def cast(self, args: Dict[str, str]) -> Dict[str, Union[int, float, str, bool]]:
         """
         Given parameter specification, tries to cast values of args to specified Python data types.
-        Note that this caster does not handle "unexpected" parameters came as an input. 
+        Note that this caster deals with query strings, thus all keys and values in the input args are plain strings. 
+        Also note that the caster does not handle "unexpected" parameters came as an input. 
         Handling (raising an exception or issuing a warning upon receiving) an unexpected runtime parameter 
         must be done within the app itself.
         Thus, when a key is not found in the parameter specifications, it should just pass it as a vanilla string.

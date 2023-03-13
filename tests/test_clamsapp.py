@@ -202,9 +202,17 @@ class TestClamsApp(unittest.TestCase):
         self.app.metadata.parameters = []
         self.app.metadata.add_parameter('param1', 'first_param', 'string')
         self.app.metadata.add_parameter('param2', 'second_param', 'string', default='second_default')
+        self.app.metadata.add_parameter('param3', 'third_param', 'boolean', default='f')
+        self.app.metadata.add_parameter('param4', 'fourth_param', 'integer', default='1')
         conf = self.app.get_configuration(param1='okay', non_parameter='should be ignored')
-        self.assertEqual(len(conf), 2)
+        self.assertEqual(len(conf), 4)
+        self.assertFalse('non_parameter' in conf)
+        self.assertEqual(type(conf['param1']), str)
+        self.assertEqual(type(conf['param2']), str)
+        self.assertEqual(type(conf['param3']), bool)
+        self.assertEqual(type(conf['param4']), int)
         with self.assertRaises(ValueError):
+            # because param1 doesn't have a default value and thus a required param
             self.app.get_configuration(param2='okay')
             
     def test_error_handling(self):

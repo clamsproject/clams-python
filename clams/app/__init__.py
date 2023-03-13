@@ -72,7 +72,7 @@ class ClamsApp(ABC):
     def annotate(self, mmif: Union[str, dict, Mmif], **runtime_params) -> str:
         """
         A public method to invoke the primary app function. It's essentially a
-        wrapper around :func:`~clams.app.ClamsApp._annotate` method where some common operations
+        wrapper around :meth:`~clams.app.ClamsApp._annotate` method where some common operations
         (that are invoked by keyword arguments) are implemented.
 
         :param mmif: An input MMIF object to annotate
@@ -104,10 +104,19 @@ class ClamsApp(ABC):
         return annotated.serialize(pretty=pretty)
 
     @abstractmethod
-    def _annotate(self, mmif: Union[str, dict, Mmif], **runtime_params) -> Mmif:
+    def _annotate(self, mmif: Mmif, **runtime_params) -> Mmif:
         """
-        An abstract method to generate (or load if stored elsewhere) the app metadata
-        at runtime. All CLAMS app must implement this.
+        An abstract method to generate (or load if stored elsewhere) the app 
+        metadata at runtime. All CLAMS app must implement this.
+        
+        A typical implementation of this method would be 
+        
+        #. Create a new view (or views) by calling :meth:`~mmif.serialize.mmif.Mmif.new_view` on the input mmif object.
+        #. Call :meth:`~clams.app.ClamsApp.sign_view` with the input runtime parameters for the record.
+        #. Call :meth:`~clams.app.ClamsApp.get_configuration` to get an "upgraded" runtime parameters with default values.
+        #. Call :meth:`~mmif.serialize.view.View.new_contain` on the new view object with any annotation properties specified by the configuration.
+        #. Process the data and create :class:`~mmif.serialize.annotation.Annotation` objects and add them to the new view. 
+        #. Return the mmif object
 
         :param mmif: An input MMIF object to annotate
         :param runtime_params: An arbitrary set of k-v pairs to configure the app at runtime
@@ -116,23 +125,30 @@ class ClamsApp(ABC):
         raise NotImplementedError()
     
     def get_configuration(self, **runtime_params):
+        """
+        Method to "fill" the parameter dictionary with default values, when a key-value is not specified in the input.
+        The input map is not really "filled" as a copy of it is returned with addition of default values. 
+        :param runtime_params: key-value pairs of runtime parameters
+        :return: a copy of parameter map, with default values added
+        :raises ValueError: when a value for a required parameter is not found in the input
+        """
         conf = {}
         for parameter in self.metadata.parameters:
             if parameter.name in runtime_params:
                 conf[parameter.name] = str(runtime_params[parameter.name])
-            elif parameter.default:
+            elif parameter.default is not None:
                 conf[parameter.name] = parameter.default
             else:
-                raise ValueError(f"Cannot find configuration for parameter \"{parameter.name}\".")
+                raise ValueError(f"Cannot find configuration for a required parameter \"{parameter.name}\".")
         return conf
 
     def sign_view(self, view: View, runtime_conf: Optional[dict] = None) -> None:
         """
         A method to "sign" a new view that this app creates at the beginning of annotation.
         Signing will populate the view metadata with information and configuration of this app.
-        The parameters passed to the :func:`~clams.app.ClamsApp._annotate` must be
+        The parameters passed to the :meth:`~clams.app.ClamsApp._annotate` must be
         passed to this method. This means all parameters for "common" configuration that
-        are consumed in :func:`~clams.app.ClamsApp.annotate` should not be recorded in the
+        are consumed in :meth:`~clams.app.ClamsApp.annotate` should not be recorded in the
         view metadata.
         :param view: a view to sign
         :param runtime_conf: runtime configuration of the app as k-v pairs
