@@ -1,24 +1,16 @@
 import os
-import sys
+from typing import Literal
 from typing import Union, Dict, List, Optional
 
 import mmif
 import pydantic
 from mmif import vocabulary
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
 primitives = Union[int, float, str, bool]
 # these names are taken from the JSON schema data types
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
 
-if sys.version_info >= (3, 7):
-    param_value_types_values = param_value_types.__args__  # pytype: disable=attribute-error
-else:
-    param_value_types_values = param_value_types.__values__  # pytype: disable=attribute-error
+param_value_types_values = param_value_types.__args__  # pytype: disable=attribute-error
 
 
 def get_clams_pyver():
