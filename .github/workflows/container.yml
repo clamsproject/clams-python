@@ -77,4 +77,7 @@ jobs:
         file: ${{ inputs.buildfilename }}
         tags: ${{ steps.meta.outputs.tags }}
         jabels: ${{ env.DOCKER_METADATA_OUTPUT_LABELS }}
+        build-args: |
+          clams_version=${{ inputs.version }}
         push: true
+

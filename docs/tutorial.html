@@ -1,96 +1,50 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>Tutorial: writing a CLAMS app &mdash; clams-python  documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="clams package" href="modules.html" />
     <link rel="prev" title="CLAMS App Directory" href="appdirectory.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="index.html" class="icon icon-home"> clams-python
           
-
-          
+          <a href="index.html" class="icon icon-home">
+            clams-python
           </a>
-
-          
-            
-            
               <div class="version">
-                0.5.2
+                0.5.3
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a></li>
@@ -124,75 +78,35 @@
 <li class="toctree-l1"><a class="reference internal" href="modules.html">clams package</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">clams-python</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Tutorial: writing a CLAMS app</li>
-    
-    
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tutorial: writing a CLAMS app</li>
       <li class="wy-breadcrumbs-aside">
-        
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <section id="tutorial-writing-a-clams-app">
-<span id="tutorial"></span><span id="header-n0"></span><h1>Tutorial: writing a CLAMS app<a class="headerlink" href="#tutorial-writing-a-clams-app" title="Permalink to this heading">¶</a></h1>
+<span id="tutorial"></span><span id="header-n0"></span><h1>Tutorial: writing a CLAMS app<a class="headerlink" href="#tutorial-writing-a-clams-app" title="Permalink to this heading"></a></h1>
 <p>A short demonstration of how to wrap an existing processing tool as a
 CLAMS application</p>
 <section id="the-example-kaldi">
-<span id="header-n3"></span><h2>The Example: Kaldi<a class="headerlink" href="#the-example-kaldi" title="Permalink to this heading">¶</a></h2>
+<span id="header-n3"></span><h2>The Example: Kaldi<a class="headerlink" href="#the-example-kaldi" title="Permalink to this heading"></a></h2>
 <ul class="simple">
 <li><p>We wrapped the Kaldi ASR tool</p></li>
 <li><p>More specifically, we wrapped the Kaldi + Pop Up Archive docker image
@@ -207,7 +121,7 @@ clamsproject organization for more examples.</p></li>
 </ul>
 </section>
 <section id="a-sample-kaldi-transcript">
-<span id="header-n13"></span><h2>A sample Kaldi transcript<a class="headerlink" href="#a-sample-kaldi-transcript" title="Permalink to this heading">¶</a></h2>
+<span id="header-n13"></span><h2>A sample Kaldi transcript<a class="headerlink" href="#a-sample-kaldi-transcript" title="Permalink to this heading"></a></h2>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">  </span><span class="s2">&quot;words&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
@@ -231,7 +145,7 @@ clamsproject organization for more examples.</p></li>
 </div>
 </section>
 <section id="translated-into-a-mmif-view">
-<span id="header-n15"></span><h2>…translated into a MMIF view<a class="headerlink" href="#translated-into-a-mmif-view" title="Permalink to this heading">¶</a></h2>
+<span id="header-n15"></span><h2>…translated into a MMIF view<a class="headerlink" href="#translated-into-a-mmif-view" title="Permalink to this heading"></a></h2>
 <p>First, the front matter:</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">  </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;v_0&quot;</span><span class="p">,</span>
@@ -356,7 +270,7 @@ clamsproject organization for more examples.</p></li>
 </div>
 </section>
 <section id="so-how-do-we-generate-this">
-<span id="header-n22"></span><h2>So, how do we generate this?<a class="headerlink" href="#so-how-do-we-generate-this" title="Permalink to this heading">¶</a></h2>
+<span id="header-n22"></span><h2>So, how do we generate this?<a class="headerlink" href="#so-how-do-we-generate-this" title="Permalink to this heading"></a></h2>
 <p>Three steps:</p>
 <ol class="arabic simple">
 <li><p>Setting up a CLAMS app in Python</p></li>
@@ -364,7 +278,7 @@ clamsproject organization for more examples.</p></li>
 <li><p>Making a Docker container</p></li>
 </ol>
 <section id="setting-up-a-clams-app-in-python">
-<span id="header-n31"></span><h3>1. Setting up a CLAMS app in Python<a class="headerlink" href="#setting-up-a-clams-app-in-python" title="Permalink to this heading">¶</a></h3>
+<span id="header-n31"></span><h3>1. Setting up a CLAMS app in Python<a class="headerlink" href="#setting-up-a-clams-app-in-python" title="Permalink to this heading"></a></h3>
 <p>Each CLAMS app should be a subclass of the <code class="docutils literal notranslate"><span class="pre">ClamsApp</span></code> class in the
 clams-python package.</p>
 <p>Things to do:</p>
@@ -375,7 +289,7 @@ clams-python package.</p>
 </ol>
 <p>Steps 1 and 2 are still a bit unconstrained at this point.</p>
 <section id="appmetadata">
-<span id="header-n44"></span><h4>1.1 <code class="docutils literal notranslate"><span class="pre">_appmetadata</span></code><a class="headerlink" href="#appmetadata" title="Permalink to this heading">¶</a></h4>
+<span id="header-n44"></span><h4>1.1 <code class="docutils literal notranslate"><span class="pre">_appmetadata</span></code><a class="headerlink" href="#appmetadata" title="Permalink to this heading"></a></h4>
 <p>This method should just return a <a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata" title="clams.appmetadata.AppMetadata"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.appmetadata.AppMetadata</span></code></a> .
 containing the metadata relevant to your app.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Kaldi</span><span class="p">(</span><span class="n">ClamsApp</span><span class="p">):</span>
@@ -404,7 +318,7 @@ Also the class provides helper methods for structured fields (<code class="docut
 To see what fields need to be specified in the app metadata, see &lt;<a class="reference internal" href="appmetadata.html#appmetadata"><span class="std std-ref">CLAMS App Metadata</span></a>&gt;.</p>
 </section>
 <section id="annotate-mmif">
-<span id="header-n47"></span><h4>1.2 <code class="docutils literal notranslate"><span class="pre">_annotate(mmif)</span></code><a class="headerlink" href="#annotate-mmif" title="Permalink to this heading">¶</a></h4>
+<span id="header-n47"></span><h4>1.2 <code class="docutils literal notranslate"><span class="pre">_annotate(mmif)</span></code><a class="headerlink" href="#annotate-mmif" title="Permalink to this heading"></a></h4>
 <p>This method should accept a MMIF file as its parameter, and should return
 a <code class="docutils literal notranslate"><span class="pre">Mmif</span></code> object with an additional <code class="docutils literal notranslate"><span class="pre">view</span></code> with annotation results.
 You will see that in the Kaldi wrapper’s method signature, there are
@@ -574,7 +488,7 @@ milliseconds from the JSON data, which is in start/duration form.</p>
 properties by using the <code class="docutils literal notranslate"><span class="pre">id</span></code> property of an <code class="docutils literal notranslate"><span class="pre">Annotation</span></code> object.</p>
 </section>
 <section id="flask-app">
-<span id="header-n87"></span><h4>1.3 Flask app<a class="headerlink" href="#flask-app" title="Permalink to this heading">¶</a></h4>
+<span id="header-n87"></span><h4>1.3 Flask app<a class="headerlink" href="#flask-app" title="Permalink to this heading"></a></h4>
 <p>We use the CLAMS RESTful API:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">kaldi_app</span> <span class="o">=</span> <span class="n">Kaldi</span><span class="p">()</span>
 <span class="n">annotate</span> <span class="o">=</span> <span class="n">kaldi_app</span><span class="o">.</span><span class="n">annotate</span>
@@ -607,13 +521,13 @@ though:</p>
 </section>
 </section>
 <section id="wrangling-data">
-<span id="header-n99"></span><h3>2. Wrangling data<a class="headerlink" href="#wrangling-data" title="Permalink to this heading">¶</a></h3>
+<span id="header-n99"></span><h3>2. Wrangling data<a class="headerlink" href="#wrangling-data" title="Permalink to this heading"></a></h3>
 <p>We have to turn MMIF into usable data for our tool to process, then turn
 the output of that tool back into MMIF.</p>
 <p>In the walkthrough of the <code class="docutils literal notranslate"><span class="pre">annotate</span></code> method, we saw both of these
 steps.</p>
 <section id="mmif-to-tool">
-<span id="header-n102"></span><h4>2.1 MMIF to tool<a class="headerlink" href="#mmif-to-tool" title="Permalink to this heading">¶</a></h4>
+<span id="header-n102"></span><h4>2.1 MMIF to tool<a class="headerlink" href="#mmif-to-tool" title="Permalink to this heading"></a></h4>
 <p>This Kaldi app operates on external files that the MMIF file points to,
 so all we needed to do was extract AudioDocuments from the MMIF
 documents list and locate their audio files.</p>
@@ -626,7 +540,7 @@ does just that!).</p>
 app, and can be less involved (as here) or much more involved.</p>
 </section>
 <section id="tool-to-mmif">
-<span id="header-n106"></span><h4>2.2 Tool to MMIF<a class="headerlink" href="#tool-to-mmif" title="Permalink to this heading">¶</a></h4>
+<span id="header-n106"></span><h4>2.2 Tool to MMIF<a class="headerlink" href="#tool-to-mmif" title="Permalink to this heading"></a></h4>
 <p>Kaldi generated JSON transcripts for us; we wanted to extract all the
 tokens from these transcripts and create several types of annotations in
 a new view.</p>
@@ -640,7 +554,7 @@ app’s output.</p>
 </section>
 </section>
 <section id="making-a-docker-container">
-<span id="header-n110"></span><h3>3. Making a Docker container<a class="headerlink" href="#making-a-docker-container" title="Permalink to this heading">¶</a></h3>
+<span id="header-n110"></span><h3>3. Making a Docker container<a class="headerlink" href="#making-a-docker-container" title="Permalink to this heading"></a></h3>
 <p>CLAMS apps will generally run as Flask servers in Docker containers.</p>
 <p>Writing a Dockerfile for your CLAMS app will likely be pretty simple. We
 have an image on Docker Hub that you can extend:
@@ -685,50 +599,33 @@ container should start up your Flask server. In this case, it runs
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="modules.html" class="btn btn-neutral float-right" title="clams package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="appdirectory.html" class="btn btn-neutral float-left" title="CLAMS App Directory" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="modules.html" class="btn btn-neutral float-right" title="clams package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2023, Brandeis LLC.
-
-    </p>
+    <p>&#169; Copyright 2023, Brandeis LLC.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

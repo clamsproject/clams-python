@@ -1,96 +1,50 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>CLAMS App Metadata &mdash; clams-python  documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="CLAMS App Directory" href="appdirectory.html" />
     <link rel="prev" title="Target MMIF Versions" href="target-versions.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="index.html" class="icon icon-home"> clams-python
           
-
-          
+          <a href="index.html" class="icon icon-home">
+            clams-python
           </a>
-
-          
-            
-            
               <div class="version">
-                0.5.2
+                0.5.3
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a></li>
@@ -112,85 +66,45 @@
 <li class="toctree-l1"><a class="reference internal" href="modules.html">clams package</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">clams-python</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>CLAMS App Metadata</li>
-    
-    
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CLAMS App Metadata</li>
       <li class="wy-breadcrumbs-aside">
-        
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <section id="clams-app-metadata">
-<span id="appmetadata"></span><h1>CLAMS App Metadata<a class="headerlink" href="#clams-app-metadata" title="Permalink to this heading">¶</a></h1>
+<span id="appmetadata"></span><h1>CLAMS App Metadata<a class="headerlink" href="#clams-app-metadata" title="Permalink to this heading"></a></h1>
 <section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">¶</a></h2>
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
 <p>Every CLAMS app must provide information about the app itself. We call this set of information <strong>App Metadata</strong>.</p>
 </section>
 <section id="format">
-<h2>Format<a class="headerlink" href="#format" title="Permalink to this heading">¶</a></h2>
+<h2>Format<a class="headerlink" href="#format" title="Permalink to this heading"></a></h2>
 <p>A CLAMS App Metadata should be able to be serialized into a JSON string.</p>
 </section>
 <section id="metadata-schema">
-<h2>Metadata Schema<a class="headerlink" href="#metadata-schema" title="Permalink to this heading">¶</a></h2>
+<h2>Metadata Schema<a class="headerlink" href="#metadata-schema" title="Permalink to this heading"></a></h2>
 <p>The schema for app metadata is as follows.
 (You can also download the schema in <a class="reference external" href="https://json-schema.org/">JSON Schema</a> format from <a class="reference external" href="appmetadata.jsonschema">here</a>.)</p>
 <section id="clams-appmetadata">
-<h3>CLAMS AppMetadata<a class="headerlink" href="#clams-appmetadata" title="Permalink to this heading">¶</a></h3>
+<h3>CLAMS AppMetadata<a class="headerlink" href="#clams-appmetadata" title="Permalink to this heading"></a></h3>
 <table class="docutils align-default">
 <tbody>
 <tr class="row-odd"><td colspan="6"><p>Defines a data model that describes a CLAMS app.
@@ -496,8 +410,10 @@ as a <code class="docutils literal notranslate"><span class="pre">dict</span></c
 <td colspan="5"><p><em>CLAMS App Runtime Parameter</em></p></td>
 </tr>
 <tr class="row-odd"><td colspan="5"><p>Defines a data model that describes a single runtime configuration of a CLAMS app.
-Usually, an app keeps a list of these configuration specifications in the
-<code class="docutils literal notranslate"><span class="pre">parameters</span></code> field.</p></td>
+Usually, an app keeps a list of these configuration specifications in the <code class="docutils literal notranslate"><span class="pre">parameters</span></code> field.
+When initializing a RuntimeParameter object in python the value for the default field must be a string.
+For example, if you want to set a default value for a boolean parameter, use any of <code class="docutils literal notranslate"><span class="pre">'True'</span></code>, <code class="docutils literal notranslate"><span class="pre">'true'</span></code>, <code class="docutils literal notranslate"><span class="pre">'t'</span></code>,
+or their falsy counterpart, instead of <code class="docutils literal notranslate"><span class="pre">True</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
 <td colspan="4"><p><em>object</em></p></td>
@@ -552,16 +468,16 @@ Usually, an app keeps a list of these configuration specifications in the
 <td><p><em>number</em></p></td>
 </tr>
 <tr class="row-odd"><td><p>type</p></td>
-<td><p><em>string</em></p></td>
+<td><p><em>boolean</em></p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
-<td><p><em>boolean</em></p></td>
+<td><p><em>string</em></p></td>
 </tr>
 <tr class="row-odd"><td rowspan="5"><ul class="simple">
 <li><p>default</p></li>
 </ul>
 </td>
-<td colspan="4"><p>(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter ‘optional’. The value must be a string, that is if you want to set a default value for a boolean parameter, be careful to use ‘true’ or ‘false’ as the value.</p></td>
+<td colspan="4"><p>(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter ‘optional’.</p></td>
 </tr>
 <tr class="row-even"><td rowspan="4"><p>anyOf</p></td>
 <td><p>type</p></td>
@@ -571,10 +487,10 @@ Usually, an app keeps a list of these configuration specifications in the
 <td colspan="2"><p><em>number</em></p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
-<td colspan="2"><p><em>string</em></p></td>
+<td colspan="2"><p><em>boolean</em></p></td>
 </tr>
 <tr class="row-odd"><td><p>type</p></td>
-<td colspan="2"><p><em>boolean</em></p></td>
+<td colspan="2"><p><em>string</em></p></td>
 </tr>
 <tr class="row-even"><td><p>additionalProperties</p></td>
 <td colspan="4"><p>False</p></td>
@@ -587,50 +503,33 @@ Usually, an app keeps a list of these configuration specifications in the
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="appdirectory.html" class="btn btn-neutral float-right" title="CLAMS App Directory" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="target-versions.html" class="btn btn-neutral float-left" title="Target MMIF Versions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="appdirectory.html" class="btn btn-neutral float-right" title="CLAMS App Directory" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2023, Brandeis LLC.
-
-    </p>
+    <p>&#169; Copyright 2023, Brandeis LLC.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
