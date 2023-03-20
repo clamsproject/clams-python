@@ -1,0 +1,80 @@
+name: build a container image and upload to ghcr
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: 'clams-python SDK version'
+      buildfilename:
+        required: true
+        type: string
+        description: 'name of the container build file to use'
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push-image:
+    name: build and push an image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.version }}
+
+
+    - name: get existing labels in the containerfile
+      id: getlabels
+      run: |
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        echo "EXISTING_LABELS<<$EOF" >> $GITHUB_ENV
+        cat ${{ inputs.buildfilename }} | grep LABEL | sed -E 's/^LABEL\s+([^=]+)="?(.+)("|$)/\1=\2/g' >> $GITHUB_ENV
+        echo "$EOF" >> $GITHUB_ENV
+        echo $EXISTING_LABELS
+
+    - name: get image build context
+      id: getcontext
+      run: |
+        echo "CONTEXT=$(dirname ${{ inputs.buildfilename }})" >> $GITHUB_ENV
+
+    - name: get image name suffix using the name of the containerfile
+      id: getsuffix
+      run: |
+        export filename=$(basename ${{ inputs.buildfilename }})
+        export nameonly="${filename%.*}"
+        if [ ${nameonly} == ${filename} ]; then echo "SUFFIX=" >> $GITHUB_ENV ; else echo "SUFFIX=-${nameonly}" >> $GITHUB_ENV; fi
+
+    - name: extract metadata for the image
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ${{ env.REGISTRY }}/${{ github.repository }}${{ env.SUFFIX }}
+        tags: |
+          type=pep440,pattern={{version}},value=${{ inputs.version }}
+          type=ref,event=tag
+          type=ref,event=pr
+        labels: |
+          ${{ env.EXISTING_LABELS }}
+
+    - name: login to the registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: build and push the image
+      uses: docker/build-push-action@v4
+      with:
+        context: ${{ env.CONTEXT }}
+        file: ${{ inputs.buildfilename }}
+        tags: ${{ steps.meta.outputs.tags }}
+        jabels: ${{ env.DOCKER_METADATA_OUTPUT_LABELS }}
+        push: true

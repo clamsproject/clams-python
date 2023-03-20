@@ -1,5 +1,5 @@
 ARG clams_version
-FROM clamsproject/clams-python-ffmpeg:$clams_version
+FROM ghcr.io/clamsproject/clams-python-ffmpeg:$clams_version
 LABEL description="clams-python-opencv image is shipped with clams-python, ffmpeg, and opencv4 with their python bindings"
 
 ARG OPENCV_VERSION=4.5.0

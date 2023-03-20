@@ -5,7 +5,9 @@
 # build time temp files
 VERSION*
 clams/ver
+
 # linux
+.*.sw?
 *~
 .directory # KDE directory preferences
 .Trash-* # Linux trash folder which might appear on any partition or disk

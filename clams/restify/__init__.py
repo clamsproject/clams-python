@@ -1,11 +1,11 @@
-from typing import Dict
+from typing import Dict, Union
 
+import jsonschema
 from flask import Flask, request, Response
 from flask_restful import Resource, Api
+from mmif import Mmif
 
 from clams.app import ClamsApp
-
-from mmif import Mmif
 
 
 class Restifier(object):
@@ -121,7 +121,7 @@ class ClamsHTTPApi(Resource):
 
     def get(self) -> Response:
         """
-        Maps HTTP GET verb to :func:`~clams.app.ClamsApp.appmetadata`.
+        Maps HTTP GET verb to :meth:`~clams.app.ClamsApp.appmetadata`.
 
         :return: Returns app metadata in a HTTP response.
         """
@@ -129,17 +129,21 @@ class ClamsHTTPApi(Resource):
 
     def post(self) -> Response:
         """
-        Maps HTTP POST verb to :func:`~clams.app.ClamsApp.annotate`.
-        Note that for now HTTP PUT verbs is also mapped to :func:`~clams.app.ClamsApp.annotate`.
+        Maps HTTP POST verb to :meth:`~clams.app.ClamsApp.annotate`.
+        Note that for now HTTP PUT verbs is also mapped to :meth:`~clams.app.ClamsApp.annotate`.
 
         :return: Returns MMIF output from a ClamsApp in a HTTP response.
         """
-        in_mmif = Mmif(request.get_data())
-        params = self.annotate_param_caster.cast(request.args)
+        raw_data = request.get_data()
+        raw_params = request.args
         try:
-            return self.json_to_response(self.cla.annotate(in_mmif, **params))
+            mmif = Mmif(raw_data)
+        except jsonschema.exceptions.ValidationError as e:
+            return Response(response="Invalid input data. See below for validation error.\n\n" + str(e), status=500, mimetype='text/plain')
+        try:
+            return self.json_to_response(self.cla.annotate(raw_data, **self.annotate_param_caster.cast(raw_params)))
         except Exception as e:
-            return self.json_to_response(self.cla.record_error(in_mmif, params).serialize(pretty=True), status=500)
+            return self.json_to_response(self.cla.record_error(raw_data, self.annotate_param_caster.cast(raw_params)).serialize(pretty=True), status=500)
 
     put = post
 
@@ -151,17 +155,20 @@ class ParameterCaster(object):
 
     :param param_spec: A specification of a data types of parameters
     """
-    def __init__(self, param_spec: Dict):
+    def __init__(self, param_spec: Dict[str, type]):
         self.param_spec = param_spec
 
-    def cast(self, args):
+    def cast(self, args: Dict[str, str]) -> Dict[str, Union[int, float, str, bool]]:
         """
         Given parameter specification, tries to cast values of args to specified Python data types.
-        If the parameter key is not specified in the app metadata, a ``TypeError` is raised. 
+        Note that this caster deals with query strings, thus all keys and values in the input args are plain strings. 
+        Also note that the caster does not handle "unexpected" parameters came as an input. 
+        Handling (raising an exception or issuing a warning upon receiving) an unexpected runtime parameter 
+        must be done within the app itself.
+        Thus, when a key is not found in the parameter specifications, it should just pass it as a vanilla string.
 
         :param args: k-v pairs
         :return: A new dictionary of type-casted args
-        :raises: KeyError: when parameter is unknown
         """
         casted = {}
         for k, v in args.items():
@@ -174,10 +181,9 @@ class ParameterCaster(object):
                     casted[k] = self.int_param(v)
                 elif self.param_spec[k] == str:
                     casted[k] = self.str_param(v)
-                else:
-                    casted[k] = v
             else:
-                raise KeyError(f"An unknown configuration is passed as a parameter: {k} = {v}")
+                casted[k] = v
+                
         return casted
 
     @staticmethod

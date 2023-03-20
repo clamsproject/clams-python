@@ -1,23 +1,16 @@
 import os
+from typing import Literal
 from typing import Union, Dict, List, Optional
 
 import mmif
 import pydantic
 from mmif import vocabulary
-import sys
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
-primitives = Union[int, float, str, bool]
+primitives = Union[int, float, bool, str]
 # these names are taken from the JSON schema data types
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
 
-if sys.version_info >= (3, 7):
-    param_value_types_values = param_value_types.__args__  # pytype: disable=attribute-error
-else:
-    param_value_types_values = param_value_types.__values__  # pytype: disable=attribute-error
+param_value_types_values = param_value_types.__args__  # pytype: disable=attribute-error
 
 
 def get_clams_pyver():
@@ -86,14 +79,16 @@ class Input(Output):
 class RuntimeParameter(_BaseModel):
     """
     Defines a data model that describes a single runtime configuration of a CLAMS app. 
-    Usually, an app keeps a list of these configuration specifications in the 
-    ``parameters`` field. 
+    Usually, an app keeps a list of these configuration specifications in the ``parameters`` field. 
+    When initializing a RuntimeParameter object in python the value for the default field must be a string. 
+    For example, if you want to set a default value for a boolean parameter, use any of ``'True'``, ``'true'``, ``'t'``,
+    or their falsy counterpart, instead of ``True`` or ``False``
     """
     name: str = pydantic.Field(..., description="A short name of the parameter (works as a key).")
     description: str = pydantic.Field(..., description="A longer description of the parameter (what it does, how to use, etc.).")
     type: param_value_types = pydantic.Field(..., description=f"Type of the parameter value the app expects. Must be one of {param_value_types_values}.") 
     choices: List[primitives] = pydantic.Field(None, description="(optional) List of string values that can be accepted.")
-    default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'. The value must be a string, that is if you want to set a default value for a boolean parameter, be careful to use \'true\' or \'false\' as the value. ")
+    default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'.")
     
     class Config:
         title = 'CLAMS App Runtime Parameter'

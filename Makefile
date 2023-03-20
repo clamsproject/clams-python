@@ -39,7 +39,7 @@ $(generatedcode): VERSION
 docs: mmif := $(shell grep mmif-python requirements.txt)
 docs: pydantic := $(shell grep pydantic requirements.txt)
 docs: VERSION $(generatedcode)
-	pip install --upgrade --no-input $(mmif) $(pydantic)
+	pip install --upgrade --no-input "$(mmif)" "$(pydantic)"
 	rm -rf documentation/_build docs
 	python3 clams/appmetadata/__init__.py > documentation/appmetadata.jsonschema
 	python3 setup.py build_sphinx -a
