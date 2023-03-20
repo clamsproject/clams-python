@@ -76,7 +76,8 @@ jobs:
         context: ${{ env.CONTEXT }}
         file: ${{ inputs.buildfilename }}
         tags: ${{ steps.meta.outputs.tags }}
-        jabels: ${{ env.DOCKER_METADATA_OUTPUT_LABELS }}
+        # using {{ steps.meta.outputs.labels }} doesn't work with multi-line variable ($EXISTING_LABLES)
+        labels: ${{ env.DOCKER_METADATA_OUTPUT_LABELS }}
         build-args: |
           clams_version=${{ inputs.version }}
         push: true
