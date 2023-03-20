@@ -1,5 +1,5 @@
 ARG clams_version
 FROM ghcr.io/clamsproject/clams-python:$clams_version
-LABEL description="clams-python-ffmpeg image is shipped with clams-python and PyTorch"
+LABEL org.opencontainers.image.description="clams-python-ffmpeg image is shipped with clams-python and PyTorch"
 
 RUN pip install torch==1.*
