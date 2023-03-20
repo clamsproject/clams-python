@@ -94,7 +94,7 @@
   ],
   "additionalProperties": false,
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$comment": "clams-python SDK 0.5.2 was used to generate this schema",
+  "$comment": "clams-python SDK 0.5.3 was used to generate this schema",
   "definitions": {
     "Input": {
       "title": "CLAMS Input Specification",
@@ -154,7 +154,7 @@
     },
     "RuntimeParameter": {
       "title": "CLAMS App Runtime Parameter",
-      "description": "Defines a data model that describes a single runtime configuration of a CLAMS app. \nUsually, an app keeps a list of these configuration specifications in the \n``parameters`` field. ",
+      "description": "Defines a data model that describes a single runtime configuration of a CLAMS app. \nUsually, an app keeps a list of these configuration specifications in the ``parameters`` field. \nWhen initializing a RuntimeParameter object in python the value for the default field must be a string. \nFor example, if you want to set a default value for a boolean parameter, use any of ``'True'``, ``'true'``, ``'t'``,\nor their falsy counterpart, instead of ``True`` or ``False``",
       "type": "object",
       "properties": {
         "name": {
@@ -187,16 +187,16 @@
                 "type": "number"
               },
               {
-                "type": "string"
+                "type": "boolean"
               },
               {
-                "type": "boolean"
+                "type": "string"
               }
             ]
           }
         },
         "default": {
-          "description": "(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'. The value must be a string, that is if you want to set a default value for a boolean parameter, be careful to use 'true' or 'false' as the value. ",
+          "description": "(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'.",
           "anyOf": [
             {
               "type": "integer"
@@ -205,10 +205,10 @@
               "type": "number"
             },
             {
-              "type": "string"
+              "type": "boolean"
             },
             {
-              "type": "boolean"
+              "type": "string"
             }
           ]
         }
