@@ -7,3 +7,4 @@ jobs:
   build-and-upload:
     name: documentation and pypi
     uses: clamsproject/.github/.github/workflows/sdk-publish.yml@main
+    secrets: inherit

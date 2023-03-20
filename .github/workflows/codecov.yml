@@ -13,3 +13,5 @@ jobs:
   test-and-codecov:
     name: test and check coverage
     uses: clamsproject/.github/.github/workflows/sdk-codecov.yml@main
+    secrets: inherit
+
