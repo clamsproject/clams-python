@@ -64,9 +64,8 @@ class ExampleClamsApp(clams.app.ClamsApp):
         metadata = AppMetadata(
             name="Example CLAMS App for testing",
             description="This app doesn't do anything",
-            app_version=exampleappversion,
             app_license="MIT",
-            identifier=f"https://apps.clams.ai/example/{exampleappversion}",
+            identifier=f"https://apps.clams.ai/example",
             output=[{'@type': AnnotationTypes.TimeFrame}],
             dependencies=['clams-python==develop-ver', 'mmif-pyhon==0.0.999'],
             url="https://fakegithub.com/some/repository"
@@ -99,6 +98,11 @@ class TestClamsApp(unittest.TestCase):
     def test_jsonschema_export(self):
         # TODO (krim @ 4/20/21): there may be a better test for this...
         self.assertIsNotNone(self.appmetadataschema)
+    
+    def test_generate_app_version(self):
+        self.assertEqual(clams.appmetadata.generate_app_version('not-existing-app'), clams.appmetadata.unresolved_app_version_num)
+        # krim: have to admit that the way version generation is using local working directory makes it hard to test
+        # self.assertTrue(clams.__version__.startswith(clams.appmetadata.generate_app_version('../').split('-')[0]))
 
     def test_appmetadata(self):
         # base metadata setting is done in the ExampleClamsApp class

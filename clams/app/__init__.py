@@ -49,10 +49,7 @@ class ClamsApp(ABC):
         :return: Serialized JSON string of the metadata
         """
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
-        if pretty:
-            return self.metadata.json(exclude_defaults=True, by_alias=True, indent=2)
-        else:
-            return self.metadata.json(exclude_defaults=True, by_alias=True)
+        return self.metadata.jsonify(pretty)
 
     @abstractmethod
     def _appmetadata(self) -> AppMetadata:
