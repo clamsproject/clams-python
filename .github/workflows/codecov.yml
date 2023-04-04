@@ -13,5 +13,6 @@ jobs:
   test-and-codecov:
     name: test and check coverage
     uses: clamsproject/.github/.github/workflows/sdk-codecov.yml@main
-    secrets: inherit
+    secrets:
+      CC_REPO_UPLOAD_TOKEN: ${{ secrets.CODECOV_UPLOAD_TOKEN_CLAMS_PYTHON }}
 
