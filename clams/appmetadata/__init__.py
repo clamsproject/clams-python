@@ -15,6 +15,7 @@ primitives = Union[int, float, bool, str]
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
 
 param_value_types_values = param_value_types.__args__  # pytype: disable=attribute-error
+app_directory_baseurl = "http://apps.clams.ai"
 
 
 def get_clams_pyver():
@@ -113,25 +114,38 @@ class RuntimeParameter(_BaseModel):
 class AppMetadata(pydantic.BaseModel):
     """
     Defines a data model that describes a CLAMS app. 
-    Can be initialized by simply passing all required key-value pairs. If you 
-    have a pre-generated metadata as an external file, you can read in the file 
-    as a ``dict`` and use it as keyword arguments for initialization. 
+    
+    Can be initialized by simply passing all required key-value pairs. 
+    
+    If you have a pre-generated metadata as an external file, you can read in the file as a ``dict`` and use it as keyword arguments for initialization. 
     
     Please refer to <:ref:`appmetadata`> for the metadata specification. 
     """
+    # make sure to use two line feeds in description field when needed, that will make newline in compiled html page
     name: str = pydantic.Field(..., description="A short name of the app.")
     description: str = pydantic.Field(..., description="A longer description of the app (what it does, how to use, etc.).")
-    app_version: str = pydantic.Field(default_factory=generate_app_version, description="(AUTO) Version of the app. When the metadata is generated using clams-python SDK, this field is automatically filled in")
-    mmif_version: str = pydantic.Field(default_factory=get_mmif_specver, description="(AUTO) Version of MMIF specification the app. When the metadata is generated using clams-python SDK, this field is automatically filled in.")
+    app_version: str = pydantic.Field(default_factory=generate_app_version, description="(AUTO-GENERATED, DO NOT SET MANUALLY)\n\n"
+                                                                                        "Version of the app.\n\n"
+                                                                                        "When the metadata is generated using clams-python SDK, this field is automatically filled in")
+    mmif_version: str = pydantic.Field(default_factory=get_mmif_specver, description="(AUTO-GENERATED, DO NOT SET MANUALLY)\n\n"
+                                                                                     "Version of MMIF specification the app.\n\n"
+                                                                                     "When the metadata is generated using clams-python SDK, this field is automatically filled in.")
     analyzer_version: str = pydantic.Field(None, description="(optional) Version of an analyzer software, if the app is working as a wrapper for one. ")
     app_license: str = pydantic.Field(..., description="License information of the app.")
     analyzer_license: str = pydantic.Field(None, description="(optional) License information of an analyzer software, if the app is working as a wrapper for one. ")
-    identifier: pydantic.AnyHttpUrl = pydantic.Field(..., description="(partly AUTO) IRI-formatted unique identifier for the app. When the metadata is generated using clams-python SDK, the `app_version` value will automatically be appended")
+    identifier: pydantic.AnyHttpUrl = pydantic.Field(..., description="(partly AUTO-GENERATED)\n\n"
+                                                                      "IRI-formatted unique identifier for the app.\n\n"
+                                                                      "If the app is to be published to the CLAMS app-directory, the developer should give a single string value composed with valid URL characters (no ``/``, no whitespace),\n\n"
+                                                                      "then when the metadata is generated using clams-python SDK, the app-directory URL is prepended and ``app_version`` value will be appended automatically.\n\n"
+                                                                      "For example, ``example-app`` -> ``http://apps.clams.ai/example-app/1.0.0``\n\n"
+                                                                      "Otherwise, only the ``app_version`` value is used as suffix, so use an IRI form, but leave the version number out.")
     url: pydantic.AnyHttpUrl = pydantic.Field(..., description="A public repository where the app's source code (git-based) and/or installation specification is available. ")
     input: List[Input] = pydantic.Field([], description="List of input types. Must have at least one.")
     output: List[Output] = pydantic.Field([], description="List of output types. Must have at least one.")
     parameters: List[RuntimeParameter] = pydantic.Field([], description="List of runtime parameters. Can be empty.")
-    dependencies: List[str] = pydantic.Field(None, description="(optional) List of software dependencies of the app. This list is completely optional, as in most cases such dependencies are specified in a separate file in the codebase of the app (for example, ``requirements.txt`` file for a Python app, or ``pom.xml`` file for a maven-based Java app). List elements must be strings, not any kind of structured data. Thus, it is recommended to include a package name and its version in the string value at the minimum (e.g., ``clams-python==1.2.3``).")
+    dependencies: List[str] = pydantic.Field(None, description="(optional) List of software dependencies of the app. \n\n"
+                                                               "This list is completely optional, as in most cases such dependencies are specified in a separate file in the codebase of the app (for example, ``requirements.txt`` file for a Python app, or ``pom.xml`` file for a maven-based Java app).\n\n"
+                                                               "List elements must be strings, not any kind of structured data. Thus, it is recommended to include a package name and its version in the string value at the minimum (e.g., ``clams-python==1.2.3``).")
     more: Dict[str, str] = pydantic.Field(None, description="(optional) A string-to-string map that can be used to store any additional metadata of the app.")
 
     class Config:
@@ -148,7 +162,7 @@ class AppMetadata(pydantic.BaseModel):
 
     @pydantic.validator('identifier', pre=True)
     def append_version(cls, val):
-        return f'{val}{"" if val.endswith("/") else "/"}{generate_app_version()}'
+        return f'{app_directory_baseurl if "/" not in val else""}/{val}{"" if val.endswith("/") else "/"}{generate_app_version()}'
 
     def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = True, **properties):
         """
