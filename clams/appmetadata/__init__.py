@@ -162,7 +162,9 @@ class AppMetadata(pydantic.BaseModel):
 
     @pydantic.validator('identifier', pre=True)
     def append_version(cls, val):
-        return f'{app_directory_baseurl if "/" not in val else""}/{val}{"" if val.endswith("/") else "/"}{generate_app_version()}'
+        prefix = f'{app_directory_baseurl if "/" not in val else""}'
+        suffix = generate_app_version()
+        return '/'.join(map(lambda x: x.strip('/'), filter(None, (prefix, val, suffix))))
 
     def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = True, **properties):
         """

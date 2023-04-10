@@ -60,7 +60,6 @@ class ExampleClamsApp(clams.app.ClamsApp):
 
     def _appmetadata(self) -> Union[dict, AppMetadata]:
         
-        exampleappversion = '0.0.1'
         metadata = AppMetadata(
             name="Example CLAMS App for testing",
             description="This app doesn't do anything",
