@@ -57,6 +57,7 @@ class TestSerialization(unittest.TestCase):
 
 
 class ExampleClamsApp(clams.app.ClamsApp):
+    app_version = 'no-manual-version',
 
     def _appmetadata(self) -> Union[dict, AppMetadata]:
         
@@ -64,6 +65,7 @@ class ExampleClamsApp(clams.app.ClamsApp):
             name="Example CLAMS App for testing",
             description="This app doesn't do anything",
             app_license="MIT",
+            app_version=self.app_version,
             identifier=f"https://apps.clams.ai/example",
             output=[{'@type': AnnotationTypes.TimeFrame}],
             dependencies=['clams-python==develop-ver', 'mmif-pyhon==0.0.999'],
@@ -113,6 +115,7 @@ class TestClamsApp(unittest.TestCase):
         
         # test base metadata
         metadata = json.loads(self.app.appmetadata())
+        self.assertNotEquals(self.app.app_version, metadata['app_version'])
         self.assertEqual(len(metadata['output']), 1)
         self.assertEqual(len(metadata['input']), 1)
         self.assertTrue('properties' not in metadata['output'][0])

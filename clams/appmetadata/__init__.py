@@ -166,6 +166,14 @@ class AppMetadata(pydantic.BaseModel):
         suffix = generate_app_version()
         return '/'.join(map(lambda x: x.strip('/'), filter(None, (prefix, val, suffix))))
 
+    @pydantic.validator('mmif_version', pre=True)
+    def auto_mmif_version(cls, val):
+        return get_mmif_specver()
+    
+    @pydantic.validator('app_version', pre=True)
+    def auto_app_version(cls, val):
+        return generate_app_version()
+
     def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = True, **properties):
         """
         Helper method to add an element to the ``input`` list. 
