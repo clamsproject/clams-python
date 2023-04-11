@@ -9,7 +9,8 @@ import mmif
 import pydantic
 from mmif import vocabulary
 
-unresolved_app_version_num = 'unresolved'
+unresolved_app_version_num = 'unresolvable'
+app_version_envvar_key = 'CLAMS_APP_VERSION'
 primitives = Union[int, float, bool, str]
 # these names are taken from the JSON schema data types
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
@@ -33,14 +34,13 @@ def get_clams_pyver():
 
 
 def generate_app_version(cwd=None):
-    if 'CLAMS_APP_VERSION' in os.environ:
-        return os.environ['CLAMS_APP_VERSION']
+    proc = subprocess.run(f'git --git-dir {Path(sys.modules["__main__"].__file__).parent.resolve() if cwd is None else cwd}/.git describe --tags --always'.split(), capture_output=True)
+    if proc.returncode == 0:
+        return proc.stdout.decode('utf8').strip()
+    elif app_version_envvar_key in os.environ:
+        return os.environ[app_version_envvar_key]
     else:
-        proc = subprocess.run(f'git --git-dir {Path(sys.modules["__main__"].__file__).parent.resolve() if cwd is None else cwd}/.git describe --tags --always'.split(), capture_output=True)
-        if proc.returncode == 0:
-            return proc.stdout.decode('utf8').strip()
-        else:
-            return unresolved_app_version_num
+        return unresolved_app_version_num
 
 
 def get_mmif_specver():

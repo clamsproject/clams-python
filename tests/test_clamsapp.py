@@ -99,7 +99,11 @@ class TestClamsApp(unittest.TestCase):
         self.assertIsNotNone(self.appmetadataschema)
     
     def test_generate_app_version(self):
+        os.environ.pop(clams.appmetadata.app_version_envvar_key, None)
         self.assertEqual(clams.appmetadata.generate_app_version('not-existing-app'), clams.appmetadata.unresolved_app_version_num)
+        os.environ.update({clams.appmetadata.app_version_envvar_key:'v10'})
+        self.assertEqual(clams.appmetadata.generate_app_version('not-existing-app'), 'v10')
+        os.environ.pop(clams.appmetadata.app_version_envvar_key, None)
         # krim: have to admit that the way version generation is using local working directory makes it hard to test
         # self.assertTrue(clams.__version__.startswith(clams.appmetadata.generate_app_version('../').split('-')[0]))
 
