@@ -22,8 +22,11 @@ def prep_argparser():
         action='version',
         version=version_template.format(__version__, __specver__)
     )
-    subparsers = parser.add_subparsers(dest='subcmd')
-    subparsers.add_parser('source', parents=[source.prep_argparser()], add_help=False)
+    subparsers = parser.add_subparsers(title='sub-command', dest='subcmd')
+    for subcmd_module in [source]:
+        subcmd_name = subcmd_module.__name__.rsplit('.')[1]
+        subcmd_parser = subcmd_module.prep_argparser(add_help=False)
+        subparsers.add_parser(subcmd_name, parents=[subcmd_parser], help=subcmd_module.prep_argparser.__doc__)
     return parser
 
 
