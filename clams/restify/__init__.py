@@ -173,14 +173,19 @@ class ParameterCaster(object):
         casted = {}
         for k, v in args.items():
             if k in self.param_spec:
-                if self.param_spec[k] == bool:
-                    casted[k] = self.bool_param(v)
-                elif self.param_spec[k] == float:
-                    casted[k] = self.float_param(v)
-                elif self.param_spec[k] == int:
-                    casted[k] = self.int_param(v)
-                elif self.param_spec[k] == str:
-                    casted[k] = self.str_param(v)
+                type_, allow_many = self.param_spec[k]
+                if type_ == bool:
+                    v = self.bool_param(v)
+                elif type_ == float:
+                    v = self.float_param(v)
+                elif type_ == int:
+                    v = self.int_param(v)
+                elif type_ == str:
+                    v = self.str_param(v)
+                if not allow_many:
+                    casted[k] = v
+                else:
+                    casted.setdefault(k, []).append(v)
             else:
                 casted[k] = v
                 

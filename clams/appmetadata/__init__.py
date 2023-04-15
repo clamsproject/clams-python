@@ -105,6 +105,7 @@ class RuntimeParameter(_BaseModel):
     type: param_value_types = pydantic.Field(..., description=f"Type of the parameter value the app expects. Must be one of {param_value_types_values}.") 
     choices: List[primitives] = pydantic.Field(None, description="(optional) List of string values that can be accepted.")
     default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'.")
+    allow_many: bool = pydantic.Field(False, description="(optional, False by default) Set True if the parameter can have multiple values.")
     
     class Config:
         title = 'CLAMS App Runtime Parameter'
