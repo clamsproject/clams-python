@@ -68,7 +68,7 @@ class Output(_BaseModel):
         if not isinstance(v, str):
             return str(v)
         return v
-    
+
     class Config:
         title = 'CLAMS Output Specification'
         extra = 'forbid'
@@ -79,7 +79,7 @@ class Input(Output):
     """
     Defines a data model that describes input specification of a CLAMS app
     """
-    required: bool = pydantic.Field(None, description="(optional) Indicating whether this input type is mandatory or optional.")
+    required: bool = pydantic.Field(None, description="(optional, True by default) Indicating whether this input type is mandatory or optional.")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -140,7 +140,11 @@ class AppMetadata(pydantic.BaseModel):
                                                                       "For example, ``example-app`` -> ``http://apps.clams.ai/example-app/1.0.0``\n\n"
                                                                       "Otherwise, only the ``app_version`` value is used as suffix, so use an IRI form, but leave the version number out.")
     url: pydantic.AnyHttpUrl = pydantic.Field(..., description="A public repository where the app's source code (git-based) and/or installation specification is available. ")
-    input: List[Input] = pydantic.Field([], description="List of input types. Must have at least one.")
+    input: List[Union[Input, List[Input]]] = pydantic.Field([], description="List of input types. Must have at least one element.\n\n"
+                                                                     "This list is conjunctive, meaning the app requires all input elements to properly work.\n\n"
+                                                                     "However, a nested list in this list means ``oneOf`` disjunctive specification.\n\n"
+                                                                     "For example, ``input = [TypeA, [TypeB, TypeC]]`` means``TypeA`` is required and either ``TypeB`` or ``TypeC`` is additionally required.\n\n"
+                                                                     "All input elements in the nested list must not be ``required=False``, and only a single nesting level is allowed (e.g. ``input = [TypeA, [ [TypeB, TypeC], [TypeD, TypeE] ] ]`` is not allowed).")
     output: List[Output] = pydantic.Field([], description="List of output types. Must have at least one.")
     parameters: List[RuntimeParameter] = pydantic.Field([], description="List of runtime parameters. Can be empty.")
     dependencies: List[str] = pydantic.Field(None, description="(optional) List of software dependencies of the app. \n\n"
@@ -173,6 +177,17 @@ class AppMetadata(pydantic.BaseModel):
     @pydantic.validator('app_version', pre=True)
     def auto_app_version(cls, val):
         return generate_app_version()
+    
+    def _check_input_duplicate(self, a_input):
+        for elem in self.input:
+            if isinstance(elem, list):
+                for nested_elem in elem:
+                    if nested_elem == a_input:
+                        return True
+            else:
+                if elem == a_input:
+                    return True
+        return False
 
     def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = True, **properties):
         """
@@ -185,15 +200,36 @@ class AppMetadata(pydantic.BaseModel):
         new = Input(at_type=at_type, required=required)
         if len(properties) > 0:
             new.properties = properties
-        if new not in self.input:
+        if self._check_input_duplicate(new):
+            raise ValueError(f"Cannot add a duplicate input '{new}'.")
+        else:
             self.input.append(new)
             if not required:
                 # TODO (krim @ 5/12/21): automatically add *optional* input types to parameter
                 # see https://github.com/clamsproject/clams-python/issues/29 for discussion
                 pass
+
+    def add_input_oneof(self, *inputs: Union[str, Input, vocabulary.ThingTypesBase] ):
+        newinputs = []
+        if len(inputs) == 1:
+            if isinstance(inputs[0], Input):
+                if not self._check_input_duplicate(inputs[0]):
+                    self.input.append(inputs[0])
+            else:
+                self.add_input(at_type=inputs[0])
+
         else:
-            raise ValueError(f"Cannot add a duplicate input '{new}'.")
-        
+            for i in inputs:
+                if not isinstance(i, Input):
+                    i = Input(at_type=i)
+                if not i.required:
+                    raise ValueError(f"Input type in `oneOf` specification cannot be optional: {i}")
+                if self._check_input_duplicate(i) or i in newinputs:
+                    raise ValueError(f"Cannot add a duplicate input '{i}'.")
+                else:
+                    newinputs.append(i)
+            self.input.append(newinputs)
+
     def add_output(self, at_type: Union[str, vocabulary.ThingTypesBase], **properties):
         """
         Helper method to add an element to the ``output`` list. 

@@ -11,7 +11,7 @@ from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver
 
 import clams.app
 import clams.restify
-from clams.appmetadata import AppMetadata
+from clams.appmetadata import AppMetadata, Input
 from clams.restify import ParameterCaster
 
 
@@ -71,7 +71,8 @@ class ExampleClamsApp(clams.app.ClamsApp):
             dependencies=['clams-python==develop-ver', 'mmif-pyhon==0.0.999'],
             url="https://fakegithub.com/some/repository"
         )
-        metadata.add_input(DocumentTypes.AudioDocument)
+        metadata.add_input(DocumentTypes.TextDocument)
+        metadata.add_input_oneof(DocumentTypes.AudioDocument, str(DocumentTypes.VideoDocument))
         metadata.add_parameter(name='raise_error', description='force raise a ValueError',
                                type='boolean', default='false')
         return metadata
@@ -117,10 +118,13 @@ class TestClamsApp(unittest.TestCase):
         metadata = json.loads(self.app.appmetadata())
         self.assertNotEquals(self.app.app_version, metadata['app_version'])
         self.assertEqual(len(metadata['output']), 1)
-        self.assertEqual(len(metadata['input']), 1)
+        self.assertEqual(len(metadata['input']), 2)
         self.assertTrue('properties' not in metadata['output'][0])
-        self.assertTrue('properties' not in metadata['input'][0])
-        self.assertTrue(metadata['input'][0]['required'])
+        for i in metadata['input']:
+            if isinstance(i, dict):
+                elem = i
+        self.assertTrue('properties' not in elem)
+        self.assertTrue(elem['required'])
         
         # test add_X methods
         self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='text')
@@ -128,20 +132,28 @@ class TestClamsApp(unittest.TestCase):
         self.assertEqual(len(metadata['output']), 2)
         # these should not be added as a duplicate
         with self.assertRaises(ValueError):
-            self.app.metadata.add_input(at_type=DocumentTypes.AudioDocument)
+            self.app.metadata.add_input(at_type=DocumentTypes.TextDocument)
         with self.assertRaises(ValueError):
             self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='text')
         # but this should 
         self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='face')
         metadata = json.loads(self.app.appmetadata())
-        self.assertEqual(len(metadata['input']), 1)
+        self.assertEqual(len(metadata['input']), 2)
         self.assertTrue('properties' not in metadata['input'][0])
         # adding input with properties
         self.app.metadata.add_input(at_type=AnnotationTypes.TimeFrame, frameType='speech')
         metadata = json.loads(self.app.appmetadata())
-        self.assertEqual(len(metadata['input']), 2)
-        self.assertTrue('properties' in metadata['input'][1])
-        self.assertEqual(len(metadata['input'][1]['properties']), 1)
+        self.assertEqual(len(metadata['input']), 3)
+        self.assertTrue('properties' in metadata['input'][-1])
+        self.assertEqual(len(metadata['input'][-1]['properties']), 1)
+        self.app.metadata.add_input_oneof(AnnotationTypes.Polygon)
+        self.assertEqual(len(self.app.metadata.input), 4)
+        self.assertFalse(isinstance(self.app.metadata.input[-1], list))
+        # adding a list should not contain "optional" types
+        i = Input(at_type=AnnotationTypes.BoundingBox, required=False)
+        j = Input(at_type=AnnotationTypes.VideoObject)
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_input_oneof(i, j)
         # now parameters
         # using a custom class
         # this should conflict with existing parameter
