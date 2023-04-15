@@ -2,8 +2,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Literal
-from typing import Union, Dict, List, Optional
+from typing import Union, Dict, List, Optional, Literal
 
 import mmif
 import pydantic
@@ -11,6 +10,7 @@ from mmif import vocabulary
 
 unresolved_app_version_num = 'unresolvable'
 app_version_envvar_key = 'CLAMS_APP_VERSION'
+# type aliases to use in app metadata and runtime parameter processing 
 primitives = Union[int, float, bool, str]
 # these names are taken from the JSON schema data types
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
@@ -105,6 +105,8 @@ class RuntimeParameter(_BaseModel):
     type: param_value_types = pydantic.Field(..., description=f"Type of the parameter value the app expects. Must be one of {param_value_types_values}.") 
     choices: List[primitives] = pydantic.Field(None, description="(optional) List of string values that can be accepted.")
     default: primitives = pydantic.Field(None, description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'.")
+    allow_many: bool = pydantic.Field(False, description="(optional, False by default) Set True if the parameter can have multiple values.\n\n"
+                                                         "Note that, for parameters that allow multiple values, the SDK will pass a singleton list to ``_annotate()`` even when one value is passed via HTTP.")
     
     class Config:
         title = 'CLAMS App Runtime Parameter'

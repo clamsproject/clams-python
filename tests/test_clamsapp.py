@@ -331,7 +331,10 @@ class TestRestifier(unittest.TestCase):
 class TestParameterCaster(unittest.TestCase):
     
     def setUp(self) -> None:
-        self.param_spec = {'str_param': str, 'number_param': float, 'int_param': int, 'bool_param': bool}
+        self.param_spec = {'str_param': (str, False), 
+                           'number_param': (float, False),
+                           'int_param': (int, False),
+                           'bool_param': (bool, False)}
         
     def test_cast(self):
         caster = ParameterCaster(self.param_spec)

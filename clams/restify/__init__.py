@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, Union, Any, Tuple, List
 
 import jsonschema
 from flask import Flask, request, Response
@@ -6,6 +6,7 @@ from flask_restful import Resource, Api
 from mmif import Mmif
 
 from clams.app import ClamsApp
+from clams.appmetadata import primitives
 
 
 class Restifier(object):
@@ -155,10 +156,10 @@ class ParameterCaster(object):
 
     :param param_spec: A specification of a data types of parameters
     """
-    def __init__(self, param_spec: Dict[str, type]):
+    def __init__(self, param_spec: Dict[str, Tuple[primitives, bool]]):
         self.param_spec = param_spec
 
-    def cast(self, args: Dict[str, str]) -> Dict[str, Union[int, float, str, bool]]:
+    def cast(self, args: Dict[str, str]) -> Dict[str, Union[primitives, List[primitives]]]:
         """
         Given parameter specification, tries to cast values of args to specified Python data types.
         Note that this caster deals with query strings, thus all keys and values in the input args are plain strings. 
@@ -173,14 +174,19 @@ class ParameterCaster(object):
         casted = {}
         for k, v in args.items():
             if k in self.param_spec:
-                if self.param_spec[k] == bool:
-                    casted[k] = self.bool_param(v)
-                elif self.param_spec[k] == float:
-                    casted[k] = self.float_param(v)
-                elif self.param_spec[k] == int:
-                    casted[k] = self.int_param(v)
-                elif self.param_spec[k] == str:
-                    casted[k] = self.str_param(v)
+                type_, allow_many = self.param_spec[k]
+                if type_ == bool:
+                    v = self.bool_param(v)
+                elif type_ == float:
+                    v = self.float_param(v)
+                elif type_ == int:
+                    v = self.int_param(v)
+                elif type_ == str:
+                    v = self.str_param(v)
+                if not allow_many:
+                    casted[k] = v
+                else:
+                    casted.setdefault(k, []).append(v)
             else:
                 casted[k] = v
                 
