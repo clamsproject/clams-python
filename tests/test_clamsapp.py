@@ -57,16 +57,16 @@ class TestSerialization(unittest.TestCase):
 
 
 class ExampleClamsApp(clams.app.ClamsApp):
+    app_version = 'no-manual-version',
 
     def _appmetadata(self) -> Union[dict, AppMetadata]:
         
-        exampleappversion = '0.0.1'
         metadata = AppMetadata(
             name="Example CLAMS App for testing",
             description="This app doesn't do anything",
-            app_version=exampleappversion,
             app_license="MIT",
-            identifier=f"https://apps.clams.ai/example/{exampleappversion}",
+            app_version=self.app_version,
+            identifier=f"https://apps.clams.ai/example",
             output=[{'@type': AnnotationTypes.TimeFrame}],
             dependencies=['clams-python==develop-ver', 'mmif-pyhon==0.0.999'],
             url="https://fakegithub.com/some/repository"
@@ -99,6 +99,15 @@ class TestClamsApp(unittest.TestCase):
     def test_jsonschema_export(self):
         # TODO (krim @ 4/20/21): there may be a better test for this...
         self.assertIsNotNone(self.appmetadataschema)
+    
+    def test_generate_app_version(self):
+        os.environ.pop(clams.appmetadata.app_version_envvar_key, None)
+        self.assertEqual(clams.appmetadata.generate_app_version('not-existing-app'), clams.appmetadata.unresolved_app_version_num)
+        os.environ.update({clams.appmetadata.app_version_envvar_key:'v10'})
+        self.assertEqual(clams.appmetadata.generate_app_version('not-existing-app'), 'v10')
+        os.environ.pop(clams.appmetadata.app_version_envvar_key, None)
+        # krim: have to admit that the way version generation is using local working directory makes it hard to test
+        # self.assertTrue(clams.__version__.startswith(clams.appmetadata.generate_app_version('../').split('-')[0]))
 
     def test_appmetadata(self):
         # base metadata setting is done in the ExampleClamsApp class
@@ -106,6 +115,7 @@ class TestClamsApp(unittest.TestCase):
         
         # test base metadata
         metadata = json.loads(self.app.appmetadata())
+        self.assertNotEquals(self.app.app_version, metadata['app_version'])
         self.assertEqual(len(metadata['output']), 1)
         self.assertEqual(len(metadata['input']), 1)
         self.assertTrue('properties' not in metadata['output'][0])
