@@ -202,16 +202,21 @@ class AppMetadata(pydantic.BaseModel):
     input: List[Union[Input, List[Input]]] = pydantic.Field(
         [],
         description="List of input types. Must have at least one element.\n\n"
-                    "This list is conjunctive, meaning the app requires all input elements to properly work.\n\n"
-                    "However, a nested list in this list means ``oneOf`` disjunctive specification.\n\n"
-                    "For example, ``input = [TypeA, [TypeB, TypeC]]`` means``TypeA`` is required and either ``TypeB`` "
-                    "or ``TypeC`` is additionally required.\n\n"
+                    "This list should iterate all input types in an exhaustive and meticulous manner, meaning it is "
+                    "recommended for developers to pay extra attention to ``input`` and ``output`` fields to include "
+                    "1) all types are listed, 2) if types to have specific properties, include the properties.\n\n"
+                    "This list should interpreted conjunctive (``AND``).\n\n"
+                    "However, a nested list in this list means ``oneOf`` disjunctive (``OR``) specification.\n\n"
+                    "For example, ``input = [TypeA (req=True), [TypeB, TypeC]]`` means``TypeA`` is required and either "
+                    "``TypeB`` or ``TypeC`` is additionally required.\n\n"
                     "All input elements in the nested list must not be ``required=False``, and only a single nesting "
                     "level is allowed (e.g. ``input = [TypeA, [ [TypeB, TypeC], [TypeD, TypeE] ] ]`` is not allowed)."
     )
     output: List[Output] = pydantic.Field(
         [], 
         description="List of output types. Must have at least one element."
+                    "This list should iterate all output types in an exhaustive and meticulous manner, meaning it is "
+                    "recommended for developers to pay extra attention to ``input`` and ``output`` fields to include "
     )
     parameters: List[RuntimeParameter] = pydantic.Field(
         [],
