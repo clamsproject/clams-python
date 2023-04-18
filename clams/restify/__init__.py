@@ -136,9 +136,10 @@ class ClamsHTTPApi(Resource):
         :return: Returns MMIF output from a ClamsApp in a HTTP response.
         """
         raw_data = request.get_data()
-        raw_params = request.args
+        # this will catch duplicate arguments with different values into a list under the key
+        raw_params = request.args.to_dict(False)
         try:
-            mmif = Mmif(raw_data)
+            _ = Mmif(raw_data)
         except jsonschema.exceptions.ValidationError as e:
             return Response(response="Invalid input data. See below for validation error.\n\n" + str(e), status=500, mimetype='text/plain')
         try:
@@ -159,7 +160,7 @@ class ParameterCaster(object):
     def __init__(self, param_spec: Dict[str, Tuple[primitives, bool]]):
         self.param_spec = param_spec
 
-    def cast(self, args: Dict[str, str]) -> Dict[str, Union[primitives, List[primitives]]]:
+    def cast(self, args: Dict[str, List[str]]) -> Dict[str, Union[primitives, List[primitives]]]:
         """
         Given parameter specification, tries to cast values of args to specified Python data types.
         Note that this caster deals with query strings, thus all keys and values in the input args are plain strings. 
@@ -172,24 +173,26 @@ class ParameterCaster(object):
         :return: A new dictionary of type-casted args
         """
         casted = {}
-        for k, v in args.items():
-            if k in self.param_spec:
-                type_, allow_many = self.param_spec[k]
-                if type_ == bool:
-                    v = self.bool_param(v)
-                elif type_ == float:
-                    v = self.float_param(v)
-                elif type_ == int:
-                    v = self.int_param(v)
-                elif type_ == str:
-                    v = self.str_param(v)
-                if not allow_many:
-                    casted[k] = v
+        for k, vs in args.items():
+            for v in vs:
+                if k in self.param_spec:
+                    type_, multivalued = self.param_spec[k]
+                    if multivalued or k not in casted:  # effectively only keeps the first value for non-multi params
+                        if type_ == bool:
+                            v = self.bool_param(v)
+                        elif type_ == float:
+                            v = self.float_param(v)
+                        elif type_ == int:
+                            v = self.int_param(v)
+                        elif type_ == str:
+                            v = self.str_param(v)
+                        if not multivalued:
+                            casted[k] = v
+                        else:
+                            casted.setdefault(k, []).append(v)
                 else:
-                    casted.setdefault(k, []).append(v)
-            else:
-                casted[k] = v
-                
+                    casted[k] = v[0]  # just keep the first value
+                    
         return casted
 
     @staticmethod

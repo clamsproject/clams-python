@@ -38,9 +38,9 @@ class ClamsApp(ABC):
         self.annotate_param_spec = {}
         for param in ClamsApp.universal_parameters:
             self.metadata.add_parameter(**param)
-            self.metadata_param_spec[param['name']] = (python_type[param['type']], param.get('allow_many', False))
+            self.metadata_param_spec[param['name']] = (python_type[param['type']], param.get('multivalued', False))
         for param_spec in self.metadata.parameters:
-            self.annotate_param_spec[param_spec.name] = (python_type[param_spec.type], param_spec.allow_many)
+            self.annotate_param_spec[param_spec.name] = (python_type[param_spec.type], param_spec.multivalued)
 
     def appmetadata(self, **kwargs) -> str:
         """
