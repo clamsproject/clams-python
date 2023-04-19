@@ -1,0 +1,12 @@
+name: Container Image Deployment
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    name: Build and deploy to a container repository
+    uses: clamsproject/.github/.github/workflows/app-container.yml@main
+    secrets: inherit

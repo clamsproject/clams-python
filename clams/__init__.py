@@ -3,14 +3,16 @@ import sys
 from mmif import __specver__
 
 from clams import source
+from clams import develop
 from clams.app import *
 from clams.app import __all__ as app_all
 from clams.appmetadata import AppMetadata
 from clams.restify import Restifier
 from clams.source import PipelineSource
+from clams.develop import CookieCutter
 from clams.ver import __version__
 
-__all__ = [AppMetadata, 'Restifier', 'PipelineSource'] + app_all
+__all__ = [AppMetadata, Restifier, PipelineSource] + app_all
 version_template = "{} (based on MMIF spec: {})"
 
 
@@ -23,8 +25,8 @@ def prep_argparser():
         version=version_template.format(__version__, __specver__)
     )
     subparsers = parser.add_subparsers(title='sub-command', dest='subcmd')
-    for subcmd_module in [source]:
-        subcmd_name = subcmd_module.__name__.rsplit('.')[1]
+    for subcmd_module in [source, develop]:
+        subcmd_name = subcmd_module.__name__.rsplit('.')[-1]
         subcmd_parser = subcmd_module.prep_argparser(add_help=False)
         subparsers.add_parser(subcmd_name, parents=[subcmd_parser], help=subcmd_module.prep_argparser.__doc__)
     return parser
@@ -38,3 +40,5 @@ def cli():
     args = parser.parse_args()
     if args.subcmd == 'source':
         source.main(args)
+    if args.subcmd == 'develop':
+        develop.main(args)

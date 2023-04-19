@@ -1,0 +1,2 @@
+# Make sure clams-python version is explicitly specified, at least the lower bound
+clams-python==$CLAMS_VERSION
