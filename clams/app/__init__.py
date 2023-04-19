@@ -23,7 +23,7 @@ class ClamsApp(ABC):
     # The behavioral changes based on these parameters must be implemented on the SDK level. 
     universal_parameters = [
         {
-            'name': 'pretty', 'type': 'boolean', 'choices': None, 'default': False,
+            'name': 'pretty', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
             'description': 'The JSON body of the HTTP response will be re-formatted with 2-space indentation',
         },
     ]

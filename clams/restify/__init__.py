@@ -104,8 +104,8 @@ class ClamsHTTPApi(Resource):
     def __init__(self, cla_instance: ClamsApp):
         super().__init__()
         self.cla = cla_instance
-        self.metadata_param_caster = ParameterCaster(self.cla.metadata_param_spec)
-        self.annotate_param_caster = ParameterCaster(self.cla.annotate_param_spec)
+        self.metadata_param_caster = ParameterCaster(self.cla.metadata_param_spec)  # pytype: disable=wrong-arg-types
+        self.annotate_param_caster = ParameterCaster(self.cla.annotate_param_spec)  # pytype: disable=wrong-arg-types
 
     @staticmethod
     def json_to_response(json_str: str, status=200) -> Response:
