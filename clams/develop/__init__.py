@@ -74,6 +74,7 @@ def prep_argparser(**kwargs):
     parser.add_argument(
         '-n', '--name',
         action='store',
+        required=True,
         help='The name of the directory where the baked app skeleton is placed. This name is also used to generate'
              '1) Python class name of the app, 2) values for `name` and `identifier` fields in app-metadata, '
              'based on heuristic tokenizing and casing rules. RECOMMENDATION: only use lower case ASCII alpha-numerics,'

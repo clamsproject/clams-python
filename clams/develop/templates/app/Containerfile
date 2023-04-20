@@ -3,6 +3,12 @@ FROM ghcr.io/clamsproject/clams-python:$CLAMS_VERSION
 # See https://github.com/orgs/clamsproject/packages?tab=packages&q=clams-python for more base images
 
 ################################################################################
+# DO NOT EDIT THIS SECTION
+ARG CLAMS_APP_VERSION
+ENV CLAMS_APP_VERSION ${CLAMS_APP_VERSION}
+################################################################################
+
+################################################################################
 # clams-python base images are based on debian distro
 # install more system packages as needed using the apt manager
 ################################################################################
