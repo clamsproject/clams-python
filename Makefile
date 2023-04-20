@@ -60,7 +60,7 @@ $(artifact):
 test: devversion $(generatedcode)
 	pip install --upgrade -r requirements.dev
 	pip install -r requirements.txt
-	pytype $(packagename)
+	pytype --config .pytype.cfg $(packagename)
 	python3 -m pytest --cov=$(packagename) --cov-report=xml
 
 # helper functions
