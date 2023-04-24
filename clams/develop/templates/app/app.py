@@ -2,7 +2,7 @@ import argparse
 from typing import Union
 
 # mostly likely you'll need these modules/classes
-from clams import ClamsApp, Restifier, AppMetadata
+from clams import ClamsApp, Restifier
 from mmif import Mmif, View, Annotation, Document, AnnotationTypes, DocumentTypes
 
 
@@ -12,7 +12,12 @@ class $APP_CLASS_NAME(ClamsApp):
         raise NotImplementedError
 
     def _appmetadata(self):
-        # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._appmetadata
+        # There are three ways to define app metadata:
+        # 1. using a ``metadata.py`` file (recommended)
+        # 2. using a ``metadata.json`` JSON file (static)
+        # 3. using this _appmetadata() method
+        # You must choose one of these three ways.
+        # Also check out ``metadata.py`` in this directory. 
         raise NotImplementedError
 
     def _annotate(self, mmif: Union[str, dict, Mmif], **parameters) -> Mmif:
