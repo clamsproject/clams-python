@@ -53,7 +53,7 @@ class ClamsApp(ABC):
         return self.metadata.jsonify(pretty)
     
     def _load_metadata(self):
-        cwd = pathlib.Path(self.__module__).parent
+        cwd = pathlib.Path(sys.modules[self.__module__].__file__).parent
         
         # metadata compilation priority
         # 1. metadata.py
@@ -61,7 +61,7 @@ class ClamsApp(ABC):
         # 3. _appmetadata() method (for legacy)
         
         if (cwd / 'metadata.py').exists():
-            import metadata as metadatapy
+            import metadata as metadatapy  # pytype: disable=import-error
             metadata = metadatapy.appmetadata()
         elif (cwd / 'metadata.json').exists():
             import json
