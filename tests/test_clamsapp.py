@@ -1,3 +1,4 @@
+import itertools
 import json
 import os
 import sys
@@ -138,7 +139,7 @@ class TestClamsApp(unittest.TestCase):
         # using python dict
         self.app.metadata.add_parameter(
             name='multiple_choice', description='meaningless multiple choice option',
-            type='integer', choices=[1, 2, 3, 4, 5], default=3)
+            type='integer', choices=[1, 2, 3, 4, 5], default=3, multivalued=True)
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['parameters']), 2 + len(self.app.universal_parameters))
         # now more additional metadata
@@ -317,25 +318,33 @@ class TestRestifier(unittest.TestCase):
 class TestParameterCaster(unittest.TestCase):
     
     def setUp(self) -> None:
-        self.param_spec = {'str_param': str, 'number_param': float, 'int_param': int, 'bool_param': bool}
+        self.param_spec = {'str_param': (str, False), 
+                           'number_param': (float, False),
+                           'int_param': (int, False),
+                           'bool_param': (bool, False), 
+                           'str_multi_param': (str, True)
+                           }
         
     def test_cast(self):
         caster = ParameterCaster(self.param_spec)
         params = {
-            'str_param': "a_string", 
-            'number_param': "1.11", 
-            'int_param': str(sys.maxsize), 
-            'bool_param': 'true',
+            'str_param': ["a_string"], 
+            'number_param': ["1.11"], 
+            'int_param': [str(sys.maxsize)], 
+            'bool_param': ['true'],
+            'str_multi_param': ['value1', 'value2']
         }
-        self.assertTrue(all(map(lambda x: isinstance(x, str), params.values())))
+        self.assertTrue(all(map(lambda x: isinstance(x, str), itertools.chain.from_iterable(params.values()))))
         casted = caster.cast(params)
-        self.assertEqual(casted['str_param'], params['str_param'])
+        # must push out to the list
+        self.assertEqual(casted['str_param'], params['str_param'][0])
         self.assertEqual(casted['number_param'], 1.11)
         self.assertTrue(isinstance(casted['int_param'], int))
         self.assertTrue(casted['bool_param'])
+        self.assertEqual(set(casted['str_multi_param']), set(params['str_multi_param']))
         unknown_param_key = 'unknown'
         unknown_param_val = 'dunno'
-        params[unknown_param_key] = unknown_param_val
+        params[unknown_param_key] = [unknown_param_val]
         # must not throw any error or warning upon receiving unknown parameters
         with warnings.catch_warnings():
             warnings.simplefilter("error")
