@@ -1,3 +1,4 @@
+import itertools
 import json
 import os
 import sys
@@ -11,7 +12,7 @@ from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver
 
 import clams.app
 import clams.restify
-from clams.appmetadata import AppMetadata
+from clams.appmetadata import AppMetadata, Input
 from clams.restify import ParameterCaster
 
 
@@ -57,24 +58,10 @@ class TestSerialization(unittest.TestCase):
 
 
 class ExampleClamsApp(clams.app.ClamsApp):
+    app_version = 'no-manual-version',
 
     def _appmetadata(self) -> Union[dict, AppMetadata]:
-        
-        exampleappversion = '0.0.1'
-        metadata = AppMetadata(
-            name="Example CLAMS App for testing",
-            description="This app doesn't do anything",
-            app_version=exampleappversion,
-            app_license="MIT",
-            identifier=f"https://apps.clams.ai/example/{exampleappversion}",
-            output=[{'@type': AnnotationTypes.TimeFrame}],
-            dependencies=['clams-python==develop-ver', 'mmif-pyhon==0.0.999'],
-            url="https://fakegithub.com/some/repository"
-        )
-        metadata.add_input(DocumentTypes.AudioDocument)
-        metadata.add_parameter(name='raise_error', description='force raise a ValueError',
-                               type='boolean', default='false')
-        return metadata
+        pass
     
     def _annotate(self, mmif, **kwargs):
         if type(mmif) is not Mmif:
@@ -82,8 +69,12 @@ class ExampleClamsApp(clams.app.ClamsApp):
         new_view = mmif.new_view()
         self.sign_view(new_view, kwargs)
         new_view.new_contain(AnnotationTypes.TimeFrame, **{"producer": "dummy-producer"})
-        ann = new_view.new_annotation(AnnotationTypes.TimeFrame, 'a1')
+        ann = new_view.new_annotation(AnnotationTypes.TimeFrame, 'a1', start=10, end=99)
         ann.add_property("f1", "hello_world")
+        d1 = DocumentTypes.VideoDocument
+        d2 = DocumentTypes.from_str(f'{str(d1)[:-1]}99')
+        if mmif.get_documents_by_type(d2):
+            new_view.new_annotation(AnnotationTypes.TimePoint, 'tp1')
         if 'raise_error' in kwargs and kwargs['raise_error']:
             raise ValueError
         return mmif
@@ -99,6 +90,15 @@ class TestClamsApp(unittest.TestCase):
     def test_jsonschema_export(self):
         # TODO (krim @ 4/20/21): there may be a better test for this...
         self.assertIsNotNone(self.appmetadataschema)
+    
+    def test_generate_app_version(self):
+        os.environ.pop(clams.appmetadata.app_version_envvar_key, None)
+        self.assertEqual(clams.appmetadata.generate_app_version('not-existing-app'), clams.appmetadata.unresolved_app_version_num)
+        os.environ.update({clams.appmetadata.app_version_envvar_key:'v10'})
+        self.assertEqual(clams.appmetadata.generate_app_version('not-existing-app'), 'v10')
+        os.environ.pop(clams.appmetadata.app_version_envvar_key, None)
+        # krim: have to admit that the way version generation is using local working directory makes it hard to test
+        # self.assertTrue(clams.__version__.startswith(clams.appmetadata.generate_app_version('../').split('-')[0]))
 
     def test_appmetadata(self):
         # base metadata setting is done in the ExampleClamsApp class
@@ -106,11 +106,15 @@ class TestClamsApp(unittest.TestCase):
         
         # test base metadata
         metadata = json.loads(self.app.appmetadata())
+        self.assertNotEqual(self.app.app_version, metadata['app_version'])
         self.assertEqual(len(metadata['output']), 1)
-        self.assertEqual(len(metadata['input']), 1)
+        self.assertEqual(len(metadata['input']), 2)
         self.assertTrue('properties' not in metadata['output'][0])
-        self.assertTrue('properties' not in metadata['input'][0])
-        self.assertTrue(metadata['input'][0]['required'])
+        for i in metadata['input']:
+            if isinstance(i, dict):
+                elem = i
+        self.assertTrue('properties' not in elem)
+        self.assertTrue(elem['required'])
         
         # test add_X methods
         self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='text')
@@ -118,20 +122,28 @@ class TestClamsApp(unittest.TestCase):
         self.assertEqual(len(metadata['output']), 2)
         # these should not be added as a duplicate
         with self.assertRaises(ValueError):
-            self.app.metadata.add_input(at_type=DocumentTypes.AudioDocument)
+            self.app.metadata.add_input(at_type=DocumentTypes.TextDocument)
         with self.assertRaises(ValueError):
             self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='text')
         # but this should 
         self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='face')
         metadata = json.loads(self.app.appmetadata())
-        self.assertEqual(len(metadata['input']), 1)
+        self.assertEqual(len(metadata['input']), 2)
         self.assertTrue('properties' not in metadata['input'][0])
         # adding input with properties
         self.app.metadata.add_input(at_type=AnnotationTypes.TimeFrame, frameType='speech')
         metadata = json.loads(self.app.appmetadata())
-        self.assertEqual(len(metadata['input']), 2)
-        self.assertTrue('properties' in metadata['input'][1])
-        self.assertEqual(len(metadata['input'][1]['properties']), 1)
+        self.assertEqual(len(metadata['input']), 3)
+        self.assertTrue('properties' in metadata['input'][-1])
+        self.assertEqual(len(metadata['input'][-1]['properties']), 1)
+        self.app.metadata.add_input_oneof(AnnotationTypes.Polygon)
+        self.assertEqual(len(self.app.metadata.input), 4)
+        self.assertFalse(isinstance(self.app.metadata.input[-1], list))
+        # adding a list should not contain "optional" types
+        i = Input(at_type=AnnotationTypes.BoundingBox, required=False)
+        j = Input(at_type=AnnotationTypes.VideoObject)
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_input_oneof(i, j)
         # now parameters
         # using a custom class
         # this should conflict with existing parameter
@@ -142,7 +154,7 @@ class TestClamsApp(unittest.TestCase):
         # using python dict
         self.app.metadata.add_parameter(
             name='multiple_choice', description='meaningless multiple choice option',
-            type='integer', choices=[1, 2, 3, 4, 5], default=3)
+            type='integer', choices=[1, 2, 3, 4, 5], default=3, multivalued=True)
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['parameters']), 2 + len(self.app.universal_parameters))
         # now more additional metadata
@@ -156,6 +168,7 @@ class TestClamsApp(unittest.TestCase):
         # finally for an eye exam
         print(self.app.appmetadata(pretty=True))
 
+    @pytest.mark.skip('legacy type version check')
     def test__check_mmif_compatibility(self):
         maj, min, pat = list(map(int, __specver__.split('.')))
         self.assertTrue(self.app._check_mmif_compatibility('0.4.3', '0.4.8'))
@@ -176,13 +189,14 @@ class TestClamsApp(unittest.TestCase):
             self.app.annotate(in_mmif)
         
     def test_annotate(self):
+        # The example app is hard-coded to **always** emit version mismatch warning
         out_mmif = self.app.annotate(self.in_mmif)
         # TODO (krim @ 9/3/19): more robust test cases
         self.assertIsNotNone(out_mmif)
         out_mmif = Mmif(out_mmif)
-        self.assertEqual(len(out_mmif.views), 1)
-        out_mmif = Mmif(self.app.annotate(out_mmif))
         self.assertEqual(len(out_mmif.views), 2)
+        out_mmif = Mmif(self.app.annotate(out_mmif))
+        self.assertEqual(len(out_mmif.views), 4)
         views = list(out_mmif.views)
         # insertion order is kept
         self.assertTrue(views[0].metadata.timestamp < views[1].metadata.timestamp)
@@ -321,25 +335,33 @@ class TestRestifier(unittest.TestCase):
 class TestParameterCaster(unittest.TestCase):
     
     def setUp(self) -> None:
-        self.param_spec = {'str_param': str, 'number_param': float, 'int_param': int, 'bool_param': bool}
+        self.param_spec = {'str_param': (str, False), 
+                           'number_param': (float, False),
+                           'int_param': (int, False),
+                           'bool_param': (bool, False), 
+                           'str_multi_param': (str, True)
+                           }
         
     def test_cast(self):
         caster = ParameterCaster(self.param_spec)
         params = {
-            'str_param': "a_string", 
-            'number_param': "1.11", 
-            'int_param': str(sys.maxsize), 
-            'bool_param': 'true',
+            'str_param': ["a_string"], 
+            'number_param': ["1.11"], 
+            'int_param': [str(sys.maxsize)], 
+            'bool_param': ['true'],
+            'str_multi_param': ['value1', 'value2']
         }
-        self.assertTrue(all(map(lambda x: isinstance(x, str), params.values())))
+        self.assertTrue(all(map(lambda x: isinstance(x, str), itertools.chain.from_iterable(params.values()))))
         casted = caster.cast(params)
-        self.assertEqual(casted['str_param'], params['str_param'])
+        # must push out to the list
+        self.assertEqual(casted['str_param'], params['str_param'][0])
         self.assertEqual(casted['number_param'], 1.11)
         self.assertTrue(isinstance(casted['int_param'], int))
         self.assertTrue(casted['bool_param'])
+        self.assertEqual(set(casted['str_multi_param']), set(params['str_multi_param']))
         unknown_param_key = 'unknown'
         unknown_param_val = 'dunno'
-        params[unknown_param_key] = unknown_param_val
+        params[unknown_param_key] = [unknown_param_val]
         # must not throw any error or warning upon receiving unknown parameters
         with warnings.catch_warnings():
             warnings.simplefilter("error")

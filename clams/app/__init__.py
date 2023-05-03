@@ -1,4 +1,5 @@
 import os
+import pathlib
 import sys
 import warnings
 from abc import ABC, abstractmethod
@@ -23,13 +24,13 @@ class ClamsApp(ABC):
     # The behavioral changes based on these parameters must be implemented on the SDK level. 
     universal_parameters = [
         {
-            'name': 'pretty', 'type': 'boolean', 'choices': None, 'default': False,
+            'name': 'pretty', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
             'description': 'The JSON body of the HTTP response will be re-formatted with 2-space indentation',
         },
     ]
 
     def __init__(self):
-        self.metadata: AppMetadata = self._appmetadata()
+        self.metadata: AppMetadata = self._load_metadata()
         super().__init__()
         # data type specification for common parameters
         python_type = {"boolean": bool, "number": float, "integer": int, "string": str}
@@ -38,9 +39,9 @@ class ClamsApp(ABC):
         self.annotate_param_spec = {}
         for param in ClamsApp.universal_parameters:
             self.metadata.add_parameter(**param)
-            self.metadata_param_spec[param['name']] = python_type[param['type']]
+            self.metadata_param_spec[param['name']] = (python_type[param['type']], param.get('multivalued', False))
         for param_spec in self.metadata.parameters:
-            self.annotate_param_spec[param_spec.name] = python_type[param_spec.type]
+            self.annotate_param_spec[param_spec.name] = (python_type[param_spec.type], param_spec.multivalued)
 
     def appmetadata(self, **kwargs) -> str:
         """
@@ -49,10 +50,26 @@ class ClamsApp(ABC):
         :return: Serialized JSON string of the metadata
         """
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
-        if pretty:
-            return self.metadata.json(exclude_defaults=True, by_alias=True, indent=2)
+        return self.metadata.jsonify(pretty)
+    
+    def _load_metadata(self):
+        cwd = pathlib.Path(sys.modules[self.__module__].__file__).parent
+        
+        # metadata compilation priority
+        # 1. metadata.py
+        # 2. metadata.json
+        # 3. _appmetadata() method (for legacy)
+        
+        if (cwd / 'metadata.py').exists():
+            import metadata as metadatapy  # pytype: disable=import-error
+            metadata = metadatapy.appmetadata()
+        elif (cwd / 'metadata.json').exists():
+            import json
+            with open(cwd / 'metadata.json') as f:
+                metadata = json.load(f)
         else:
-            return self.metadata.json(exclude_defaults=True, by_alias=True)
+            metadata = self._appmetadata()
+        return metadata
 
     @abstractmethod
     def _appmetadata(self) -> AppMetadata:
@@ -83,12 +100,6 @@ class ClamsApp(ABC):
         pretty = runtime_params.get('pretty', False)
         if not isinstance(mmif, Mmif):
             mmif = Mmif(mmif)
-        input_specver = mmif.metadata.mmif.rsplit('/')[-1]  # pytype: disable=attribute-error
-        if 'dev' not in __specver__ :
-            if not self._check_mmif_compatibility(__specver__, input_specver):
-                raise ValueError(f"Input MMIF file (versioned: {input_specver} is not compatible with the app "
-                                 f"targeting at {__specver__}. Make sure apps in the pipeline is all compatible. See "
-                                 f"https://mmif.clams.ai/versioning/ for information about MMIF compatibility. ") 
         issued_warnings = []
         for key in runtime_params:
             if key not in self.annotate_param_spec:

@@ -217,8 +217,11 @@ def generate_source_mmif(documents, prefix=None, **ignored):
     return pl.produce().serialize(pretty=True)
 
 
-def prep_argparser():
-    parser = argparse.ArgumentParser()
+def prep_argparser(**kwargs):
+    """
+    provides CLI to create a "source" MMIF json. A source MMIF is a MMIF with a list of source documents but empty views. It can be used as a starting point for a CLAMS pipeline. 
+    """
+    parser = argparse.ArgumentParser(**kwargs)
     parser.add_argument(
         'documents',
         default=None,
