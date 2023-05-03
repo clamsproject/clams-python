@@ -13,7 +13,8 @@ def appmetadata() -> AppMetadata:
         dependencies=['clams-python==develop-ver', 'mmif-pyhon==0.0.999'],
         url="https://fakegithub.com/some/repository"
     )
-    metadata.add_input(DocumentTypes.AudioDocument)
+    metadata.add_input(DocumentTypes.TextDocument)
+    metadata.add_input_oneof(DocumentTypes.AudioDocument, str(DocumentTypes.VideoDocument))
     metadata.add_parameter(name='raise_error', description='force raise a ValueError',
-                           type='boolean', default='false')
+                               type='boolean', default='false')
     return metadata
