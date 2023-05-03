@@ -2,8 +2,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Literal
-from typing import Union, Dict, List, Optional
+from typing import Union, Dict, List, Optional, Literal
 
 import mmif
 import pydantic
@@ -11,6 +10,7 @@ from mmif import vocabulary
 
 unresolved_app_version_num = 'unresolvable'
 app_version_envvar_key = 'CLAMS_APP_VERSION'
+# type aliases to use in app metadata and runtime parameter processing 
 primitives = Union[int, float, bool, str]
 # these names are taken from the JSON schema data types
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
@@ -131,7 +131,17 @@ class RuntimeParameter(_BaseModel):
         description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting "
                     "a default value makes a parameter 'optional'."
     )
-    
+    multivalued: bool = pydantic.Field(
+        ..., 
+        description="(optional, False by default) Set True if the parameter can have multiple values.\n\n"
+                    "Note that, for parameters that allow multiple values, the SDK will pass a singleton list to "
+                    "``_annotate()`` even when one value is passed via HTTP.")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.multivalued is None:
+            self.multivalued = False
+            
     class Config:
         title = 'CLAMS App Runtime Parameter'
         extra = 'forbid'
@@ -330,11 +340,14 @@ class AppMetadata(pydantic.BaseModel):
             raise ValueError(f"Cannot add a duplicate output '{new}'.")
 
     def add_parameter(self, name: str, description: str, type: param_value_types,
-                      choices: Optional[List[primitives]] = None, default: primitives = None):
+                      choices: Optional[List[primitives]] = None,
+                      multivalued: bool = False,
+                      default: primitives = None):
         """
         Helper method to add an element to the ``parameters`` list. 
         """
-        new_param = RuntimeParameter(name=name, description=description, type=type, choices=choices, default=default)
+        new_param = RuntimeParameter(name=name, description=description, type=type,
+                                     choices=choices, default=default, multivalued=multivalued)
         if new_param.name not in [param.name for param in self.parameters]:
             self.parameters.append(new_param)
         else:
