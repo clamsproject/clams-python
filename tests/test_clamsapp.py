@@ -69,8 +69,12 @@ class ExampleClamsApp(clams.app.ClamsApp):
         new_view = mmif.new_view()
         self.sign_view(new_view, kwargs)
         new_view.new_contain(AnnotationTypes.TimeFrame, **{"producer": "dummy-producer"})
-        ann = new_view.new_annotation(AnnotationTypes.TimeFrame, 'a1')
+        ann = new_view.new_annotation(AnnotationTypes.TimeFrame, 'a1', start=10, end=99)
         ann.add_property("f1", "hello_world")
+        d1 = DocumentTypes.VideoDocument
+        d2 = DocumentTypes.from_str(f'{str(d1)[:-1]}99')
+        if mmif.get_documents_by_type(d2):
+            new_view.new_annotation(AnnotationTypes.TimePoint, 'tp1')
         if 'raise_error' in kwargs and kwargs['raise_error']:
             raise ValueError
         return mmif
@@ -102,7 +106,7 @@ class TestClamsApp(unittest.TestCase):
         
         # test base metadata
         metadata = json.loads(self.app.appmetadata())
-        self.assertNotEquals(self.app.app_version, metadata['app_version'])
+        self.assertNotEqual(self.app.app_version, metadata['app_version'])
         self.assertEqual(len(metadata['output']), 1)
         self.assertEqual(len(metadata['input']), 2)
         self.assertTrue('properties' not in metadata['output'][0])
@@ -164,6 +168,7 @@ class TestClamsApp(unittest.TestCase):
         # finally for an eye exam
         print(self.app.appmetadata(pretty=True))
 
+    @pytest.mark.skip('legacy type version check')
     def test__check_mmif_compatibility(self):
         maj, min, pat = list(map(int, __specver__.split('.')))
         self.assertTrue(self.app._check_mmif_compatibility('0.4.3', '0.4.8'))
@@ -184,13 +189,14 @@ class TestClamsApp(unittest.TestCase):
             self.app.annotate(in_mmif)
         
     def test_annotate(self):
+        # The example app is hard-coded to **always** emit version mismatch warning
         out_mmif = self.app.annotate(self.in_mmif)
         # TODO (krim @ 9/3/19): more robust test cases
         self.assertIsNotNone(out_mmif)
         out_mmif = Mmif(out_mmif)
-        self.assertEqual(len(out_mmif.views), 1)
-        out_mmif = Mmif(self.app.annotate(out_mmif))
         self.assertEqual(len(out_mmif.views), 2)
+        out_mmif = Mmif(self.app.annotate(out_mmif))
+        self.assertEqual(len(out_mmif.views), 4)
         views = list(out_mmif.views)
         # insertion order is kept
         self.assertTrue(views[0].metadata.timestamp < views[1].metadata.timestamp)

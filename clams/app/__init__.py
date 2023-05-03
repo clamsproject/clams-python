@@ -100,12 +100,6 @@ class ClamsApp(ABC):
         pretty = runtime_params.get('pretty', False)
         if not isinstance(mmif, Mmif):
             mmif = Mmif(mmif)
-        input_specver = mmif.metadata.mmif.rsplit('/')[-1]  # pytype: disable=attribute-error
-        if 'dev' not in __specver__ :
-            if not self._check_mmif_compatibility(__specver__, input_specver):
-                raise ValueError(f"Input MMIF file (versioned: {input_specver} is not compatible with the app "
-                                 f"targeting at {__specver__}. Make sure apps in the pipeline is all compatible. See "
-                                 f"https://mmif.clams.ai/versioning/ for information about MMIF compatibility. ") 
         issued_warnings = []
         for key in runtime_params:
             if key not in self.annotate_param_spec:
