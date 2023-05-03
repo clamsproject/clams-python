@@ -1,4 +1,5 @@
 import os
+import pathlib
 import sys
 import warnings
 from abc import ABC, abstractmethod
@@ -29,7 +30,7 @@ class ClamsApp(ABC):
     ]
 
     def __init__(self):
-        self.metadata: AppMetadata = self._appmetadata()
+        self.metadata: AppMetadata = self._load_metadata()
         super().__init__()
         # data type specification for common parameters
         python_type = {"boolean": bool, "number": float, "integer": int, "string": str}
@@ -50,6 +51,25 @@ class ClamsApp(ABC):
         """
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
         return self.metadata.jsonify(pretty)
+    
+    def _load_metadata(self):
+        cwd = pathlib.Path(sys.modules[self.__module__].__file__).parent
+        
+        # metadata compilation priority
+        # 1. metadata.py
+        # 2. metadata.json
+        # 3. _appmetadata() method (for legacy)
+        
+        if (cwd / 'metadata.py').exists():
+            import metadata as metadatapy  # pytype: disable=import-error
+            metadata = metadatapy.appmetadata()
+        elif (cwd / 'metadata.json').exists():
+            import json
+            with open(cwd / 'metadata.json') as f:
+                metadata = json.load(f)
+        else:
+            metadata = self._appmetadata()
+        return metadata
 
     @abstractmethod
     def _appmetadata(self) -> AppMetadata:
