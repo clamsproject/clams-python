@@ -2,12 +2,13 @@ ARG clams_version
 FROM ghcr.io/clamsproject/clams-python-ffmpeg:$clams_version
 LABEL org.opencontainers.image.description="clams-python-opencv image is shipped with clams-python, ffmpeg, and opencv4 with their python bindings"
 
-ARG OPENCV_VERSION=4.5.0
+ARG OPENCV_VERSION=4.7.0
 ARG OPENCV_PATH=/opt/opencv-${OPENCV_VERSION}
 ARG OPENCV_EXTRA_PATH=/opt/opencv_contrib-${OPENCV_VERSION}
 
 # opencv dependencies
 RUN pip install numpy
+RUN apt-get update
 RUN apt-get install -y g++ cmake make wget unzip libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
 # opencv download
 RUN mkdir /opt || echo '/opt is already there'
@@ -39,5 +40,5 @@ RUN make -j$(nproc) && make install && ldconfig
 # cleanup
 WORKDIR /
 RUN rm -rf ${OPENCV_PATH} ${OPENCV_EXTRA_PATH}
+RUN pip install opencv-python~=${OPENCV_VERSION}
 RUN apt-get remove -y g++ cmake make wget unzip libavcodec-dev libavformat-dev libavutil-dev libswscale-dev && apt-get autoremove -y
-RUN pip install opencv-python~=4.4.0
