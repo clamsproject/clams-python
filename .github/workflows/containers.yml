@@ -63,6 +63,14 @@ jobs:
       buildfilename: './container/torch.containerfile'
       version: ${{ needs.set-version.outputs.version }}
 
+  call-build-torch2:
+    needs: ['set-version', 'call-build-base']
+    uses: ./.github/workflows/container.yml
+    secrets: inherit
+    with:
+      buildfilename: './container/torch2.containerfile'
+      version: ${{ needs.set-version.outputs.version }}
+
   call-build-ffmpeg:
     needs: ['set-version', 'call-build-base']
     uses: ./.github/workflows/container.yml
@@ -87,6 +95,14 @@ jobs:
       buildfilename: './container/ffmpeg-torch.containerfile'
       version: ${{ needs.set-version.outputs.version }}
 
+  call-build-ffmpeg-torch2:
+    needs: ['set-version', 'call-build-ffmpeg']
+    uses: ./.github/workflows/container.yml
+    secrets: inherit
+    with:
+      buildfilename: './container/ffmpeg-torch2.containerfile'
+      version: ${{ needs.set-version.outputs.version }}
+
   call-build-opencv4:
     needs: ['set-version', 'call-build-ffmpeg']
     uses: ./.github/workflows/container.yml
@@ -109,5 +125,13 @@ jobs:
     secrets: inherit
     with:
       buildfilename: './container/opencv4-torch.containerfile'
+      version: ${{ needs.set-version.outputs.version }}
+
+  call-build-opencv4-torch2:
+    needs: ['set-version', 'call-build-opencv4']
+    uses: ./.github/workflows/container.yml
+    secrets: inherit
+    with:
+      buildfilename: './container/opencv4-torch2.containerfile'
       version: ${{ needs.set-version.outputs.version }}
 
