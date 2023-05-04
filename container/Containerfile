@@ -2,4 +2,5 @@ FROM python:3.8-slim-buster
 LABEL org.opencontainers.image.description="clams-python image is a base image for CLAMS apps"
 
 ARG clams_version
+RUN apt-get update && apt-get install -y pkg-config 
 RUN pip install clams-python==$clams_version
