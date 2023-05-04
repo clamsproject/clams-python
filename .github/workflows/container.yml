@@ -11,6 +11,16 @@ on:
         required: true
         type: string
         description: 'name of the container build file to use'
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: 'clams-python SDK version'
+      buildfilename:
+        required: true
+        type: string
+        description: 'name of the container build file to use'
 
 env:
   REGISTRY: ghcr.io
