@@ -31,7 +31,11 @@ def appmetadata() -> AppMetadata:
         identifier=f"my-app",  # should be a single string without whitespaces. If you don't intent to publish this app to the CLAMS app-directory, please use a full IRI format. 
         url="https://fakegithub.com/some/repository",  # a website where the full documentation of the app is hosted (usually source code repository)
         # use the following if this app is a wrapper of an existing computational analysis tool
+        # (it is very important to pinpoint the primary analyzer version for reproducibility)
         analyzer_version='version_X',
+        # if the analyzer is a python app, and it's specided in the requirements.txt
+        # this trick can also be useful (replace ANALYZER_NAME with the pypi dist name)
+        analyzer_version=[l.strip().rsplit('==')[-1] for l in open('requirements.txt').readlines() if re.match(r'^ANALYZER_NAME==', l)][0],
         analyzer_license='short name for a software license',
     )
     # and then add I/O specifications: an app must have at least one input and ont output

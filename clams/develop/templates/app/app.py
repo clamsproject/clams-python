@@ -9,7 +9,7 @@ from mmif import Mmif, View, Annotation, Document, AnnotationTypes, DocumentType
 class $APP_CLASS_NAME(ClamsApp):
 
     def __init__(self):
-        raise NotImplementedError
+        super().__init__()
 
     def _appmetadata(self):
         # There are three ways to define app metadata:
@@ -32,6 +32,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--production", action="store_true", help="run gunicorn server")
     # more arguments as needed
+    # parser.add_argument(more_arg...)
+
     parsed_args = parser.parse_args()
 
     # create the app instance
