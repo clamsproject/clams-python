@@ -5,7 +5,7 @@ Delete this section of the document once the app development is done, before pub
 ---
 This skeleton code is a scaffolding for Python-based CLAMS app development. Specifically, it contains 
 
-1. `app.py` to write the app 
+1. `app.py` and `metadata.py` to write the app 
 1. `requirements.txt` to specify python dependencies
 1. `.gitignore` file listing common ignored files
 1. `Containerfile` to containerize the app and specify system dependencies

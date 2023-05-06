@@ -1,0 +1,7 @@
+.git/
+.github/
+bin/
+build/
+*~
+**/*.pyc
+**/__pyche__
