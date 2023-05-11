@@ -36,3 +36,4 @@ jobs:
     secrets: inherit
     with:
       version: ${{ needs.set-version.outputs.version }}
+      arm64: false
