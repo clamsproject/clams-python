@@ -3,7 +3,9 @@ FROM ghcr.io/clamsproject/clams-python:$CLAMS_VERSION
 # See https://github.com/orgs/clamsproject/packages?tab=packages&q=clams-python for more base images
 # IF you want to automatically publish this image to the clamsproject organization, 
 # 1. you should have generated this template without --no-github-actions flag
-# 1. to add arm64 support, change relevant line in .github/workflows/container.yml
+# 1. to add arm64 support, change relevant line in .github/workflows/container.yml 
+#     * NOTE that a lots of software doesn't install/compile or run on arm64 architecture out of the box 
+#     * make sure you locally test the compatibility of all software dependencies before using arm64 support 
 # 1. use a git tag to trigger the github action. You need to use git tag to properly set app version anyway
 
 ################################################################################
