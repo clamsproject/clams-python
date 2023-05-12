@@ -127,6 +127,7 @@ class ClamsApp(ABC):
         An abstract method to generate (or load if stored elsewhere) the app 
         metadata at runtime. All CLAMS app must implement this.
         
+        This is where the bulk of your logic will go.
         A typical implementation of this method would be 
         
         #. Create a new view (or views) by calling :meth:`~mmif.serialize.mmif.Mmif.new_view` on the input mmif object.
@@ -134,6 +135,7 @@ class ClamsApp(ABC):
         #. Call :meth:`~clams.app.ClamsApp.get_configuration` to get an "upgraded" runtime parameters with default values.
         #. Call :meth:`~mmif.serialize.view.View.new_contain` on the new view object with any annotation properties specified by the configuration.
         #. Process the data and create :class:`~mmif.serialize.annotation.Annotation` objects and add them to the new view. 
+        #. While doing so, get help from :class:`~mmif.vocabulary.document_types.DocumentTypes`, :class:`~mmif.vocabulary.annotation_types.AnnotationTypes` classes to generate ``@type`` strings.
         #. Return the mmif object
 
         :param mmif: An input MMIF object to annotate

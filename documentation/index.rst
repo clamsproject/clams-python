@@ -11,7 +11,6 @@ Welcome to CLAMS Python SDK documentation!
   input-output
   appmetadata
   appdirectory
-  tutorial
 
 .. toctree::
   :maxdepth: 2
