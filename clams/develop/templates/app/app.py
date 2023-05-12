@@ -12,11 +12,7 @@ class $APP_CLASS_NAME(ClamsApp):
         super().__init__()
 
     def _appmetadata(self):
-        # There are three ways to define app metadata:
-        # 1. using a ``metadata.py`` file (recommended)
-        # 2. using a ``metadata.json`` JSON file (static)
-        # 3. using this _appmetadata() method
-        # You must choose one of these three ways.
+        # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata
         # Also check out ``metadata.py`` in this directory. 
         raise NotImplementedError
 
