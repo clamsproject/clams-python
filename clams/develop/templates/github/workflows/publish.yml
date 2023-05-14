@@ -1,4 +1,4 @@
-name: Container Image Deployment
+name: "App Publisher: image>ghcr, metadata>appdir"
 
 on:
   workflow_dispatch:
@@ -14,6 +14,7 @@ on:
 jobs:
   set-version:
     runs-on: ubuntu-latest
+    name: 📌 Set VERSION value
     outputs:
       version: ${{ steps.output_version.outputs.version }}
     steps:
@@ -29,11 +30,21 @@ jobs:
         id: output_version
         run: |
           echo "version=${{ env.VERSION }}" >> $GITHUB_OUTPUT
-  build:
+  publish-image:
     needs: ['set-version']
-    name: Build and deploy to a container repository
+    name: 🐳 Build and deploy to a container repository
     uses: clamsproject/.github/.github/workflows/app-container.yml@main
     secrets: inherit
     with:
       version: ${{ needs.set-version.outputs.version }}
       arm64: false
+  register-appdir:
+    needs: ['set-version', 'publish-image']
+    name: 📝 Register to CLASM app directory
+    uses: clamsproject/apps/.github/workflows/register.yml@main
+    secrets: inherit
+    with:
+      repo: ${{ github.repository }}
+      tag: ${{ needs.set-version.outputs.version }}
+      container: 'ghcr.io/${{ github.repository }}:${{ needs.set-version.outputs.version }}'
+  

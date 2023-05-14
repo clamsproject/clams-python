@@ -33,7 +33,7 @@ def appmetadata() -> AppMetadata:
         # use the following if this app is a wrapper of an existing computational analysis tool
         # (it is very important to pinpoint the primary analyzer version for reproducibility)
         analyzer_version='version_X',
-        # if the analyzer is a python app, and it's specided in the requirements.txt
+        # if the analyzer is a python app, and it's specified in the requirements.txt
         # this trick can also be useful (replace ANALYZER_NAME with the pypi dist name)
         analyzer_version=[l.strip().rsplit('==')[-1] for l in open('requirements.txt').readlines() if re.match(r'^ANALYZER_NAME==', l)][0],
         analyzer_license='short name for a software license',
@@ -54,4 +54,4 @@ def appmetadata() -> AppMetadata:
 # DO NOT CHANGE the main block
 if __name__ == '__main__':
     import sys
-    sys.stdout.write(appmetadata().json(indent=2))
+    sys.stdout.write(appmetadata().jsonify(pretty=True))
