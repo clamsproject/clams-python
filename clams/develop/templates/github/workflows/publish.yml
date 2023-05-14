@@ -1,4 +1,4 @@
-name: "App Publisher: image>ghcr"
+name: "App Publisher: image>ghcr, metadata>appdir"
 
 on:
   workflow_dispatch:
@@ -38,4 +38,13 @@ jobs:
     with:
       version: ${{ needs.set-version.outputs.version }}
       arm64: false
-
+  register-appdir:
+    needs: ['set-version', 'publish-image']
+    name: 📝 Register to CLASM app directory
+    uses: clamsproject/apps/.github/workflows/register.yml@main
+    secrets: inherit
+    with:
+      repo: ${{ github.repository }}
+      tag: ${{ needs.set-version.outputs.version }}
+      container: 'ghcr.io/${{ github.repository }}:${{ needs.set-version.outputs.version }}'
+  
