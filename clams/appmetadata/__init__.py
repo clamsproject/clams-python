@@ -16,7 +16,7 @@ primitives = Union[int, float, bool, str]
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
 
 param_value_types_values = param_value_types.__args__  # pytype: disable=attribute-error
-app_directory_baseurl = "http://apps.clams.ai"
+app_directory_baseurl = "https://apps.clams.ai"
 
 
 def get_clams_pyver():
