@@ -9,8 +9,10 @@ Welcome to CLAMS Python SDK documentation!
 
   introduction
   input-output
+  runtime-params
   appmetadata
   appdirectory
+  cli
 
 .. toctree::
   :maxdepth: 2
