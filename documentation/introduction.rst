@@ -6,7 +6,7 @@ Getting started
 Overview
 --------
 
-The CLAMS project has many moving parts to make various computational analysis tools talk to each other to create customized workflow pipelines. However the most important part of the project must be the apps published for the CLAMS platform. The CLAMS Python SDK will help app developers handling MMIF data format with high-level classes and methods in Python, and publishing their code as a CLAMS app that can be easily deployed to the site via CLAMS workflow engines, such as the `CLAMS appliance <https://appliance.clams.ai>`_.
+The CLAMS project has many moving parts to make various computational analysis tools talk to each other to create customized workflows. However the most important part of the project must be the apps published for the CLAMS platform. The CLAMS Python SDK will help app developers handling MMIF data format with high-level classes and methods in Python, and publishing their code as a CLAMS app that can be easily deployed to the site via CLAMS workflow engines, such as the `CLAMS appliance <https://appliance.clams.ai>`_.
 
 A CLAMS app can be any software that performs automated contents analysis on text, audio, and/or image/video data stream, while using `MMIF <https://mmif.clams.ai>`_ as I/O format. When deployed into a CLAMS workflow engine, an app needs be running as a webapp wrapped in a container. In this documentation, we will explain what Python API's and HTTP API's an app must implement. 
 

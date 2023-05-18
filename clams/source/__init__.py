@@ -8,7 +8,7 @@ from typing import Union, Generator, List, Optional, Iterable
 from mmif import Mmif, Document, DocumentTypes, __specver__
 from mmif.serialize.mmif import MmifMetadata
 
-__all__ = ['PipelineSource']
+__all__ = ['WorkflowSource']
 
 DOC_JSON = Union[str, dict]
 DOC = Union[DOC_JSON, Document]
@@ -16,23 +16,21 @@ METADATA_JSON = Union[str, dict]
 METADATA = Union[METADATA_JSON, MmifMetadata]
 
 
-class PipelineSource:
+class WorkflowSource:
     """
-    The PipelineSource class.
+    A WorkflowSource object is used at the beginning of a
+    CLAMS workflow to populate a new MMIF file with media.
 
-    A PipelineSource object is used at the beginning of a
-    CLAMS pipeline to populate a new MMIF file with media.
-
-    The same PipelineSource object can be used repeatedly
+    The same WorkflowSource object can be used repeatedly
     to generate multiple MMIF objects.
 
     :param common_documents_json:
         JSON doc_lists for any documents that should be common
-        to all MMIF objects produced by this pipeline.
+        to all MMIF objects produced by this workflow.
 
     :param common_metadata_json:
         JSON doc_lists for metadata that should be common to
-        all MMIF objects produced by this pipeline.
+        all MMIF objects produced by this workflow.
     """
     mmif: Mmif
 
@@ -80,19 +78,19 @@ class PipelineSource:
 
     def prime(self) -> None:
         """
-        Primes the PipelineSource with a fresh MMIF object.
+        Primes the WorkflowSource with a fresh MMIF object.
 
-        Call this method if you want to reset the PipelineSource
+        Call this method if you want to reset the WorkflowSource
         without producing a MMIF object with produce().
         """
         self.mmif = Mmif(self.mmif_start)
 
     def produce(self) -> Mmif:
         """
-        Returns the source MMIF and resets the PipelineSource.
+        Returns the source MMIF and resets the WorkflowSource.
 
         Call this method once you have added all the documents
-        for your pipeline.
+        for your Workflow.
 
         :return: the current MMIF object that has been prepared
         """
@@ -107,7 +105,7 @@ class PipelineSource:
     ) -> Mmif:
         """
         Callable API that produces a new MMIF object from
-        this pipeline source given a list of documents and
+        this workflow source given a list of documents and
         a metadata object.
 
         Call with no parameters to produce the default MMIF
@@ -147,7 +145,7 @@ class PipelineSource:
 
         ``doc_lists`` and ``metadata_objs`` should be matched pairwise,
         so that if they are zipped together, each pair defines
-        a single MMIF object from this pipeline source.
+        a single MMIF object from this workflow source.
 
         :param doc_lists: an iterable of document lists to generate MMIF from
         :param metadata_objs: an iterable of metadata objects paired with the document lists
@@ -163,7 +161,7 @@ class PipelineSource:
         Endlessly produces MMIF directly from ``self.mmif_start``.
 
         If called after adding documents or changing metadata,
-        these changes are discarded, as the pipeline source
+        these changes are discarded, as the workflow source
         gets re-primed.
         """
         self.prime()
@@ -186,7 +184,7 @@ def generate_source_mmif(documents, prefix=None, **ignored):
             "mime": "${mime}",
             "location": "${location}" }
         }''')
-    pl = PipelineSource()
+    pl = WorkflowSource()
     if prefix and not path.isabs(prefix):
         raise ValueError(f"prefix must be an absolute path; given \"{prefix}\".")
 
@@ -219,7 +217,7 @@ def generate_source_mmif(documents, prefix=None, **ignored):
 
 def prep_argparser(**kwargs):
     """
-    provides CLI to create a "source" MMIF json. A source MMIF is a MMIF with a list of source documents but empty views. It can be used as a starting point for a CLAMS pipeline. 
+    provides CLI to create a "source" MMIF json. A source MMIF is a MMIF with a list of source documents but empty views. It can be used as a starting point for a CLAMS workflow. 
     """
     parser = argparse.ArgumentParser(**kwargs)
     parser.add_argument(
@@ -239,7 +237,7 @@ def prep_argparser(**kwargs):
         nargs='?',
         help='An absolute path to use as prefix for document file paths. When prefix is set, document file paths MUST '
              'be relative. This can be useful when creating source MMIF files from a system that\'s different from '
-             'the system that actually runs the pipeline (e.g. in a docker container).'
+             'the system that actually runs the workflow (e.g. in a container).'
     )
     parser.add_argument(
         '-o', '--output',
