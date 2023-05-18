@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 import warnings
+from pathlib import Path
 from typing import Union
 
 import pytest
@@ -93,12 +94,17 @@ class TestClamsApp(unittest.TestCase):
     
     def test_generate_app_version(self):
         os.environ.pop(clams.appmetadata.app_version_envvar_key, None)
-        self.assertEqual(clams.appmetadata.generate_app_version('not-existing-app'), clams.appmetadata.unresolved_app_version_num)
+        # should fail to generate version number if the directory of the app doesn't exist
+        self.assertEqual(clams.appmetadata.generate_app_version(cwd='not-existing-app'), 
+                         clams.appmetadata.unresolved_app_version_num)
+
         os.environ.update({clams.appmetadata.app_version_envvar_key:'v10'})
-        self.assertEqual(clams.appmetadata.generate_app_version('not-existing-app'), 'v10')
+        # should use version value from envvar if the directory of the app doesn't exist
+        self.assertEqual(clams.appmetadata.generate_app_version(cwd='not-existing-app'), 'v10')
         os.environ.pop(clams.appmetadata.app_version_envvar_key, None)
-        # krim: have to admit that the way version generation is using local working directory makes it hard to test
-        # self.assertTrue(clams.__version__.startswith(clams.appmetadata.generate_app_version('../').split('-')[0]))
+        # the version in development should be greater than the version in the last release
+        self.assertTrue(clams.__version__ >=
+                        clams.appmetadata.generate_app_version(cwd=Path(__file__).parent/'..').split('-')[0])
 
     def test_appmetadata(self):
         # base metadata setting is done in the ExampleClamsApp class
