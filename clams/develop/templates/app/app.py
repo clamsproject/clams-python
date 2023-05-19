@@ -9,16 +9,12 @@ from mmif import Mmif, View, Annotation, Document, AnnotationTypes, DocumentType
 class $APP_CLASS_NAME(ClamsApp):
 
     def __init__(self):
-        raise NotImplementedError
+        super().__init__()
 
     def _appmetadata(self):
-        # There are three ways to define app metadata:
-        # 1. using a ``metadata.py`` file (recommended)
-        # 2. using a ``metadata.json`` JSON file (static)
-        # 3. using this _appmetadata() method
-        # You must choose one of these three ways.
+        # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata
         # Also check out ``metadata.py`` in this directory. 
-        raise NotImplementedError
+        pass
 
     def _annotate(self, mmif: Union[str, dict, Mmif], **parameters) -> Mmif:
         # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._annotate
@@ -32,6 +28,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--production", action="store_true", help="run gunicorn server")
     # more arguments as needed
+    # parser.add_argument(more_arg...)
+
     parsed_args = parser.parse_args()
 
     # create the app instance

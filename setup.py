@@ -77,6 +77,11 @@ setuptools.setup(
             'builder': ('setup.py', 'html'),
         }
     },
+    # this is for *building*, building (build, bdist_*) doesn't get along with MANIFEST.in
+    # so using this param explicitly is much safer implementation
+    package_data={
+        'clams': ['develop/templates/**/*', 'develop/templates/**/.*']
+    },
     install_requires=requires,
     python_requires='>=3.8',
     packages=setuptools.find_packages(),

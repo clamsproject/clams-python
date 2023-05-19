@@ -5,6 +5,7 @@ twine
 sphinx
 sphinx-rtd-theme
 sphinx-jsonschema
+sphinx-autobuild
 autodoc
 m2r2
 pillow

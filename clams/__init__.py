@@ -8,11 +8,11 @@ from clams.app import *
 from clams.app import __all__ as app_all
 from clams.appmetadata import AppMetadata
 from clams.restify import Restifier
-from clams.source import PipelineSource
+from clams.source import WorkflowSource
 from clams.develop import CookieCutter
 from clams.ver import __version__
 
-__all__ = [AppMetadata, Restifier, PipelineSource] + app_all
+__all__ = [AppMetadata, Restifier, WorkflowSource] + app_all
 version_template = "{} (based on MMIF spec: {})"
 
 

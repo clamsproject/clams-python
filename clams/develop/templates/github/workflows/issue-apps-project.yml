@@ -14,5 +14,5 @@ jobs:
     uses: clamsproject/.github/.github/workflows/repo-issue-project.yml@main
     secrets: inherit
     with:
-      projectnum: '11'
+      projectnum: '12'
 

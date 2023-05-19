@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import shutil
 from pathlib import Path
 from typing import Union, Dict, List, Optional, Literal
 
@@ -16,7 +17,7 @@ primitives = Union[int, float, bool, str]
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
 
 param_value_types_values = param_value_types.__args__  # pytype: disable=attribute-error
-app_directory_baseurl = "http://apps.clams.ai"
+app_directory_baseurl = "https://apps.clams.ai"
 
 
 def get_clams_pyver():
@@ -34,8 +35,15 @@ def get_clams_pyver():
 
 
 def generate_app_version(cwd=None):
-    proc = subprocess.run(f'git --git-dir {Path(sys.modules["__main__"].__file__).parent.resolve() if cwd is None else cwd}/.git describe --tags --always'.split(), capture_output=True)
-    if proc.returncode == 0:
+    gitcmd = shutil.which('git') 
+    gitdir = (Path(sys.modules["__main__"].__file__).parent.resolve() if cwd is None else Path(cwd)) / '.git'
+    if gitcmd is not None and gitdir.exists():
+        proc = subprocess.run(
+            f'{gitcmd} --git-dir "{gitdir}" describe --tags --always',
+            capture_output=True,
+            shell=True,
+            check=True,
+        )
         return proc.stdout.decode('utf8').strip()
     elif app_version_envvar_key in os.environ:
         return os.environ[app_version_envvar_key]

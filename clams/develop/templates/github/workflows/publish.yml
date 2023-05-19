@@ -1,0 +1,50 @@
+name: "App Publisher: image>ghcr, metadata>appdir"
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        type: string
+        description: 'git tag to use to build an app image'
+  push:
+    tags:
+      - '*'
+
+jobs:
+  set-version:
+    runs-on: ubuntu-latest
+    name: 📌 Set VERSION value
+    outputs:
+      version: ${{ steps.output_version.outputs.version }}
+    steps:
+      - name: set VERSION value from dispatch inputs
+        id: get_version_dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: echo "VERSION=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+      - name: set VERSION value from pushed tag
+        id: get_version_tag
+        if: ${{ github.event_name == 'push' }}
+        run: echo "VERSION=$(echo "${{ github.ref }}" | cut -d/ -f3)" >> $GITHUB_ENV
+      - name: output result into an env-var
+        id: output_version
+        run: |
+          echo "version=${{ env.VERSION }}" >> $GITHUB_OUTPUT
+  publish-image:
+    needs: ['set-version']
+    name: 🐳 Build and deploy to a container repository
+    uses: clamsproject/.github/.github/workflows/app-container.yml@main
+    secrets: inherit
+    with:
+      version: ${{ needs.set-version.outputs.version }}
+      arm64: false
+  register-appdir:
+    needs: ['set-version', 'publish-image']
+    name: 📝 Register to CLASM app directory
+    uses: clamsproject/apps/.github/workflows/register.yml@main
+    secrets: inherit
+    with:
+      repo: ${{ github.repository }}
+      tag: ${{ needs.set-version.outputs.version }}
+      container: 'ghcr.io/${{ github.repository }}:${{ needs.set-version.outputs.version }}'
+  
