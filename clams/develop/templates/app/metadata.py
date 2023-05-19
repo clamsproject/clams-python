@@ -1,8 +1,5 @@
 """
 The purpose of this file is to define the metadata of the app with minimal imports. 
-You can define app metadata in a static ``metadata.json`` file in JSON format. 
-If you are using a static JSON file, please be more careful to keep the information
-up to date. 
 
 DO NOT CHANGE the name of the file
 """
@@ -25,18 +22,18 @@ def appmetadata() -> AppMetadata:
     
     # first set up some basic information
     metadata = AppMetadata(
-        name="long name free-text",
-        description="briefly describe what the purpose and features of the app",
-        app_license="short name for a software license like MIT, Apache2, GPL, etc.",
-        identifier=f"my-app",  # should be a single string without whitespaces. If you don't intent to publish this app to the CLAMS app-directory, please use a full IRI format. 
-        url="https://fakegithub.com/some/repository",  # a website where the full documentation of the app is hosted (usually source code repository)
+        name="$APP_NAME",
+        description="",  # briefly describe what the purpose and features of the app
+        app_license="",  # short name for a software license like MIT, Apache2, GPL, etc.
+        identifier="$APP_IDENTIFIER",  # should be a single string without whitespaces. If you don't intent to publish this app to the CLAMS app-directory, please use a full IRI format. 
+        url="https://fakegithub.com/some/repository",  # a website where the source code and full documentation of the app is hosted, if you are on the CLAMS team, see ``.github/README.md`` file in this directory.
         # use the following if this app is a wrapper of an existing computational analysis tool
         # (it is very important to pinpoint the primary analyzer version for reproducibility)
         analyzer_version='version_X',
         # if the analyzer is a python app, and it's specified in the requirements.txt
         # this trick can also be useful (replace ANALYZER_NAME with the pypi dist name)
         analyzer_version=[l.strip().rsplit('==')[-1] for l in open('requirements.txt').readlines() if re.match(r'^ANALYZER_NAME==', l)][0],
-        analyzer_license='short name for a software license',
+        analyzer_license="",  # short name for a software license
     )
     # and then add I/O specifications: an app must have at least one input and ont output
     metadata.add_input(DocumentTypes.Document)

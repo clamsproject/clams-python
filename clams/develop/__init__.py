@@ -67,19 +67,23 @@ def prep_argparser(**kwargs):
     parser.add_argument(
         '--no-github-actions',
         action='store_true', 
-        help='The cookiecutter by default assumes that the app codebase will be hosted on `github.com/clamsproejct`,'
-             'and add pre-shipped github actions for the `clamsproject` organization setup to the skeleton codebase.'
+        help='The cookiecutter by default assumes that the app codebase will be hosted on `github.com/clamsproejct`, '
+             'and add pre-shipped github actions for the `clamsproject` organization setup to the skeleton codebase. '
              'Use this options to disable this behavior.'
     )
     parser.add_argument(
         '-n', '--name',
         action='store',
         required=True,
-        help='The name of the directory where the baked app skeleton is placed. This name is also used to generate'
+        help='The name of the directory where the baked app skeleton is placed. This name is also used to generate '
              '1) Python class name of the app, 2) values for `name` and `identifier` fields in app-metadata, '
-             'based on heuristic tokenizing and casing rules. RECOMMENDATION: only use lower case ASCII alpha-numerics,'
+             'based on heuristic tokenizing and casing rules. RECOMMENDATION: only use lower case alpha-numerics, '
              'do not use whitespace, use dash (`-`) character instead for word boundaries, always check for the '
-             'generated names and make changes if they are incorrect.'
+             'generated names and make changes if they are incorrect. NOTE: if the name starts with `app-` or ends '
+             'with `-app`, those affixes will be removed from Python class name and app identifier, but will be '
+             'retained in the directory name. (e.g. `app-foo-bar-app` will be converted to `FooBar` for class name, '
+             '`foo-bar-app` for app identifier, and `app-foo-bar-app` for directory name.)'
+        
     )
     parser.add_argument(
         '-p', '--parent-dir',

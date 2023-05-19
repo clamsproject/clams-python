@@ -30,7 +30,7 @@ class ClamsApp(ABC):
     ]
 
     def __init__(self):
-        self.metadata: AppMetadata = self._load_metadata()
+        self.metadata: AppMetadata = self._load_appmetadata()
         super().__init__()
         # data type specification for common parameters
         python_type = {"boolean": bool, "number": float, "integer": int, "string": str}
@@ -52,21 +52,25 @@ class ClamsApp(ABC):
         pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
         return self.metadata.jsonify(pretty)
     
-    def _load_metadata(self):
-        cwd = pathlib.Path(sys.modules[self.__module__].__file__).parent
+    def _load_appmetadata(self) -> AppMetadata:
+        """
+        A private method to load the app metadata. This is called in __init__, 
+        (only once) and it uses three sources to load the metadata (in the order 
+        of priority):
         
-        # metadata compilation priority
-        # 1. metadata.py
-        # 2. metadata.json
-        # 3. _appmetadata() method (for legacy)
+        #. using a ``metadata.py`` file (recommended)
+        #. using self._appmetadata() method (legacy, no longer recommended)
+        
+        In any case, :class:`~clams.appmetadata.AppMetadata` class must be useful.
+        
+        For metadata specification, 
+        see `https://sdk.clams.ai/appmetadata.jsonschema <../appmetadata.jsonschema>`_. 
+        """
+        cwd = pathlib.Path(sys.modules[self.__module__].__file__).parent
         
         if (cwd / 'metadata.py').exists():
             import metadata as metadatapy  # pytype: disable=import-error
             metadata = metadatapy.appmetadata()
-        elif (cwd / 'metadata.json').exists():
-            import json
-            with open(cwd / 'metadata.json') as f:
-                metadata = json.load(f)
         else:
             metadata = self._appmetadata()
         return metadata
@@ -74,9 +78,7 @@ class ClamsApp(ABC):
     @abstractmethod
     def _appmetadata(self) -> AppMetadata:
         """
-        An abstract method to generate (or load if stored elsewhere) the app metadata
-        at runtime. All CLAMS app must implement this. For metadata specification, 
-        see `https://sdk.clams.ai/appmetadata.jsonschema <../appmetadata.jsonschema>`_. 
+        An abstract method to generate the app metadata. 
 
         :return: A Python object of the metadata, must be JSON-serializable
         """
@@ -96,7 +98,6 @@ class ClamsApp(ABC):
         :param runtime_params: An arbitrary set of k-v pairs to configure the app at runtime
         :return: Serialized JSON string of the output of the app
         """
-        # TODO (krim @ 12/17/20): add documentation on what are "common" operations
         pretty = runtime_params.get('pretty', False)
         if not isinstance(mmif, Mmif):
             mmif = Mmif(mmif)
@@ -120,6 +121,7 @@ class ClamsApp(ABC):
         An abstract method to generate (or load if stored elsewhere) the app 
         metadata at runtime. All CLAMS app must implement this.
         
+        This is where the bulk of your logic will go.
         A typical implementation of this method would be 
         
         #. Create a new view (or views) by calling :meth:`~mmif.serialize.mmif.Mmif.new_view` on the input mmif object.
@@ -127,6 +129,7 @@ class ClamsApp(ABC):
         #. Call :meth:`~clams.app.ClamsApp.get_configuration` to get an "upgraded" runtime parameters with default values.
         #. Call :meth:`~mmif.serialize.view.View.new_contain` on the new view object with any annotation properties specified by the configuration.
         #. Process the data and create :class:`~mmif.serialize.annotation.Annotation` objects and add them to the new view. 
+        #. While doing so, get help from :class:`~mmif.vocabulary.document_types.DocumentTypes`, :class:`~mmif.vocabulary.annotation_types.AnnotationTypes` classes to generate ``@type`` strings.
         #. Return the mmif object
 
         :param mmif: An input MMIF object to annotate

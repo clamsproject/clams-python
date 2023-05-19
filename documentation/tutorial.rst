@@ -4,6 +4,14 @@
 Tutorial: writing a CLAMS app
 =============================
 
+TODO: This tutorial is very old and needs some serious updating. When doing so, consider that 
+
+1. a large portion of this is "migrated" into app template documentation. 
+1. this document still uses term `tool` but we should use `app` instead.
+1. this document doesn't have any demo on the runtime params.
+1. the actual kaldi app has a runtime param that utilizes audio segment. But support for audio segment makes the app extremely messy, so we should avoid using it in this tutorial. Instead find a simpler app that can show multiple runtime params, I/O types.
+
+
 A short demonstration of how to wrap an existing processing tool as a
 CLAMS application
 
