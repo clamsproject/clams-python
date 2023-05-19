@@ -1,4 +1,11 @@
 
+## releasing 0.6.2 (2023-05-19)
+### Overview
+This release includes all the `clamsproject`-specific GHA workflow files in the PyPI distribution. 
+
+### Changes
+* fixed GHA workflow files were missing in the sdist uploaded to PyPI (#143)
+
 ## releasing 0.6.1 (2023-05-19)
 ### Overview
 This release is based on a new version of `mmif-python` [0.5.2](https://github.com/clamsproject/mmif-python/blob/main/CHANGELOG.md#releasing-052-2023-05-19). Additionally, this release includes significant updates in documentation both in sphinx API documentation (website) and app starter-kit documentation, huge upgrades in GHA workflows in app-dev template, and finally small (but critical) bug fixes.
