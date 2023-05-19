@@ -1,8 +1,5 @@
 """
 The purpose of this file is to define the metadata of the app with minimal imports. 
-You can define app metadata in a static ``metadata.json`` file in JSON format. 
-If you are using a static JSON file, please be more careful to keep the information
-up to date. 
 
 DO NOT CHANGE the name of the file
 """

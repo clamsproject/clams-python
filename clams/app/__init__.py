@@ -59,11 +59,9 @@ class ClamsApp(ABC):
         of priority):
         
         #. using a ``metadata.py`` file (recommended)
-        #. using a ``metadata.json`` JSON file (static)
-        #. using this _appmetadata() method
+        #. using self._appmetadata() method (legacy, no longer recommended)
         
-        You must choose one of these three ways. And if a Python-way is chosen,
-        :class:`~clams.appmetadata.AppMetadata` class must be useful.
+        In any case, :class:`~clams.appmetadata.AppMetadata` class must be useful.
         
         For metadata specification, 
         see `https://sdk.clams.ai/appmetadata.jsonschema <../appmetadata.jsonschema>`_. 
@@ -73,10 +71,6 @@ class ClamsApp(ABC):
         if (cwd / 'metadata.py').exists():
             import metadata as metadatapy  # pytype: disable=import-error
             metadata = metadatapy.appmetadata()
-        elif (cwd / 'metadata.json').exists():
-            import json
-            with open(cwd / 'metadata.json') as f:
-                metadata = json.load(f)
         else:
             metadata = self._appmetadata()
         return metadata
