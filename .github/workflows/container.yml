@@ -1,4 +1,4 @@
-name: build a container image and upload to ghcr
+name: "🐳 build one image and upload to ghcr"
 
 on:
   workflow_call:

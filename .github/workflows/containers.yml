@@ -1,4 +1,4 @@
-name: build and publish a family of base images
+name: "📦🐳 container images"
 
 on:
   push:

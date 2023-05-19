@@ -1,4 +1,4 @@
-name: "unassign all when an issue is closed"
+name: "📜🙅 unassign all when an issue is closed"
 
 on:
   issues:
