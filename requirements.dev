@@ -9,3 +9,4 @@ sphinx-autobuild
 autodoc
 m2r2
 pillow
+setuptools>=62
