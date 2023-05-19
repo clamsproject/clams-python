@@ -1,4 +1,4 @@
-name: "assign an issue when issue branch is created"
+name: "📜🙆 assign an issue when issue branch is created"
 
 on:
   create:

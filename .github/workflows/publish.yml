@@ -1,4 +1,4 @@
-name: upload HTML documentation, PyPI distribution
+name: 📦🎁 upload HTML documentation, PyPI distribution
 
 on: 
   push: 

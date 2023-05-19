@@ -1,4 +1,4 @@
-name: test and send code coverage to codecov.io
+name: "🧪 test with coverage"
 
 on:
   push:
