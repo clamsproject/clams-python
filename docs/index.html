@@ -34,7 +34,7 @@
             clams-python
           </a>
               <div class="version">
-                0.6.0
+                0.6.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -47,10 +47,11 @@
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="target-versions.html">Target MMIF Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input-output.html">I/O Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime-params.html">Runtime Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appmetadata.html">CLAMS App Metadata</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appdirectory.html">CLAMS App Directory</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial: writing a CLAMS app</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html"><code class="docutils literal notranslate"><span class="pre">clams</span></code> shell command</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API documentation:</span></p>
 <ul>
@@ -82,43 +83,47 @@
              
   <section id="welcome-to-clams-python-sdk-documentation">
 <h1>Welcome to CLAMS Python SDK documentation!<a class="headerlink" href="#welcome-to-clams-python-sdk-documentation" title="Permalink to this heading"></a></h1>
-</section>
-<section id="clams-sdk-for-python">
-<h1>CLAMS sdk for python<a class="headerlink" href="#clams-sdk-for-python" title="Permalink to this heading"></a></h1>
-<p><strong>NOTE</strong> that this project is in pre-alpha stage and being actively developed. Nothing is guaranteed to reliably work for the moment and developers need to be very careful when using APIs implemented here. Please use <a class="reference external" href="https://github.com/clamsproject/clams-python/issues">the issue track</a> to report bugs and malfunctions, or send us pull requests for even more contribution.</p>
 <section id="clams-project">
 <h2>CLAMS project<a class="headerlink" href="#clams-project" title="Permalink to this heading"></a></h2>
-<p><a class="reference external" href="https://clams.ai">CLAMS project</a> aims at free and open-source software platform for computational analysis and metadata generation applications for multimedia material. To achieve interoperability between various computational applications developed be different vendors, which is absolutely necessary for piping applications together supported by user-friendly workflow engines, we are also developing JSON(-LD)-based MultiMedia Interchange Format (<a class="reference external" href="https://mmif.clams.ai">MMIF</a>)</p>
+<p><a class="reference external" href="https://clams.ai">CLAMS project</a> aims at free and open-source software platform for computational analysis and metadata generation applications for multimedia material. We believe free and open AI-based multimedia processing platform can bring many benefits of technical advancement to libraries, archives, and museums. To achieve interoperability between various computational applications developed be different vendors, which is absolutely necessary for using applications together supported by user-friendly workflow engines, we are also developing JSON-based MultiMedia Interchange Format (<a class="reference external" href="https://mmif.clams.ai">MMIF</a>)</p>
 </section>
 <section id="clams-python">
 <h2>clams-python<a class="headerlink" href="#clams-python" title="Permalink to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">clams-python</span></code> is a Python implementation of the CLAMS SDK. <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> supports;</p>
+<p><code class="docutils literal notranslate"><span class="pre">clams-python</span></code> is a Python implementation of the CLAMS SDK. <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> provides CLAMS app developers with the following assistance ;</p>
 <ol class="arabic simple">
 <li><p>handling MMIF files for input and output specification for CLAMS apps</p></li>
-<li><p>a base class to start developing a CLAMS app</p></li>
-<li><p>a flask-based wrapper to run a Python CLAMS app as a HTTP web app</p></li>
+<li><p>a base Python class to start developing a CLAMS app</p></li>
+<li><p>a flask-based wrapper to run a Python CLAMS app as an HTTP web app</p></li>
+<li><p>cookie-cutter shell command that sets up everything and starts a new CLAMS app project</p></li>
 </ol>
+<section id="start-now-from-getting-started">
+<h3>Start now from <a class="reference external" href="introduction.html">Getting Started</a>!<a class="headerlink" href="#start-now-from-getting-started" title="Permalink to this heading"></a></h3>
+</section>
 </section>
 <section id="for-more">
 <h2>For more …<a class="headerlink" href="#for-more" title="Permalink to this heading"></a></h2>
-<p>For user manuals and Python API documentation, take a look at <a class="reference external" href="https://clams.ai/clams-python">the SDK website</a>.</p>
+<p>For user manuals and Python API documentation, take a look at <a class="reference external" href="https://clams.ai/clams-python/modules.html">Python modules</a>.</p>
 <p>For MMIF-specific Python API documentation, take a look at the <a class="reference external" href="https://clams.ai/mmif-python">mmif-python website</a>.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="introduction.html#quick-links">Quick Links</a></li>
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#prerequisites">Prerequisites</a></li>
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#installation">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="introduction.html#i-o-specification">I/O Specification</a></li>
-<li class="toctree-l2"><a class="reference internal" href="introduction.html#clams-app-api">CLAMS App API</a></li>
-<li class="toctree-l2"><a class="reference internal" href="introduction.html#http-webapp">HTTP webapp</a></li>
-<li class="toctree-l2"><a class="reference internal" href="introduction.html#dockerization">Dockerization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="introduction.html#clams-appliance-integration">CLAMS appliance integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#quick-start-with-the-app-template">Quick Start with the App Template</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="target-versions.html">Target MMIF Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input-output.html">I/O Specification</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="input-output.html#mmif-package"><code class="docutils literal notranslate"><span class="pre">mmif</span></code> package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input-output.html#mmif-version-and-clams-apps">MMIF version and CLAMS apps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="runtime-params.html">Runtime Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="runtime-params.html#as-python-api">As Python API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime-params.html#as-http-server">As HTTP Server</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="appmetadata.html">CLAMS App Metadata</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="appmetadata.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="appmetadata.html#format">Format</a></li>
@@ -126,13 +131,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="appdirectory.html">CLAMS App Directory</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial: writing a CLAMS app</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html#the-example-kaldi">The Example: Kaldi</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html#a-sample-kaldi-transcript">A sample Kaldi transcript</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html#translated-into-a-mmif-view">…translated into a MMIF view</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html#so-how-do-we-generate-this">So, how do we generate this?</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html"><code class="docutils literal notranslate"><span class="pre">clams</span></code> shell command</a></li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">

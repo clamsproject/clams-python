@@ -19,7 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Target MMIF Versions" href="target-versions.html" />
+    <link rel="next" title="I/O Specification" href="input-output.html" />
     <link rel="prev" title="Welcome to CLAMS Python SDK documentation!" href="index.html" /> 
 </head>
 
@@ -35,7 +35,7 @@
             clams-python
           </a>
               <div class="version">
-                0.6.0
+                0.6.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -49,27 +49,25 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Getting started</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#quick-links">Quick Links</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#i-o-specification">I/O Specification</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mmif-package"><code class="docutils literal notranslate"><span class="pre">mmif</span></code> package</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#note-on-versions">Note on versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-start-with-the-app-template">Quick Start with the App Template</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#clams-app-api">CLAMS App API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#annotate">annotate()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#appmetadata">appmetadata()</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#clams-app-api">CLAMS App API</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#note-on-app-metadata">Note on App metadata</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#http-webapp">HTTP webapp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#containerization">Containerization</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#http-webapp">HTTP webapp</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#dockerization">Dockerization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#clams-appliance-integration">CLAMS appliance integration</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="target-versions.html">Target MMIF Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input-output.html">I/O Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime-params.html">Runtime Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appmetadata.html">CLAMS App Metadata</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appdirectory.html">CLAMS App Directory</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial: writing a CLAMS app</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html"><code class="docutils literal notranslate"><span class="pre">clams</span></code> shell command</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API documentation:</span></p>
 <ul>
@@ -103,22 +101,14 @@
 <span id="introduction"></span><h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this heading"></a></h1>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
-<p>The CLAMS project has many moving parts to make various computational analysis tools talk to each other to create customized workflow pipelines. However the most important part of the project must be the apps published for the CLAMS platform. The CLAMS Python SDK will help app developers handling MMIF data format with high-level classes and methods in Python, and publishing their code as a CLAMS app that can be easily deployed to the site via CLAMS workflow engines, such as the <a class="reference external" href="https://appliance.clams.ai">CLAMS appliance</a>.</p>
-<p>A CLAMS app can be any software that performs automated contents analysis on text, audio, and/or image/video data stream. An app must use <a class="reference external" href="https://mmif.clams.ai">MMIF</a> as I/O format. When deployed into a CLAMS appliance, an app needs be running as a webapp wrapped in a docker container. In this documentation, we will explain what Python API’s and HTTP API’s an app must implement.</p>
-</section>
-<section id="quick-links">
-<h2>Quick Links<a class="headerlink" href="#quick-links" title="Permalink to this heading"></a></h2>
-<ul class="simple">
-<li><p><a class="reference external" href="appmetadata.jsonschema">CLAMS App Metadata jsonschema</a>.</p></li>
-<li><p><a class="reference external" href="https://mmif.clams.ai/">MMIF specification documentation</a>.</p></li>
-<li><p><a class="reference external" href="https://clams.ai/mmif-python/">mmif-python API documentation</a>.</p></li>
-</ul>
+<p>The CLAMS project has many moving parts to make various computational analysis tools talk to each other to create customized workflows. However the most important part of the project must be the apps published for the CLAMS platform. The CLAMS Python SDK will help app developers handling MMIF data format with high-level classes and methods in Python, and publishing their code as a CLAMS app that can be easily deployed to the site via CLAMS workflow engines, such as the <a class="reference external" href="https://appliance.clams.ai">CLAMS appliance</a>.</p>
+<p>A CLAMS app can be any software that performs automated contents analysis on text, audio, and/or image/video data stream, while using <a class="reference external" href="https://mmif.clams.ai">MMIF</a> as I/O format. When deployed into a CLAMS workflow engine, an app needs be running as a webapp wrapped in a container. In this documentation, we will explain what Python API’s and HTTP API’s an app must implement.</p>
 </section>
 <section id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading"></a></h2>
 <ul class="simple">
-<li><p><a class="reference external" href="https://www.python.org">Python</a>: <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> requires Python 3.6 or newer. We have no plan to support <a class="reference external" href="https://pythonclock.org/">Python 2.7</a>.</p></li>
-<li><p><a class="reference external" href="https://www.docker.com">Docker</a>: when deployed to the CLAMS appliance, an app must be in a docker container</p></li>
+<li><p><a class="reference external" href="https://www.python.org">Python</a>: the latest <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> requires Python 3.8 or newer. We have no plan to support <a class="reference external" href="https://pythonclock.org/">Python 2.7</a>.</p></li>
+<li><p>Containerization software: when deployed to a CLAMS workflow engine, an app must be containerized. Developers can choose any containerization software for doing so, but <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> SDK is developed <a class="reference external" href="https://www.docker.com">Docker</a> in mind.</p></li>
 </ul>
 </section>
 <section id="installation">
@@ -129,65 +119,66 @@
 </div>
 <p>Note that installing <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> will also install <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> PyPI package, which is a companion python library related to the MMIF data format.</p>
 </section>
-<section id="i-o-specification">
-<h2>I/O Specification<a class="headerlink" href="#i-o-specification" title="Permalink to this heading"></a></h2>
-<p>A CLAMS app must be able to take a MMIF json as input as well as to return a MMIF json as output. MMIF is a JSON(-LD)-based open source data format. For more details and discussions, please visit the <a class="reference external" href="https://mmif.clams.ai">MMIF website</a> and the <a class="reference external" href="https://github.com/clamsproject/mmif/issues">issue tracker</a>.</p>
-<section id="mmif-package">
-<h3><code class="docutils literal notranslate"><span class="pre">mmif</span></code> package<a class="headerlink" href="#mmif-package" title="Permalink to this heading"></a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> PyPI package comes together with the installation of <code class="docutils literal notranslate"><span class="pre">clams-python</span></code>, and with it, you can use <code class="docutils literal notranslate"><span class="pre">mmif</span></code> python package.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mmif</span>
-<span class="kn">from</span> <span class="nn">mmif.serialize</span> <span class="kn">import</span> <span class="n">Mmif</span>
-<span class="n">new_mmif</span> <span class="o">=</span> <span class="n">Mmif</span><span class="p">()</span>
-<span class="c1"># this will fail because an empty MMIF will fail to validate against MMIF JSON schema</span>
+<section id="quick-start-with-the-app-template">
+<h2>Quick Start with the App Template<a class="headerlink" href="#quick-start-with-the-app-template" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">clams-python</span></code> comes with a cookiecutter template for creating a CLAMS app. You can use it to create a new app project.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>clams<span class="w"> </span>develop<span class="w"> </span>--help
 </pre></div>
 </div>
-<p>Because API’s of the <code class="docutils literal notranslate"><span class="pre">mmf</span></code> package is well documented in the <a class="reference external" href="http://clams.ai/mmif">mmif-python website</a>, we won’t go into more details here. Please refer to the website.</p>
-</section>
-<section id="note-on-versions">
-<h3>Note on versions<a class="headerlink" href="#note-on-versions" title="Permalink to this heading"></a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">clams-python</span></code> is under active development, so is <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code>, which is a separate PyPI distribution package providing Python classes and methods to handle MMIF JSON string. Because of this rapid version cycles, it is possible that a MMIF file of a specific version does not work with a CLAMS app that is based on a incompatible version of <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code>. In every MMIF files, there must be the MMIF version encoded at the top of the file. Please keep in mind the versions of Python libraries you’re using and their target specification version. To see the MMIF specification version targeted by the installed <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> package, look at <code class="docutils literal notranslate"><span class="pre">mmif.__specver__</span></code> variable (installing <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> will also install <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code>).</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mmif</span>
-<span class="n">mmif</span><span class="o">.</span><span class="n">__specver__</span>
-</pre></div>
-</div>
-<p>A CLAMS app must report which MMIF specification version it targets in its metadata (see <a class="reference internal" href="appmetadata.html#appmetadata"><span class="std std-ref">CLAMS App Metadata</span></a>). And when an app targets a specific version, it means;</p>
+<p>The newly created project will have a <code class="docutils literal notranslate"><span class="pre">README.md</span></code> file that explains how to develop and deploy the app. Here we will explain the basic structure of the project. Developing a CLAMS app has three (or four depending on what is the underlying analyzer) major components.</p>
 <ol class="arabic simple">
-<li><p>the app can only process input MMIF files that are compatible with the target version.</p></li>
-<li><p>the app will output MMIF files exactly versioned as the target version.</p></li>
+<li><p>(Writing computational analysis code, or use existing code in Python)</p></li>
+<li><p>Make the analyzer to speak MMIF by wrapping with <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.app.ClamsApp</span></code></a>.</p></li>
+<li><p>Make the app into a web app by wrapping with <a class="reference internal" href="autodoc/clams.restify.html#clams.restify.Restifier" title="clams.restify.Restifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.restify.Restifier</span></code></a>.</p></li>
+<li><p>Containerize the app by writing a <code class="docutils literal notranslate"><span class="pre">Containerfile</span></code> or <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>.</p></li>
 </ol>
-<p>Finally, for two different specifications to be compatible to each other, their <code class="docutils literal notranslate"><span class="pre">major</span></code> and <code class="docutils literal notranslate"><span class="pre">minor</span></code> version numbers should be the same. For example, <code class="docutils literal notranslate"><span class="pre">0.4.2</span></code> is compatible either with <code class="docutils literal notranslate"><span class="pre">0.4.10</span></code> or <code class="docutils literal notranslate"><span class="pre">0.4.0</span></code>, but is not compatible with <code class="docutils literal notranslate"><span class="pre">0.3.0</span></code> or <code class="docutils literal notranslate"><span class="pre">0.7.2</span></code>.</p>
-<p>For more information on the relation between <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> versions and MMIF specification versions, or MMIF version compatibility, please take time to read our decision on the subject <a class="reference external" href="https://mmif.clams.ai/versioning/">here</a>. You can also find a table with all public <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> packages and their target MMIF versions in <a class="reference internal" href="target-versions.html#target-versions"><span class="std std-ref">Target MMIF Versions</span></a>. This is a seemingly complicated issue, but also is very crucial to build CLAMS as a platform.</p>
-</section>
-</section>
 <section id="clams-app-api">
-<h2>CLAMS App API<a class="headerlink" href="#clams-app-api" title="Permalink to this heading"></a></h2>
+<h3>CLAMS App API<a class="headerlink" href="#clams-app-api" title="Permalink to this heading"></a></h3>
 <p>A CLAMS Python app is a python class that implements and exposes two core methods; <code class="docutils literal notranslate"><span class="pre">annotate()</span></code>, <code class="docutils literal notranslate"><span class="pre">appmetadata()</span></code>.</p>
 <ul class="simple">
+<li><p><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.annotate" title="clams.app.ClamsApp.annotate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">annotate()</span></code></a>: Takes a MMIF as input and processes the MMIF input, then returns serialized MMIF <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>.</p></li>
 <li><p><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.appmetadata" title="clams.app.ClamsApp.appmetadata"><code class="xref py py-meth docutils literal notranslate"><span class="pre">appmetadata()</span></code></a>: Returns JSON-formatted <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> that contains metadata about the app.</p></li>
-<li><p><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.annotate" title="clams.app.ClamsApp.annotate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">annotate()</span></code></a>: Takes a MMIF as the only input and processes the MMIF input, then returns serialized MMIF <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>.</p></li>
 </ul>
-<p>A good place to start writing a CLAMS app is to start with inheriting <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.app.ClamsApp</span></code></a>. And if you’re doing so, you might want to implement two private methods instead of two public methods above. That’s because the implementation of the public methods in the super class internally call these private methods respectively.</p>
+<p>A good place to start writing a CLAMS app is to start with inheriting <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.app.ClamsApp</span></code></a>. Let’s talk about the two methods in detail when inheriting the class.</p>
+<section id="annotate">
+<h4>annotate()<a class="headerlink" href="#annotate" title="Permalink to this heading"></a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">annotate()</span></code> method is the core method of a CLAMS app. It takes a MMIF JSON string as the main input, along with other <a class="reference external" href="https://docs.python.org/3.8/glossary.html#term-argument">kwargs</a> for runtime configurations, and analyze the MMIF input, then returns analysis results in a serialized MMIF <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>.
+When you inherit <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClamsApp</span></code></a>, you need to implement</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._appmetadata" title="clams.app.ClamsApp._appmetadata"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_appmetadata()</span></code></a> (using a <a class="reference external" href="https://clams.ai/mmif-python/0.5.1/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v0.5.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mmif</span></code></a> object) and</p></li>
-<li><p><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._annotate" title="clams.app.ClamsApp._annotate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_annotate()</span></code></a> (using a <a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata" title="clams.appmetadata.AppMetadata"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppMetadata</span></code></a> object)</p></li>
+<li><p><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._annotate" title="clams.app.ClamsApp._annotate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_annotate()</span></code></a> instead of <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.annotate" title="clams.app.ClamsApp.annotate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">annotate()</span></code></a> (read the docstrings as they contains important information about the app implementation)</p></li>
 </ul>
-<p>We provide a tutorial for writing with a real world example at &lt;<a class="reference internal" href="tutorial.html#tutorial"><span class="std std-ref">Tutorial: writing a CLAMS app</span></a>&gt;. We highly recommend you to go through it.</p>
-<section id="note-on-app-metadata">
-<h3>Note on App metadata<a class="headerlink" href="#note-on-app-metadata" title="Permalink to this heading"></a></h3>
-<p>App metadata is a map where important information about the app itself is stored as key-value pairs.
-See &lt;<a class="reference internal" href="appmetadata.html#appmetadata"><span class="std std-ref">CLAMS App Metadata</span></a>&gt; for the specification.
-In the future the app metadata will be used for automatic generation of CLAMS App index in the <a class="reference internal" href="appdirectory.html#appdirectory"><span class="std std-ref">CLAMS App Directory</span></a>, as well as automatic integration to Galaxy in the appliance deployment.</p>
+<p>As a developer you can expose different behaviors of the <code class="docutils literal notranslate"><span class="pre">annotate()</span></code> method by providing configurable parameters as keyword arguments of the method. For example, you can have user specify a re-sample rate of an audio file to be analyzed by providing <code class="docutils literal notranslate"><span class="pre">resample_rate</span></code> parameter.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These runtime configurations are not part of the MMIF input, but for reproducible analysis, you should record these configurations in the output MMIF.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There are <em>universal</em> parameters defined at the SDK-level that all CLAMS apps commonly use. See <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.universal_parameters" title="clams.app.ClamsApp.universal_parameters"><code class="xref py py-const docutils literal notranslate"><span class="pre">clams.app.ClamsApp.universal_parameters</span></code></a>.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>All the runtime configurations should be pre-announced in the app metadata.</p>
+</div>
+</section>
+<section id="appmetadata">
+<h4>appmetadata()<a class="headerlink" href="#appmetadata" title="Permalink to this heading"></a></h4>
+<p>App metadata is a map where important information about the app itself is stored as key-value pairs. That said, <code class="docutils literal notranslate"><span class="pre">appmetadata()</span></code> method should not perform any analysis on the input MMIF. In fact, it shouldn’t take any input at all.</p>
+<p>When using <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp" title="clams.app.ClamsApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.app.ClamsApp</span></code></a>, you have different options to implement information source for the metadata. See <a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata" title="clams.app.ClamsApp._load_appmetadata"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_load_appmetadata()</span></code></a> for the options, and &lt;<a class="reference internal" href="appmetadata.html#appmetadata"><span class="std std-ref">CLAMS App Metadata</span></a>&gt; for the metadata specification.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In the future, the app metadata will be used for automatic generation of <a class="reference internal" href="appdirectory.html#appdirectory"><span class="std std-ref">CLAMS App Directory</span></a>.</p>
+</div>
 </section>
 </section>
 <section id="http-webapp">
-<h2>HTTP webapp<a class="headerlink" href="#http-webapp" title="Permalink to this heading"></a></h2>
+<h3>HTTP webapp<a class="headerlink" href="#http-webapp" title="Permalink to this heading"></a></h3>
 <p>To be integrated into the CLAMS appliance, a CLAMS app needs to serve as a webapp. Once your application class is ready, you can use <a class="reference internal" href="autodoc/clams.restify.html#clams.restify.Restifier" title="clams.restify.Restifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.restify.Restifier</span></code></a> to wrap your app as a <a class="reference external" href="https://palletsprojects.com/p/flask/">Flask</a>-based web application.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">clams.app</span> <span class="kn">import</span> <span class="n">ClamsApp</span>
 <span class="kn">from</span> <span class="nn">clams.restify</span> <span class="kn">import</span> <span class="n">Restifier</span>
 
 <span class="k">class</span> <span class="nc">AnApp</span><span class="p">(</span><span class="n">ClamsApp</span><span class="p">):</span>
     <span class="c1"># Implements an app that does this and that.</span>
-    <span class="c1"># Must implement `_appmetadata`, `_annotate` methods</span>
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">app</span> <span class="o">=</span> <span class="n">AnApp</span><span class="p">()</span>
@@ -196,24 +187,23 @@ In the future the app metadata will be used for automatic generation of CLAMS Ap
 </pre></div>
 </div>
 <p>When running the above code, Python will start a web server and host your CLAMS app. By default the serve will listen to <code class="docutils literal notranslate"><span class="pre">0.0.0.0:5000</span></code>, but you can adjust hostname and port number. In this webapp, <code class="docutils literal notranslate"><span class="pre">appmetadata</span></code> and <code class="docutils literal notranslate"><span class="pre">annotate</span></code> will be respectively mapped to <code class="docutils literal notranslate"><span class="pre">GET</span></code>, and <code class="docutils literal notranslate"><span class="pre">POST</span></code> to the root route. Hence, for example, you can <code class="docutils literal notranslate"><span class="pre">POST</span></code> a MMIF file to the web app and get a response with the annotated MMIF string in the body.</p>
-<p>In the above example, <a class="reference internal" href="autodoc/clams.restify.html#clams.restify.Restifier.run" title="clams.restify.Restifier.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">clams.restify.Restifier.run()</span></code></a> will start the webapp in debug mode on a <a class="reference external" href="https://palletsprojects.com/p/werkzeug/">Werkzeug</a> server, which is not always suitable for a production server. For a more robust server that can handle multiple requests asynchronously, you might want to use a production-ready HTTP server. In such a case you can use <a class="reference internal" href="autodoc/clams.restify.html#clams.restify.Restifier.serve_production" title="clams.restify.Restifier.serve_production"><code class="xref py py-meth docutils literal notranslate"><span class="pre">serve_production()</span></code></a>, which will spin up a multi-worker <a class="reference external" href="https://docs.gunicorn.org">Gunicorn</a> server. If you don’t like it (for example, gunicorn does not support Windows OS), you can write your own HTTP wrapper. In the end of the day, all you need is a webapp that maps <code class="docutils literal notranslate"><span class="pre">appmetadata</span></code> and <code class="docutils literal notranslate"><span class="pre">annotate</span></code> on <code class="docutils literal notranslate"><span class="pre">GET</span></code> and <code class="docutils literal notranslate"><span class="pre">POST</span></code> requests.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Now with HTTP interface, users can pass runtime configuration as <a class="reference external" href="https://en.wikipedia.org/wiki/Query_string">URL query strings</a>. As the values of query string parameters are always strings, <code class="docutils literal notranslate"><span class="pre">Restifier</span></code> will try to convert the values to the types specified in the app metadata, using <a class="reference internal" href="autodoc/clams.restify.html#clams.restify.ParameterCaster" title="clams.restify.ParameterCaster"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.restify.ParameterCaster</span></code></a>.</p>
+</div>
+<p>In the above example, <a class="reference internal" href="autodoc/clams.restify.html#clams.restify.Restifier.run" title="clams.restify.Restifier.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">clams.restify.Restifier.run()</span></code></a> will start the webapp in debug mode on a <a class="reference external" href="https://palletsprojects.com/p/werkzeug/">Werkzeug</a> server, which is not always suitable for a production server. For a more robust server that can handle multiple requests asynchronously, you might want to use a production-ready HTTP server. In such a case you can use <a class="reference internal" href="autodoc/clams.restify.html#clams.restify.Restifier.serve_production" title="clams.restify.Restifier.serve_production"><code class="xref py py-meth docutils literal notranslate"><span class="pre">serve_production()</span></code></a>, which will spin up a multi-worker <a class="reference external" href="https://docs.gunicorn.org">Gunicorn</a> server. If you don’t like it (because, for example, gunicorn does not support Windows OS), you can write your own HTTP wrapper. In the end of the day, all you need is a webapp that maps <code class="docutils literal notranslate"><span class="pre">appmetadata</span></code> and <code class="docutils literal notranslate"><span class="pre">annotate</span></code> on <code class="docutils literal notranslate"><span class="pre">GET</span></code> and <code class="docutils literal notranslate"><span class="pre">POST</span></code> requests.</p>
 </section>
-<section id="dockerization">
-<h2>Dockerization<a class="headerlink" href="#dockerization" title="Permalink to this heading"></a></h2>
-<p>In addition to the HTTP service, a CLAMS app is expected to be containerized. Concretely, the appliance maker expects a CLAMS app to have a <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code> at the project root. Independently from being compatible with the CLAMS appliance, containerization of your app is recommended especially when your app processes video streams and dependent on complicated system-level video processing libraries (e.g. <a class="reference external" href="https://opencv.org/">OpenCV</a>, <a class="reference external" href="https://ffmpeg.org/">FFmpeg</a>).</p>
-<p>Refer to the <a class="reference external" href="https://docs.docker.com/engine/reference/builder/">official documentation</a> to learn how to write a <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>. To integrate to the CLAMS appliance, a dockerized CLAMS app must automatically start itself as a webapp when instantiated as a container, and listen to <code class="docutils literal notranslate"><span class="pre">5000</span></code> port in the container.</p>
-<p>We have a <a class="reference external" href="https://hub.docker.com/orgs/clamsproject/repositories">public docker hub</a>, and publishing Debian-based base images to help developers write <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code> and save build time to install common libraries. At the moment we have a basic image with Python 3.6 and <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> installed. We will publish more images built with commonly used video and audio processing libraries.</p>
+<section id="containerization">
+<h3>Containerization<a class="headerlink" href="#containerization" title="Permalink to this heading"></a></h3>
+<p>In addition to the HTTP service, a CLAMS app is expected to be containerized for seamless deployment to CLAMS workflow engines. Also, independently from being compatible with the CLAMS platform, containerization of your app is recommended especially when your app processes video streams and dependent on complicated system-level video processing libraries (e.g. <a class="reference external" href="https://opencv.org/">OpenCV</a>, <a class="reference external" href="https://ffmpeg.org/">FFmpeg</a>).</p>
+<p>When you start developing an app with <code class="docutils literal notranslate"><span class="pre">clams</span> <span class="pre">develop</span></code> command, the command will create a <code class="docutils literal notranslate"><span class="pre">Containerfile</span></code> with some instructions as inline comments for you (you can always start from scratch with any containerization tool you like).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you are part of CLAMS team and you want to publish your app to the <code class="docutils literal notranslate"><span class="pre">https://github.com/clamsproject</span></code> organization, <code class="docutils literal notranslate"><span class="pre">clams</span> <span class="pre">develop</span></code> command will also create a GitHub actions files to automatically build and push an app image to the organization’s container registry. For the actions to work, you must use the name <code class="docutils literal notranslate"><span class="pre">Containerfile</span></code> instead of <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>.</p>
+</div>
+<p>If you are not familiar with <code class="docutils literal notranslate"><span class="pre">Containerfile</span></code> or <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>, refer to the <a class="reference external" href="https://docs.docker.com/engine/reference/builder/">official documentation</a> to learn how to write one. To integrate to the CLAMS workflow engines, a containerized CLAMS app must automatically start itself as a webapp when instantiated as a container, and listen to <code class="docutils literal notranslate"><span class="pre">5000</span></code> port.</p>
+<p>We have a <a class="reference external" href="https://github.com/orgs/clamsproject/packages">public GitHub Container Repository</a>, and publishing Debian-based base images to help developers write <code class="docutils literal notranslate"><span class="pre">Containerfile</span></code> and save build time to install common libraries. At the moment we have a basic image with Python 3.6 and <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> installed. We will publish more images built with commonly used video and audio processing libraries.</p>
 </section>
-<section id="clams-appliance-integration">
-<h2>CLAMS appliance integration<a class="headerlink" href="#clams-appliance-integration" title="Permalink to this heading"></a></h2>
-<p>Finally, here are requirements for an app to be appliance compatible.</p>
-<ol class="arabic simple">
-<li><p>App code is hosted on a public git repository.</p></li>
-<li><p>App is dockerized</p></li>
-<li><p>The app docker image will automatically start the app as a webapp, and listen to port 5000.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code> for the dockerization is placed in the root of the git repository</p></li>
-</ol>
-<p>To learn how to deploy your app on an appliance instance, please refer to the <a class="reference external" href="https://appliance.clams.ai/">appliance documentation</a>.</p>
 </section>
 </section>
 
@@ -222,7 +212,7 @@ In the future the app metadata will be used for automatic generation of CLAMS Ap
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Welcome to CLAMS Python SDK documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="target-versions.html" class="btn btn-neutral float-right" title="Target MMIF Versions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="input-output.html" class="btn btn-neutral float-right" title="I/O Specification" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

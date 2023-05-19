@@ -32,7 +32,7 @@
             clams-python
           </a>
               <div class="version">
-                0.6.0
+                0.6.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -45,10 +45,11 @@
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="target-versions.html">Target MMIF Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input-output.html">I/O Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime-params.html">Runtime Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appmetadata.html">CLAMS App Metadata</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appdirectory.html">CLAMS App Directory</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial: writing a CLAMS app</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html"><code class="docutils literal notranslate"><span class="pre">clams</span></code> shell command</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API documentation:</span></p>
 <ul>
@@ -98,16 +99,23 @@
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
  | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
  
 </div>
 <h2 id="_">_</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="autodoc/clams.app.html#clams.app.ClamsApp._abc_impl">_abc_impl (clams.app.ClamsApp attribute)</a>
+</li>
       <li><a href="autodoc/clams.app.html#clams.app.ClamsApp._annotate">_annotate() (clams.app.ClamsApp method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autodoc/clams.app.html#clams.app.ClamsApp._appmetadata">_appmetadata() (clams.app.ClamsApp method)</a>
+</li>
+      <li><a href="autodoc/clams.app.html#clams.app.ClamsApp._check_mmif_compatibility">_check_mmif_compatibility() (clams.app.ClamsApp static method)</a>
+</li>
+      <li><a href="autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata">_load_appmetadata() (clams.app.ClamsApp method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -115,7 +123,7 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="autodoc/clams.source.html#clams.source.PipelineSource.add_document">add_document() (clams.source.PipelineSource method)</a>
+      <li><a href="autodoc/clams.source.html#clams.source.WorkflowSource.add_document">add_document() (clams.source.WorkflowSource method)</a>
 </li>
       <li><a href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata.add_input">add_input() (clams.appmetadata.AppMetadata method)</a>
 </li>
@@ -149,7 +157,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autodoc/clams.restify.html#clams.restify.ParameterCaster.cast">cast() (clams.restify.ParameterCaster method)</a>
 </li>
-      <li><a href="autodoc/clams.source.html#clams.source.PipelineSource.change_metadata">change_metadata() (clams.source.PipelineSource method)</a>
+      <li><a href="autodoc/clams.source.html#clams.source.WorkflowSource.change_metadata">change_metadata() (clams.source.WorkflowSource method)</a>
 </li>
       <li>
     clams.app
@@ -188,7 +196,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="autodoc/clams.source.html#clams.source.PipelineSource.from_data">from_data() (clams.source.PipelineSource method)</a>
+      <li><a href="autodoc/clams.source.html#clams.source.WorkflowSource.from_data">from_data() (clams.source.WorkflowSource method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -226,7 +234,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autodoc/clams.restify.html#clams.restify.ClamsHTTPApi.methods">methods (clams.restify.ClamsHTTPApi attribute)</a>
 </li>
-      <li><a href="autodoc/clams.source.html#clams.source.PipelineSource.mmif">mmif (clams.source.PipelineSource attribute)</a>
+      <li><a href="autodoc/clams.source.html#clams.source.WorkflowSource.mmif">mmif (clams.source.WorkflowSource attribute)</a>
 </li>
       <li>
     module
@@ -255,15 +263,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autodoc/clams.restify.html#clams.restify.ParameterCaster">ParameterCaster (class in clams.restify)</a>
 </li>
-      <li><a href="autodoc/clams.source.html#clams.source.PipelineSource">PipelineSource (class in clams.source)</a>
-</li>
       <li><a href="autodoc/clams.restify.html#clams.restify.ClamsHTTPApi.post">post() (clams.restify.ClamsHTTPApi method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="autodoc/clams.source.html#clams.source.PipelineSource.prime">prime() (clams.source.PipelineSource method)</a>
+      <li><a href="autodoc/clams.source.html#clams.source.WorkflowSource.prime">prime() (clams.source.WorkflowSource method)</a>
 </li>
-      <li><a href="autodoc/clams.source.html#clams.source.PipelineSource.produce">produce() (clams.source.PipelineSource method)</a>
+      <li><a href="autodoc/clams.source.html#clams.source.WorkflowSource.produce">produce() (clams.source.WorkflowSource method)</a>
 </li>
       <li><a href="autodoc/clams.restify.html#clams.restify.ClamsHTTPApi.put">put() (clams.restify.ClamsHTTPApi method)</a>
 </li>
@@ -322,6 +328,14 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autodoc/clams.app.html#clams.app.ClamsApp.validate_document_locations">validate_document_locations() (clams.app.ClamsApp static method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="autodoc/clams.source.html#clams.source.WorkflowSource">WorkflowSource (class in clams.source)</a>
 </li>
   </ul></td>
 </tr></table>

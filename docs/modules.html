@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="clams.restify package" href="autodoc/clams.restify.html" />
-    <link rel="prev" title="Tutorial: writing a CLAMS app" href="tutorial.html" /> 
+    <link rel="prev" title="clams shell command" href="cli.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -35,7 +35,7 @@
             clams-python
           </a>
               <div class="version">
-                0.6.0
+                0.6.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -48,10 +48,11 @@
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="target-versions.html">Target MMIF Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input-output.html">I/O Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime-params.html">Runtime Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appmetadata.html">CLAMS App Metadata</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appdirectory.html">CLAMS App Directory</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial: writing a CLAMS app</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html"><code class="docutils literal notranslate"><span class="pre">clams</span></code> shell command</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API documentation:</span></p>
 <ul class="current">
@@ -124,8 +125,11 @@
 <li class="toctree-l1"><a class="reference internal" href="autodoc/clams.app.html">clams.app package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="autodoc/clams.app.html#module-clams.app">Module contents</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp"><code class="docutils literal notranslate"><span class="pre">ClamsApp</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._abc_impl"><code class="docutils literal notranslate"><span class="pre">ClamsApp._abc_impl</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._annotate"><code class="docutils literal notranslate"><span class="pre">ClamsApp._annotate()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._appmetadata"><code class="docutils literal notranslate"><span class="pre">ClamsApp._appmetadata()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._check_mmif_compatibility"><code class="docutils literal notranslate"><span class="pre">ClamsApp._check_mmif_compatibility()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata"><code class="docutils literal notranslate"><span class="pre">ClamsApp._load_appmetadata()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.annotate"><code class="docutils literal notranslate"><span class="pre">ClamsApp.annotate()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.appmetadata"><code class="docutils literal notranslate"><span class="pre">ClamsApp.appmetadata()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.get_configuration"><code class="docutils literal notranslate"><span class="pre">ClamsApp.get_configuration()</span></code></a></li>
@@ -143,13 +147,13 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="autodoc/clams.source.html">clams.source package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="autodoc/clams.source.html#module-clams.source">Module contents</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.source.html#clams.source.PipelineSource"><code class="docutils literal notranslate"><span class="pre">PipelineSource</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.PipelineSource.add_document"><code class="docutils literal notranslate"><span class="pre">PipelineSource.add_document()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.PipelineSource.change_metadata"><code class="docutils literal notranslate"><span class="pre">PipelineSource.change_metadata()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.PipelineSource.from_data"><code class="docutils literal notranslate"><span class="pre">PipelineSource.from_data()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.PipelineSource.mmif"><code class="docutils literal notranslate"><span class="pre">PipelineSource.mmif</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.PipelineSource.prime"><code class="docutils literal notranslate"><span class="pre">PipelineSource.prime()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.PipelineSource.produce"><code class="docutils literal notranslate"><span class="pre">PipelineSource.produce()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.source.html#clams.source.WorkflowSource"><code class="docutils literal notranslate"><span class="pre">WorkflowSource</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.WorkflowSource.add_document"><code class="docutils literal notranslate"><span class="pre">WorkflowSource.add_document()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.WorkflowSource.change_metadata"><code class="docutils literal notranslate"><span class="pre">WorkflowSource.change_metadata()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.WorkflowSource.from_data"><code class="docutils literal notranslate"><span class="pre">WorkflowSource.from_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.WorkflowSource.mmif"><code class="docutils literal notranslate"><span class="pre">WorkflowSource.mmif</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.WorkflowSource.prime"><code class="docutils literal notranslate"><span class="pre">WorkflowSource.prime()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="autodoc/clams.source.html#clams.source.WorkflowSource.produce"><code class="docutils literal notranslate"><span class="pre">WorkflowSource.produce()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -177,7 +181,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="tutorial.html" class="btn btn-neutral float-left" title="Tutorial: writing a CLAMS app" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cli.html" class="btn btn-neutral float-left" title="clams shell command" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="autodoc/clams.restify.html" class="btn btn-neutral float-right" title="clams.restify package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

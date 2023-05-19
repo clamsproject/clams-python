@@ -1,4 +1,20 @@
 
+## releasing 0.6.1 (2023-05-19)
+### Overview
+This release is based on a new version of `mmif-python` [0.5.2](https://github.com/clamsproject/mmif-python/blob/main/CHANGELOG.md#releasing-052-2023-05-19). Additionally, this release includes significant updates in documentation both in sphinx API documentation (website) and app starter-kit documentation, huge upgrades in GHA workflows in app-dev template, and finally small (but critical) bug fixes.
+
+### Additions
+* app directory registration GHA workflow is added to the app development template. (#134)
+* documentation of `clamsproject`-specific GHA workflows included in the app-dev template.
+
+### Changes
+* now using [`mmif-python==0.5.2`](https://github.com/clamsproject/mmif-python/blob/main/CHANGELOG.md#releasing-052-2023-05-19).
+* major updates in the documentation website (API doc by sphinx) to include recent changes in app metadata, I/O specs, runtime parameters, as well as `clams` CLI. (#140)
+* fixed app-dev templated wasn't really included in the pypi distribution. (#132)
+* fixed app version generator crashed when `git` cmd not found (in a container). (#139)
+* fixed `@` sign wasn't properly serialized from `metadata.py`.
+
+
 ## releasing 0.6.0 (2023-05-03)
 ### Overview
 This release contains big changes and new features, including "breaking" ones. All CLAMS apps using `clams-python==0.5.*` are recommended to update to this release. 
@@ -65,27 +81,3 @@ This release contains changes in `AppMetadata` scheme and bug fix in `Restifier`
   * `license` -> `app_license`
   * `wrappee_version` -> `analyzer_version`
   * `wrappee_license` -> `analyzer_license`
-
-## releasing 0.4.4 (2021-07-11)
-This release includes bug fixes from mmif-python package, loosened ML library versions in docker images.
-
-
-
-## releasing 0.4.3 (2021-06-19)
-This release contains various fixes and improvements. 
-
-* updated mmif-python to 0.4.4
-* (added) C`lamsApp.get_configuration` will convert runtime parameters into actual runtime configuration that the app uses. This will help signing view.
-* (fixed) Crash when `sign_view` with non-string parameter values
-* (changed) MMIF with error is always prettified when returned as HTTP response
-* (fixed) Adding duplicate input/output should not be allowed
-* (changed) `AppMetadata.add_parameter` now has a proper signature for IDE hints
-
-
-## releasing 0.4.2 (2021-06-17)
-This release contains bugfixes
-
-- fixed clams-python only worked on python==3.6
-- fixed clams CLI not properly displaying help msg 
-- updated latest mmif-python
-
