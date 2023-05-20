@@ -1,5 +1,6 @@
 .git/
 .github/
+.gitignore
 bin/
 build/
 *~

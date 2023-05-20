@@ -1,4 +1,4 @@
-name: "📜🙅 unassign all when an issue is closed"
+name: "🙅 Unassign assignees"
 
 on:
   issues:
@@ -10,5 +10,6 @@ on:
 
 jobs:
   call-unassign:
+    name: "🤙 Call unassignment workflow"
     uses: clamsproject/.github/.github/workflows/repo-issue-close.yml@main
     secrets: inherit

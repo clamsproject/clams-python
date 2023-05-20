@@ -1,4 +1,4 @@
-name: "🧪 test with coverage"
+name: "🧪 Test"
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
       - develop
 jobs:
   test-and-codecov:
-    name: test and check coverage
+    name: "🤙 Call SDK test workflow"
     uses: clamsproject/.github/.github/workflows/sdk-codecov.yml@main
     secrets:
       CC_REPO_UPLOAD_TOKEN: ${{ secrets.CODECOV_UPLOAD_TOKEN_CLAMS_PYTHON }}
