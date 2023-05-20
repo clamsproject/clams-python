@@ -1,8 +1,9 @@
-name: "📦🐳 container images"
+name: "📦 Publish (base images)"
 
 on:
   push:
-    tags: '[0-9]+.[0-9]+.[0-9]+'
+    tags: 
+      - '[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
     inputs:
       version:
@@ -12,26 +13,28 @@ on:
 jobs:
   set-version:
     runs-on: ubuntu-latest
+    name: "🏷 Set version value"
     outputs:
       version: ${{ steps.output_version.outputs.version }}
     steps:
-    - name: set VERSION value from dispatch inputs
+    - name: "📌 Set VERSION value from dispatch inputs"
       id: get_version_dispatch
       if: ${{ github.event_name == 'workflow_dispatch' }} 
       run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-    - name: set VERSION value from pushed tag
+    - name: "📌 Set VERSION value from pushed tag"
       id: get_version_tag
       if: ${{ github.event_name == 'push' }} 
       run: echo "VERSION=$(echo "${{ github.ref }}" | cut -d/ -f3)" >> $GITHUB_ENV
-    - name: output result into an env-var
+    - name: "🏷 Record VERSION for follow-up jobs"
       id: output_version
       run: |
         echo "version=${{ env.VERSION }}" >> $GITHUB_OUTPUT
   check-deployment:
+    name: "✅ PyPI deployment check"
     runs-on: ubuntu-latest
     needs: ['set-version']
     steps:
-    - name: wait up to 20 minutes for the new clams-python is deployed on pypi
+    - name: "⏱️ Wait up to 20 minutes for the new clams-python is deployed on PyPI"
       uses: nev7n/wait_for_response@v1
       with:
         url: "https://pypi.org/project/clams-python/${{ needs.set-version.outputs.version }}/"
@@ -40,6 +43,7 @@ jobs:
         interval: 5000
 
   call-build-base:
+    name: "🤙 Call container workflow with the base"
     needs: ['set-version', 'check-deployment']
     uses: ./.github/workflows/container.yml
     secrets: inherit
@@ -47,7 +51,17 @@ jobs:
       buildfilename: './container/Containerfile'
       version: ${{ needs.set-version.outputs.version }}
 
+  call-build-jdk8:
+    name: "🤙 Call container workflow with `jdk8`"
+    needs: ['set-version', 'call-build-base']
+    uses: ./.github/workflows/container.yml
+    secrets: inherit
+    with:
+      buildfilename: './container/jdk8.containerfile'
+      version: ${{ needs.set-version.outputs.version }}
+
   call-build-tf2:
+    name: "🤙 Call container workflow with `tf2`"
     needs: ['set-version', 'call-build-base']
     uses: ./.github/workflows/container.yml
     secrets: inherit
@@ -56,6 +70,7 @@ jobs:
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-torch:
+    name: "🤙 Call container workflow with `torch`"
     needs: ['set-version', 'call-build-base']
     uses: ./.github/workflows/container.yml
     secrets: inherit
@@ -64,6 +79,7 @@ jobs:
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-torch2:
+    name: "🤙 Call container workflow with `torch2`"
     needs: ['set-version', 'call-build-base']
     uses: ./.github/workflows/container.yml
     secrets: inherit
@@ -72,6 +88,7 @@ jobs:
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-ffmpeg:
+    name: "🤙 Call container workflow with `ffmpeg`"
     needs: ['set-version', 'call-build-base']
     uses: ./.github/workflows/container.yml
     secrets: inherit
@@ -80,6 +97,7 @@ jobs:
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-ffmpeg-tf2:
+    name: "🤙 Call container workflow with `ffmpeg-tf2`"
     needs: ['set-version', 'call-build-ffmpeg']
     uses: ./.github/workflows/container.yml
     secrets: inherit
@@ -88,6 +106,7 @@ jobs:
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-ffmpeg-torch:
+    name: "🤙 Call container workflow with `ffmpeg-torch`"
     needs: ['set-version', 'call-build-ffmpeg']
     uses: ./.github/workflows/container.yml
     secrets: inherit
@@ -96,6 +115,7 @@ jobs:
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-ffmpeg-torch2:
+    name: "🤙 Call container workflow with `ffmpeg-torch2`"
     needs: ['set-version', 'call-build-ffmpeg']
     uses: ./.github/workflows/container.yml
     secrets: inherit
@@ -104,6 +124,7 @@ jobs:
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-opencv4:
+    name: "🤙 Call container workflow with `opencv4`"
     needs: ['set-version', 'call-build-ffmpeg']
     uses: ./.github/workflows/container.yml
     secrets: inherit
@@ -112,6 +133,7 @@ jobs:
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-opencv4-tf2:
+    name: "🤙 Call container workflow with `opencv4-tf2`"
     needs: ['set-version', 'call-build-opencv4']
     uses: ./.github/workflows/container.yml
     secrets: inherit
@@ -120,6 +142,7 @@ jobs:
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-opencv4-torch:
+    name: "🤙 Call container workflow with `opencv4-torch`"
     needs: ['set-version', 'call-build-opencv4']
     uses: ./.github/workflows/container.yml
     secrets: inherit
@@ -128,6 +151,7 @@ jobs:
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-opencv4-torch2:
+    name: "🤙 Call container workflow with `opencv4-torch2`"
     needs: ['set-version', 'call-build-opencv4']
     uses: ./.github/workflows/container.yml
     secrets: inherit

@@ -1,4 +1,4 @@
-name: "App Publisher: image>ghcr, metadata>appdir"
+name: "📦 Publish image>ghcr, metadata>appdir"
 
 on:
   workflow_dispatch:
@@ -14,25 +14,25 @@ on:
 jobs:
   set-version:
     runs-on: ubuntu-latest
-    name: 📌 Set VERSION value
+    name: "🏷 Set version value"
     outputs:
       version: ${{ steps.output_version.outputs.version }}
     steps:
-      - name: set VERSION value from dispatch inputs
+      - name: "📌 Set VERSION value from dispatch inputs"
         id: get_version_dispatch
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: echo "VERSION=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-      - name: set VERSION value from pushed tag
+      - name: "📌 Set VERSION value from pushed tag"
         id: get_version_tag
         if: ${{ github.event_name == 'push' }}
         run: echo "VERSION=$(echo "${{ github.ref }}" | cut -d/ -f3)" >> $GITHUB_ENV
-      - name: output result into an env-var
+      - name: "🏷 Record VERSION for follow-up jobs"
         id: output_version
         run: |
           echo "version=${{ env.VERSION }}" >> $GITHUB_OUTPUT
   publish-image:
     needs: ['set-version']
-    name: 🐳 Build and deploy to a container repository
+    name: "🤙 Call app container workflow"
     uses: clamsproject/.github/.github/workflows/app-container.yml@main
     secrets: inherit
     with:
@@ -40,7 +40,7 @@ jobs:
       arm64: false
   register-appdir:
     needs: ['set-version', 'publish-image']
-    name: 📝 Register to CLASM app directory
+    name: "🤙 Call app registration workflow"
     uses: clamsproject/apps/.github/workflows/register.yml@main
     secrets: inherit
     with:

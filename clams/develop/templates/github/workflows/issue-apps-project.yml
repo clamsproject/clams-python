@@ -1,4 +1,4 @@
-name: "add to `apps` GH project when a new issue is submitted"
+name: "🗂 Add new issue to `apps` GHP"
 
 on:
   issues:
@@ -11,8 +11,9 @@ on:
 
 jobs:
   call-assign:
+    name: "🤙 Call GHP workflow"
     uses: clamsproject/.github/.github/workflows/repo-issue-project.yml@main
     secrets: inherit
     with:
-      projectnum: '12'
+      projectnum: 12
 
