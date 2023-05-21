@@ -1,4 +1,14 @@
 
+## releasing 0.6.3 (2023-05-20)
+### Overview
+This is a minor release
+
+### Additions
+* a new base container image with jdk8 is added 
+
+### Changes
+* protocol string used in the base url to generate app identifiers is now reverted back to `http` from `https` for consistency (all documentations of ours are using `http` in the base URL in any URI/IRI field).
+
 ## releasing 0.6.2 (2023-05-19)
 ### Overview
 This release includes all the `clamsproject`-specific GHA workflow files in the PyPI distribution. 
@@ -78,13 +88,3 @@ This release contains updates of the python version (#102) and "uncapping" of py
 
 ## releasing 0.5.1 (2022-03-25)
 This release contains fixes in the development pipelines (#97 ) and dependency ( #95). 
-
-## releasing 0.5.0 (2021-07-24)
-This release contains changes in `AppMetadata` scheme and bug fix in `Restifier`.
-
-* Non-boolean parameter values passed via query strings are now properly casted to python data types (#84)
-* `url`, `dependencies` and `more` fields are added to app metadata scheme (#79, #83)
-* Some app metadata fields are renamed (#80)
-  * `license` -> `app_license`
-  * `wrappee_version` -> `analyzer_version`
-  * `wrappee_license` -> `analyzer_license`
