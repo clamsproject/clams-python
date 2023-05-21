@@ -3,30 +3,56 @@ import pathlib
 import re
 import shutil
 from string import Template
+from typing import List
 
 import clams
+
+available_recipes = {
+    'app': {
+        'description': 'Skeleton code for a CLAMS app',
+        'sourcedir': 'app',
+        'targetdir': '.',
+    },
+    'gha': {
+        'description': 'GtiHub Actions workflow files specific to `clamsproject` GitHub organization',
+        'sourcedir': 'gha',
+        'targetdir': '.github',
+    }
+}
 
 
 class CookieCutter(object):
     
-    def __init__(self, name:str, outdir:str, ghactions:bool=True):
+    def __init__(self, name: str, outdir: str, recipes: List[str]):
         self.rawname = name 
         self.name_tokens = self.tokenize_rawname()
         self.ourdir = pathlib.Path(outdir)
-        self.copy_gha = ghactions
+        if recipes:
+            self.recipes = recipes
+        else:
+            self.recipes = available_recipes.keys()
         
     def tokenize_rawname(self):
         word_pat = re.compile('[A-Z][a-z]+|[0-9A-Z]+(?=[A-Z][a-z])|[0-9A-Z]{2,}|[a-z0-9]{2,}|[a-zA-Z0-9]')
         words = [m.group(0).lower() for m in word_pat.finditer(self.rawname)]
-        if words[0] == 'app':
-            words.pop(0)
-        if words[-1] == 'app':
-            words.pop()
+        if len(words) > 1:
+            if words[0] == 'app':
+                words.pop(0)
+            if words[-1] == 'app':
+                words.pop()
         return words
     
     def bake(self):
-        src_dir = pathlib.Path(__file__).parent / 'templates' / 'app'
-        dst_dir = self.ourdir / self.rawname
+        print(f"Baking {self.recipes}")
+        for recipe in self.recipes:
+            src_dir = pathlib.Path(__file__).parent / 'templates' / available_recipes[recipe]['sourcedir']
+            dst_dir = self.ourdir / self.rawname / available_recipes[recipe]['targetdir']
+            if recipe == 'app':
+                self.bake_app(src_dir, dst_dir)
+            if recipe == 'gha':
+                self.bake_gha(src_dir, dst_dir)
+            
+    def bake_app(self, src_dir, dst_dir):
         excludes = {'__init__.py'}
         caps = [t.capitalize() for t in self.name_tokens]
         templating_vars = {
@@ -46,30 +72,35 @@ class CookieCutter(object):
                 tmpl_to_compile = Template(in_f.read())
                 compiled = tmpl_to_compile.safe_substitute(templating_vars)
                 out_f.write(compiled)
-        if self.copy_gha:
-            src_dir = pathlib.Path(__file__).parent / 'templates' / 'github'
-            dst_dir = dst_dir / '.github'
-            shutil.copytree(src_dir, dst_dir)
+        print(f"App skeleton code is copied to {self.rawname}")
+        print(f"  Checkout {self.rawname}/README.md for the next steps!")
+                
+    def bake_gha(self, src_dir, dst_dir):
+        shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+        print(f"GitHub Actions workflow files are copied to {self.rawname}/.github")
+        print(f"  Checkout {self.rawname}/.github/README.md for how they work!")
 
+
+def describe_argparser():
+    """
+    returns two strings: one-line description of the argparser, and addition material, 
+    which will be shown in `clams --help` and `clams <subcmd> --help`, respectively.
+    """
+    oneliner = 'provides CLI to create a skeleton code for app development'
+    additional = "Available recipes:\n"
+    for k, v in available_recipes.items():
+        additional += f"  - {k}: {v['description']}\n" 
+    return oneliner, oneliner + '\n\n' + additional
+    
 
 def prep_argparser(**kwargs):
-    """
-    provides CLI to create a skeleton code for app development.
-    """
-    parser = argparse.ArgumentParser(**kwargs)
+    parser = argparse.ArgumentParser(description=describe_argparser()[1], formatter_class=argparse.RawDescriptionHelpFormatter, **kwargs)
     parser.add_argument(
-        '-r', '--recipe', 
+        '-r', '--recipes', 
         action='store',
-        default='app',
-        choices=['app'],
-        help="Pick a recipe to use. Currently `app` is the only option, hence there's no need to use the flag at all."
-    )
-    parser.add_argument(
-        '--no-github-actions',
-        action='store_true', 
-        help='The cookiecutter by default assumes that the app codebase will be hosted on `github.com/clamsproejct`, '
-             'and add pre-shipped github actions for the `clamsproject` organization setup to the skeleton codebase. '
-             'Use this options to disable this behavior.'
+        nargs='+',
+        default=[],
+        help=f"Pick recipes to bake. DEFAULT: {list(available_recipes.keys())}"
     )
     parser.add_argument(
         '-n', '--name',
@@ -97,7 +128,7 @@ def prep_argparser(**kwargs):
 
 
 def main(args):
-    cutter = CookieCutter(name=args.name, outdir=args.parent_dir, ghactions=not args.no_github_actions)
+    cutter = CookieCutter(name=args.name, outdir=args.parent_dir, recipes=args.recipes)
     cutter.bake()
 
 if __name__ == '__main__':

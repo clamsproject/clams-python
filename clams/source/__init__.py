@@ -2,6 +2,7 @@ import argparse
 import itertools
 import json
 import sys
+import textwrap
 from os import path
 from typing import Union, Generator, List, Optional, Iterable
 
@@ -215,11 +216,20 @@ def generate_source_mmif(documents, prefix=None, **ignored):
     return pl.produce().serialize(pretty=True)
 
 
+def describe_argparser():
+    """
+    returns two strings: one-line description of the argparser, and addition material, 
+    which will be shown in `clams --help` and `clams <subcmd> --help`, respectively.
+    """
+    oneliner = 'provides CLI to create a "source" MMIF json.'
+    additional = textwrap.dedent("""
+    A source MMIF is a MMIF with a list of source documents but empty views. 
+    It can be used as a starting point for a CLAMS workflow. """)
+    return oneliner, oneliner + '\n\n' + additional
+
+
 def prep_argparser(**kwargs):
-    """
-    provides CLI to create a "source" MMIF json. A source MMIF is a MMIF with a list of source documents but empty views. It can be used as a starting point for a CLAMS workflow. 
-    """
-    parser = argparse.ArgumentParser(**kwargs)
+    parser = argparse.ArgumentParser(description=describe_argparser()[1], formatter_class=argparse.RawDescriptionHelpFormatter, **kwargs)
     parser.add_argument(
         'documents',
         default=None,

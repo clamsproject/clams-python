@@ -2,17 +2,15 @@ import sys
 
 from mmif import __specver__
 
-from clams import source
 from clams import develop
+from clams import source
 from clams.app import *
 from clams.app import __all__ as app_all
 from clams.appmetadata import AppMetadata
 from clams.restify import Restifier
-from clams.source import WorkflowSource
-from clams.develop import CookieCutter
 from clams.ver import __version__
 
-__all__ = [AppMetadata, Restifier, WorkflowSource] + app_all
+__all__ = [AppMetadata, Restifier] + app_all
 version_template = "{} (based on MMIF spec: {})"
 
 
@@ -28,7 +26,11 @@ def prep_argparser():
     for subcmd_module in [source, develop]:
         subcmd_name = subcmd_module.__name__.rsplit('.')[-1]
         subcmd_parser = subcmd_module.prep_argparser(add_help=False)
-        subparsers.add_parser(subcmd_name, parents=[subcmd_parser], help=subcmd_module.prep_argparser.__doc__)
+        subparsers.add_parser(subcmd_name, parents=[subcmd_parser], 
+                              help=subcmd_module.describe_argparser()[0],
+                              description=subcmd_module.describe_argparser()[1],
+                              formatter_class=argparse.RawDescriptionHelpFormatter,
+                              )
     return parser
 
 
