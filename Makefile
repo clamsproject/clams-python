@@ -23,7 +23,7 @@ testcaches = .hypothesis .pytest_cache .pytype coverage.xml htmlcov .coverage
 
 all: version test build
 
-develop: devversion package test
+develop: devversion package
 	python3 setup.py develop --uninstall
 	python3 setup.py develop
 
@@ -81,8 +81,8 @@ version: VERSION; cat VERSION
 
 VERSION.dev: devver := $(shell curl --silent "https://api.github.com/repos/clamsproject/clams-python/git/refs/tags" | grep '"ref":' | sed -E 's/.+refs\/tags\/([0-9.]+)",/\1/g' | sort | tail -n 1)
 VERSION.dev:
-	if [ -z $(devver) ]; then if [ -e VERSION ] ; then cp VERSION{"",".dev"}; else echo "0.0.0.dev1" > VERSION.dev ; fi \
-	else if [[ $(devver) == *.dev* ]]; then echo $(call increase_dev,$(devver)); else echo $(call add_dev,$(call increase_patch, $(devver))); fi > VERSION.dev; \
+	@if [ -z "$(devver)" ]; then if [ -e VERSION ] ; then cp VERSION{"",".dev"}; else echo "0.0.0.dev1" > VERSION.dev ; fi \
+	else if [[ "$(devver)" == *.dev* ]]; then echo $(call increase_dev,$(devver)); else echo $(call add_dev,$(call increase_patch, $(devver))); fi > VERSION.dev; \
     fi
 
 VERSION: version := $(shell git tag | sort -r | head -n 1)
