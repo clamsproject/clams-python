@@ -24,6 +24,10 @@ Then use the following section to document any additional information specific t
 
 ## User instruction
 
+General user instruction for CLAMS apps is available at [CLAMS Apps documentation](https://apps.clams.ai/clamsapp/).
+
+Below is a list of additional information specific to this app.
+
 ### System requirments
 
 (Any system-level software required to run this app)
