@@ -53,7 +53,6 @@ class CookieCutter(object):
                 self.bake_gha(src_dir, dst_dir)
             
     def bake_app(self, src_dir, dst_dir):
-        excludes = {'__init__.py'}
         caps = [t.capitalize() for t in self.name_tokens]
         templating_vars = {
             'CLAMS_VERSION': clams.__version__,
@@ -61,11 +60,9 @@ class CookieCutter(object):
             'APP_NAME': " ".join(caps),
             'APP_IDENTIFIER': '-'.join(self.name_tokens)
         }
-        for g in src_dir.glob("**/*"):
+        for g in src_dir.glob("**/*.template"):
             r = g.relative_to(src_dir).parent
-            f = g.name
-            if r in excludes or f in excludes:
-                continue
+            f = g.with_suffix('').name
             (dst_dir / r).mkdir(exist_ok=True)
             
             with open(g, 'r') as in_f, open(dst_dir/r/f, 'w') as out_f:
@@ -76,9 +73,16 @@ class CookieCutter(object):
         print(f"  Checkout {self.rawname}/README.md for the next steps!")
                 
     def bake_gha(self, src_dir, dst_dir):
-        shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+        self.simple_recursive_copy_minus_template_suffix(src_dir, dst_dir)
         print(f"GitHub Actions workflow files are copied to {self.rawname}/.github")
         print(f"  Checkout {self.rawname}/.github/README.md for how they work!")
+    
+    @staticmethod
+    def simple_recursive_copy_minus_template_suffix(src_dir, dst_dir):
+        for g in src_dir.glob("**/*.template"):
+            dst_pname = dst_dir/g.relative_to(src_dir)
+            dst_pname.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(g, dst_pname.with_suffix(''))
 
 
 def describe_argparser():

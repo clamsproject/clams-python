@@ -59,7 +59,7 @@ class _BaseModel(pydantic.BaseModel):
     
     class Config:
         @staticmethod
-        def schema_extra(schema, model) -> None:
+        def json_schema_extra(schema, model) -> None:
             for prop in schema.get('properties', {}).values():
                 prop.pop('title', None)
 
@@ -260,7 +260,7 @@ class AppMetadata(pydantic.BaseModel):
         allow_population_by_field_name = True
 
         @staticmethod
-        def schema_extra(schema, model) -> None:
+        def json_schema_extra(schema, model) -> None:
             for prop in schema.get('properties', {}).values():
                 prop.pop('title', None)
             schema['$schema'] = "http://json-schema.org/draft-07/schema#"  # currently pydantic doesn't natively support the $schema field. See https://github.com/samuelcolvin/pydantic/issues/1478
