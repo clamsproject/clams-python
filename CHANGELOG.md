@@ -1,4 +1,36 @@
 
+## releasing 1.0.0 (2023-05-26)
+### Overview
+This release will be numbered as 1.0.0, but indeed it's a minor update from 0.6.3. 
+
+### Additions
+* `clams develop` now can select recipes to "install". Currently only two are supported (`app` and `gha`). Having `gha` separated enables developers of existing apps to update GHA workflows only when there's a new feature or fix in the workflows. 
+
+``` bash 
+$ clams develop --help
+usage: clams develop [-h] [-r RECIPES [RECIPES ...]] -n NAME [-p [PATH]]
+
+provides CLI to create a skeleton code for app development
+
+Available recipes:
+  - app: Skeleton code for a CLAMS app
+  - gha: GtiHub Actions workflow files specific to `clamsproject` GitHub organization
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -r RECIPES [RECIPES ...], --recipes RECIPES [RECIPES ...]
+                        Pick recipes to bake. DEFAULT: ['app', 'gha']
+  -n NAME, --name NAME  The name of the directory where the baked app skeleton is placed. This name is also used to generate 1) Python class name of the app, 2) values for `name` and `identifier` fields in app-metadata, based on heuristic tokenizing and casing rules. RECOMMENDATION: only use lower case alpha-
+                        numerics, do not use whitespace, use dash (`-`) character instead for word boundaries, always check for the generated names and make changes if they are incorrect. NOTE: if the name starts with `app-` or ends with `-app`, those affixes will be removed from Python class name and app
+                        identifier, but will be retained in the directory name. (e.g. `app-foo-bar-app` will be converted to `FooBar` for class name, `foo-bar-app` for app identifier, and `app-foo-bar-app` for directory name.)
+  -p [PATH], --parent-dir [PATH]
+                        The name of the parent directory where the app skeleton directory is placed. (default: current directory)
+```
+
+### Changes
+* "generic" readme file in the app template is replaced with a link to the generic user manual (soon be) published to `apps.clams.ai`. 
+* now based on `mmif-python` and MMIF 1.0.0. 
+
 ## releasing 0.6.3 (2023-05-20)
 ### Overview
 This is a minor release
@@ -88,3 +120,105 @@ This release contains updates of the python version (#102) and "uncapping" of py
 
 ## releasing 0.5.1 (2022-03-25)
 This release contains fixes in the development pipelines (#97 ) and dependency ( #95). 
+
+## releasing 0.5.0 (2021-07-24)
+This release contains changes in `AppMetadata` scheme and bug fix in `Restifier`.
+
+* Non-boolean parameter values passed via query strings are now properly casted to python data types (#84)
+* `url`, `dependencies` and `more` fields are added to app metadata scheme (#79, #83)
+* Some app metadata fields are renamed (#80)
+  * `license` -> `app_license`
+  * `wrappee_version` -> `analyzer_version`
+  * `wrappee_license` -> `analyzer_license`
+
+## releasing 0.4.4 (2021-07-11)
+This release includes bug fixes from mmif-python package, loosened ML library versions in docker images.
+
+
+
+## releasing 0.4.3 (2021-06-19)
+This release contains various fixes and improvements. 
+
+* updated mmif-python to 0.4.4
+* (added) C`lamsApp.get_configuration` will convert runtime parameters into actual runtime configuration that the app uses. This will help signing view.
+* (fixed) Crash when `sign_view` with non-string parameter values
+* (changed) MMIF with error is always prettified when returned as HTTP response
+* (fixed) Adding duplicate input/output should not be allowed
+* (changed) `AppMetadata.add_parameter` now has a proper signature for IDE hints
+
+
+## releasing 0.4.2 (2021-06-17)
+This release contains bugfixes
+
+- fixed clams-python only worked on python==3.6
+- fixed clams CLI not properly displaying help msg 
+- updated latest mmif-python
+
+
+## releasing 0.4.1 (2021-06-14)
+This release includes minor API improvement ...
+
+* `sign_view` now does not require runtime parameters (defaults to empty)
+* `AppMetadata` class can be imported from `clams` package directly
+
+
+## releasing 0.4.0 (2021-06-14)
+This release includes 
+* input MMIF file compatibility check (#60 )
+* upgrade to mmif-python 0.4.x, which includes a lots of breaking changes. 
+
+## releasing 0.3.0 (2021-06-04)
+This new breaking release includes ... 
+
+* definition and implementation of app metadata as JSON schema (#49, #50, #51, #52)
+* adding server for production environment (based on gunicorn, #59 )
+* changing HTTP code for error responses to 500 (#61 )
+* and minor bugfixes 
+
+## releasing 0.2.4 (2021-05-12)
+This release includes small updates of error handling matching updates on mmif-python side. 
+
+## releasing 0.2.3 (2021-05-01)
+A new release includes
+
+* *signing* method for an app (#48, #40)
+* (premature) error stamping (#55, #36)
+* smaller docker images (#54) 
+* and other minor bugfixes 
+
+
+## releasing 0.2.2 (2021-03-30)
+* based on mmif-python 0.3.1 patch
+* more documentation 
+* more pre-built docker images 
+* interpretation of HTTP parameters into python API arguments
+* dependency for lapps/LIF
+
+## releasing 0.2.1 (2021-03-17)
+This version now based on `mmif-python` 0.3.0, which is based on MMIF spec 0.3.0. It doesn't have breaking changes, but due to the new dependency to `mmif-python` 0.3.0, it might break some apps. Please report here if it breaks your code. 
+
+## releasing 0.2.0 (2021-02-04)
+This PR contains many breaking changes, so when merged, we release as `0.2.0`.
+
+* renamed
+  * `Clams.serve` -> `Clams.app` (#35)
+  * `ClamsApp::setupmetadata` -> `ClamsApp::_appmetadata` (#37)
+  * `ClamsApp::annotate` -> `ClamsApp::_annotate` (#37)
+* removed
+  * `ClamsApp::sniff` (#37)
+  * PUT requests
+* changes
+  * POST requests now invoke `annotate` instead of retired `sniff` method (#37)
+  * prototype of parameter passing (#29, #37)
+  * added HTTP response codes for errors during `annotate` (#33, #36)
+  * refactored CLI components (currently only one CLI (`source`) implemented)
+  * `clams source` CLI now supports custom directory prefix (#31)
+  * added `ClamsApp::validate_document_files` (not supporting integrity check such as MD5 yet) (https://github.com/clamsproject/mmif/issues/150)
+
+
+## releasing 0.1.3 (2020-10-09)
+0.1.3 includes; 
+
+* `clams` CLI
+* `clams source` command
+* replacement of `appmetadata` with `setupmetadata` in `ClamsApp` ABC 
