@@ -1,4 +1,12 @@
 
+## releasing 1.0.1 (2023-05-26)
+### Overview
+This release is about updating to `mmif-python==1.0.1`, which is based on MMIF 1.0.0. 
+
+### Changes
+* uses `mmif-python==1.0.1`
+* updated some names for upcoming pedantic v2 update
+
 ## releasing 1.0.0 (2023-05-26)
 ### Overview
 This release will be numbered as 1.0.0, but indeed it's a minor update from 0.6.3. 

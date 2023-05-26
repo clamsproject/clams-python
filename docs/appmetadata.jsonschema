@@ -4,34 +4,42 @@
   "type": "object",
   "properties": {
     "name": {
+      "title": "Name",
       "description": "A short name of the app.",
       "type": "string"
     },
     "description": {
+      "title": "Description",
       "description": "A longer description of the app (what it does, how to use, etc.).",
       "type": "string"
     },
     "app_version": {
+      "title": "App Version",
       "description": "(AUTO-GENERATED, DO NOT SET MANUALLY)\n\nVersion of the app.\n\nWhen the metadata is generated using clams-python SDK, this field is automatically filled in",
       "type": "string"
     },
     "mmif_version": {
+      "title": "Mmif Version",
       "description": "(AUTO-GENERATED, DO NOT SET MANUALLY)\n\nVersion of MMIF specification the app.\n\nWhen the metadata is generated using clams-python SDK, this field is automatically filled in.",
       "type": "string"
     },
     "analyzer_version": {
+      "title": "Analyzer Version",
       "description": "(optional) Version of an analyzer software, if the app is working as a wrapper for one. ",
       "type": "string"
     },
     "app_license": {
+      "title": "App License",
       "description": "License information of the app.",
       "type": "string"
     },
     "analyzer_license": {
+      "title": "Analyzer License",
       "description": "(optional) License information of an analyzer software, if the app works as a wrapper for one. ",
       "type": "string"
     },
     "identifier": {
+      "title": "Identifier",
       "description": "(partly AUTO-GENERATED)\n\nIRI-formatted unique identifier for the app.\n\nIf the app is to be published to the CLAMS app-directory, the developer should give a single string value composed with valid URL characters (no ``/``, no whitespace),\n\nthen when the metadata is generated using clams-python SDK, the app-directory URL is prepended and ``app_version`` value will be appended automatically.\n\nFor example, ``example-app`` -> ``http://apps.clams.ai/example-app/1.0.0``\n\nOtherwise, only the ``app_version`` value is used as suffix, so use an IRI form, but leave the version number out.",
       "minLength": 1,
       "maxLength": 65536,
@@ -39,6 +47,7 @@
       "type": "string"
     },
     "url": {
+      "title": "Url",
       "description": "A public repository where the app's source code (git-based) and/or documentation is available. ",
       "minLength": 1,
       "maxLength": 65536,
@@ -46,6 +55,7 @@
       "type": "string"
     },
     "input": {
+      "title": "Input",
       "description": "List of input types. Must have at least one element.\n\nThis list should iterate all input types in an exhaustive and meticulous manner, meaning it is recommended for developers to pay extra attention to ``input`` and ``output`` fields to include 1) all types are listed, 2) if types to have specific properties, include the properties.\n\nThis list should interpreted conjunctive (``AND``).\n\nHowever, a nested list in this list means ``oneOf`` disjunctive (``OR``) specification.\n\nFor example, ``input = [TypeA (req=True), [TypeB, TypeC]]`` means``TypeA`` is required and either ``TypeB`` or ``TypeC`` is additionally required.\n\nAll input elements in the nested list must not be ``required=False``, and only a single nesting level is allowed (e.g. ``input = [TypeA, [ [TypeB, TypeC], [TypeD, TypeE] ] ]`` is not allowed).",
       "default": [],
       "type": "array",
@@ -64,6 +74,7 @@
       }
     },
     "output": {
+      "title": "Output",
       "description": "List of output types. Must have at least one element.This list should iterate all output types in an exhaustive and meticulous manner, meaning it is recommended for developers to pay extra attention to ``input`` and ``output`` fields to include ",
       "default": [],
       "type": "array",
@@ -72,6 +83,7 @@
       }
     },
     "parameters": {
+      "title": "Parameters",
       "description": "List of runtime parameters. Can be empty.",
       "default": [],
       "type": "array",
@@ -80,6 +92,7 @@
       }
     },
     "dependencies": {
+      "title": "Dependencies",
       "description": "(optional) List of software dependencies of the app. \n\nThis list is completely optional, as in most cases such dependencies are specified in a separate file in the codebase of the app (for example, ``requirements.txt`` file for a Python app, or ``pom.xml`` file for a maven-based Java app).\n\nList items must be strings, not any kind of structured data. Thus, it is recommended to include a package name and its version in the string value at the minimum (e.g., ``clams-python==1.2.3``).",
       "type": "array",
       "items": {
@@ -87,6 +100,7 @@
       }
     },
     "more": {
+      "title": "More",
       "description": "(optional) A string-to-string map that can be used to store any additional metadata of the app.",
       "type": "object",
       "additionalProperties": {
@@ -102,8 +116,6 @@
     "url"
   ],
   "additionalProperties": false,
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$comment": "clams-python SDK 1.0.0 was used to generate this schema",
   "definitions": {
     "Input": {
       "title": "CLAMS Input Specification",
@@ -111,6 +123,7 @@
       "type": "object",
       "properties": {
         "@type": {
+          "title": "@Type",
           "description": "The type of the object. Must be a IRI string.",
           "minLength": 1,
           "maxLength": 65536,
@@ -118,6 +131,7 @@
           "type": "string"
         },
         "properties": {
+          "title": "Properties",
           "description": "(optional) Specification for type properties, if any.",
           "default": {},
           "type": "object",
@@ -126,6 +140,7 @@
           }
         },
         "required": {
+          "title": "Required",
           "description": "(optional, True by default) Indicating whether this input type is mandatory or optional.",
           "type": "boolean"
         }
@@ -141,6 +156,7 @@
       "type": "object",
       "properties": {
         "@type": {
+          "title": "@Type",
           "description": "The type of the object. Must be a IRI string.",
           "minLength": 1,
           "maxLength": 65536,
@@ -148,6 +164,7 @@
           "type": "string"
         },
         "properties": {
+          "title": "Properties",
           "description": "(optional) Specification for type properties, if any.",
           "default": {},
           "type": "object",
@@ -167,14 +184,17 @@
       "type": "object",
       "properties": {
         "name": {
+          "title": "Name",
           "description": "A short name of the parameter (works as a key).",
           "type": "string"
         },
         "description": {
+          "title": "Description",
           "description": "A longer description of the parameter (what it does, how to use, etc.).",
           "type": "string"
         },
         "type": {
+          "title": "Type",
           "description": "Type of the parameter value the app expects. Must be one of ('integer', 'number', 'string', 'boolean').",
           "enum": [
             "integer",
@@ -185,6 +205,7 @@
           "type": "string"
         },
         "choices": {
+          "title": "Choices",
           "description": "(optional) List of string values that can be accepted.",
           "type": "array",
           "items": {
@@ -205,6 +226,7 @@
           }
         },
         "default": {
+          "title": "Default",
           "description": "(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter 'optional'.",
           "anyOf": [
             {
@@ -222,6 +244,7 @@
           ]
         },
         "multivalued": {
+          "title": "Multivalued",
           "description": "(optional, False by default) Set True if the parameter can have multiple values.\n\nNote that, for parameters that allow multiple values, the SDK will pass a singleton list to ``_annotate()`` even when one value is passed via HTTP.",
           "type": "boolean"
         }

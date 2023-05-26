@@ -35,7 +35,7 @@
             clams-python
           </a>
               <div class="version">
-                1.0.0
+                1.0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -121,41 +121,49 @@ SDK.</p>
 </tr>
 <tr class="row-odd"><td colspan="6"><p>properties</p></td>
 </tr>
-<tr class="row-even"><td rowspan="2"><ul class="simple">
+<tr class="row-even"><td rowspan="3"><ul class="simple">
 <li><p><strong>name</strong></p></li>
 </ul>
 </td>
-<td colspan="5"><p>A short name of the app.</p></td>
+<td colspan="5"><p><em>Name</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-odd"><td colspan="5"><p>A short name of the app.</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
 <td colspan="4"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="2"><ul class="simple">
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
 <li><p><strong>description</strong></p></li>
 </ul>
 </td>
-<td colspan="5"><p>A longer description of the app (what it does, how to use, etc.).</p></td>
+<td colspan="5"><p><em>Description</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="5"><p>A longer description of the app (what it does, how to use, etc.).</p></td>
 </tr>
 <tr class="row-odd"><td><p>type</p></td>
 <td colspan="4"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="2"><ul class="simple">
+<tr class="row-even"><td rowspan="3"><ul class="simple">
 <li><p>app_version</p></li>
 </ul>
 </td>
-<td colspan="5"><p>(AUTO-GENERATED, DO NOT SET MANUALLY)</p>
+<td colspan="5"><p><em>App Version</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="5"><p>(AUTO-GENERATED, DO NOT SET MANUALLY)</p>
 <p>Version of the app.</p>
 <p>When the metadata is generated using clams-python SDK, this field is automatically filled in</p>
 </td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-even"><td><p>type</p></td>
 <td colspan="4"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="2"><ul class="simple">
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
 <li><p>mmif_version</p></li>
 </ul>
 </td>
-<td colspan="5"><p>(AUTO-GENERATED, DO NOT SET MANUALLY)</p>
+<td colspan="5"><p><em>Mmif Version</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="5"><p>(AUTO-GENERATED, DO NOT SET MANUALLY)</p>
 <p>Version of MMIF specification the app.</p>
 <p>When the metadata is generated using clams-python SDK, this field is automatically filled in.</p>
 </td>
@@ -163,38 +171,46 @@ SDK.</p>
 <tr class="row-odd"><td><p>type</p></td>
 <td colspan="4"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="2"><ul class="simple">
+<tr class="row-even"><td rowspan="3"><ul class="simple">
 <li><p>analyzer_version</p></li>
 </ul>
 </td>
-<td colspan="5"><p>(optional) Version of an analyzer software, if the app is working as a wrapper for one.</p></td>
+<td colspan="5"><p><em>Analyzer Version</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-odd"><td colspan="5"><p>(optional) Version of an analyzer software, if the app is working as a wrapper for one.</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
 <td colspan="4"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="2"><ul class="simple">
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
 <li><p><strong>app_license</strong></p></li>
 </ul>
 </td>
-<td colspan="5"><p>License information of the app.</p></td>
+<td colspan="5"><p><em>App License</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="5"><p>License information of the app.</p></td>
 </tr>
 <tr class="row-odd"><td><p>type</p></td>
 <td colspan="4"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="2"><ul class="simple">
+<tr class="row-even"><td rowspan="3"><ul class="simple">
 <li><p>analyzer_license</p></li>
 </ul>
 </td>
-<td colspan="5"><p>(optional) License information of an analyzer software, if the app works as a wrapper for one.</p></td>
+<td colspan="5"><p><em>Analyzer License</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-odd"><td colspan="5"><p>(optional) License information of an analyzer software, if the app works as a wrapper for one.</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
 <td colspan="4"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="5"><ul class="simple">
+<tr class="row-odd"><td rowspan="6"><ul class="simple">
 <li><p><strong>identifier</strong></p></li>
 </ul>
 </td>
-<td colspan="5"><p>(partly AUTO-GENERATED)</p>
+<td colspan="5"><p><em>Identifier</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="5"><p>(partly AUTO-GENERATED)</p>
 <p>IRI-formatted unique identifier for the app.</p>
 <p>If the app is to be published to the CLAMS app-directory, the developer should give a single string value composed with valid URL characters (no <code class="docutils literal notranslate"><span class="pre">/</span></code>, no whitespace),</p>
 <p>then when the metadata is generated using clams-python SDK, the app-directory URL is prepended and <code class="docutils literal notranslate"><span class="pre">app_version</span></code> value will be appended automatically.</p>
@@ -214,29 +230,33 @@ SDK.</p>
 <tr class="row-even"><td><p>format</p></td>
 <td colspan="4"><p>uri</p></td>
 </tr>
-<tr class="row-odd"><td rowspan="5"><ul class="simple">
+<tr class="row-odd"><td rowspan="6"><ul class="simple">
 <li><p><strong>url</strong></p></li>
 </ul>
 </td>
-<td colspan="5"><p>A public repository where the app’s source code (git-based) and/or documentation is available.</p></td>
+<td colspan="5"><p><em>Url</em></p></td>
 </tr>
-<tr class="row-even"><td><p>type</p></td>
+<tr class="row-even"><td colspan="5"><p>A public repository where the app’s source code (git-based) and/or documentation is available.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
 <td colspan="4"><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>maxLength</p></td>
+<tr class="row-even"><td><p>maxLength</p></td>
 <td colspan="4"><p>65536</p></td>
 </tr>
-<tr class="row-even"><td><p>minLength</p></td>
+<tr class="row-odd"><td><p>minLength</p></td>
 <td colspan="4"><p>1</p></td>
 </tr>
-<tr class="row-odd"><td><p>format</p></td>
+<tr class="row-even"><td><p>format</p></td>
 <td colspan="4"><p>uri</p></td>
 </tr>
-<tr class="row-even"><td rowspan="6"><ul class="simple">
+<tr class="row-odd"><td rowspan="7"><ul class="simple">
 <li><p>input</p></li>
 </ul>
 </td>
-<td colspan="5"><p>List of input types. Must have at least one element.</p>
+<td colspan="5"><p><em>Input</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="5"><p>List of input types. Must have at least one element.</p>
 <p>This list should iterate all input types in an exhaustive and meticulous manner, meaning it is recommended for developers to pay extra attention to <code class="docutils literal notranslate"><span class="pre">input</span></code> and <code class="docutils literal notranslate"><span class="pre">output</span></code> fields to include 1) all types are listed, 2) if types to have specific properties, include the properties.</p>
 <p>This list should interpreted conjunctive (<code class="docutils literal notranslate"><span class="pre">AND</span></code>).</p>
 <p>However, a nested list in this list means <code class="docutils literal notranslate"><span class="pre">oneOf</span></code> disjunctive (<code class="docutils literal notranslate"><span class="pre">OR</span></code>) specification.</p>
@@ -260,26 +280,30 @@ SDK.</p>
 <tr class="row-odd"><td><p>items</p></td>
 <td colspan="2"><p><span class="xref std std-ref">#/definitions/Input</span></p></td>
 </tr>
-<tr class="row-even"><td rowspan="4"><ul class="simple">
+<tr class="row-even"><td rowspan="5"><ul class="simple">
 <li><p>output</p></li>
 </ul>
 </td>
-<td colspan="5"><p>List of output types. Must have at least one element.This list should iterate all output types in an exhaustive and meticulous manner, meaning it is recommended for developers to pay extra attention to <code class="docutils literal notranslate"><span class="pre">input</span></code> and <code class="docutils literal notranslate"><span class="pre">output</span></code> fields to include</p></td>
+<td colspan="5"><p><em>Output</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-odd"><td colspan="5"><p>List of output types. Must have at least one element.This list should iterate all output types in an exhaustive and meticulous manner, meaning it is recommended for developers to pay extra attention to <code class="docutils literal notranslate"><span class="pre">input</span></code> and <code class="docutils literal notranslate"><span class="pre">output</span></code> fields to include</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
 <td colspan="4"><p><em>array</em></p></td>
 </tr>
-<tr class="row-even"><td><p>default</p></td>
+<tr class="row-odd"><td><p>default</p></td>
 <td colspan="4"></td>
 </tr>
-<tr class="row-odd"><td><p>items</p></td>
+<tr class="row-even"><td><p>items</p></td>
 <td colspan="4"><p><span class="xref std std-ref">#/definitions/Output</span></p></td>
 </tr>
-<tr class="row-even"><td rowspan="4"><ul class="simple">
+<tr class="row-odd"><td rowspan="5"><ul class="simple">
 <li><p>parameters</p></li>
 </ul>
 </td>
-<td colspan="5"><p>List of runtime parameters. Can be empty.</p></td>
+<td colspan="5"><p><em>Parameters</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="5"><p>List of runtime parameters. Can be empty.</p></td>
 </tr>
 <tr class="row-odd"><td><p>type</p></td>
 <td colspan="4"><p><em>array</em></p></td>
@@ -290,27 +314,31 @@ SDK.</p>
 <tr class="row-odd"><td><p>items</p></td>
 <td colspan="4"><p><span class="xref std std-ref">#/definitions/RuntimeParameter</span></p></td>
 </tr>
-<tr class="row-even"><td rowspan="3"><ul class="simple">
+<tr class="row-even"><td rowspan="4"><ul class="simple">
 <li><p>dependencies</p></li>
 </ul>
 </td>
-<td colspan="5"><p>(optional) List of software dependencies of the app.</p>
+<td colspan="5"><p><em>Dependencies</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="5"><p>(optional) List of software dependencies of the app.</p>
 <p>This list is completely optional, as in most cases such dependencies are specified in a separate file in the codebase of the app (for example, <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> file for a Python app, or <code class="docutils literal notranslate"><span class="pre">pom.xml</span></code> file for a maven-based Java app).</p>
 <p>List items must be strings, not any kind of structured data. Thus, it is recommended to include a package name and its version in the string value at the minimum (e.g., <code class="docutils literal notranslate"><span class="pre">clams-python==1.2.3</span></code>).</p>
 </td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-even"><td><p>type</p></td>
 <td colspan="4"><p><em>array</em></p></td>
 </tr>
-<tr class="row-even"><td><p>items</p></td>
+<tr class="row-odd"><td><p>items</p></td>
 <td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<tr class="row-even"><td rowspan="4"><ul class="simple">
 <li><p>more</p></li>
 </ul>
 </td>
-<td colspan="5"><p>(optional) A string-to-string map that can be used to store any additional metadata of the app.</p></td>
+<td colspan="5"><p><em>More</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="5"><p>(optional) A string-to-string map that can be used to store any additional metadata of the app.</p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
 <td colspan="4"><p><em>object</em></p></td>
@@ -324,7 +352,7 @@ SDK.</p>
 </tr>
 <tr class="row-odd"><td colspan="6"><p>definitions</p></td>
 </tr>
-<tr class="row-even"><td rowspan="16"><ul class="simple">
+<tr class="row-even"><td rowspan="19"><ul class="simple">
 <li><p>Input</p></li>
 </ul>
 </td>
@@ -337,29 +365,33 @@ SDK.</p>
 </tr>
 <tr class="row-odd"><td colspan="5"><p>properties</p></td>
 </tr>
-<tr class="row-even"><td rowspan="5"><ul class="simple">
+<tr class="row-even"><td rowspan="6"><ul class="simple">
 <li><p><strong>&#64;type</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p>The type of the object. Must be a IRI string.</p></td>
+<td colspan="4"><p><em>&#64;Type</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-odd"><td colspan="4"><p>The type of the object. Must be a IRI string.</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td><p>maxLength</p></td>
+<tr class="row-odd"><td><p>maxLength</p></td>
 <td colspan="3"><p>65536</p></td>
 </tr>
-<tr class="row-odd"><td><p>minLength</p></td>
+<tr class="row-even"><td><p>minLength</p></td>
 <td colspan="3"><p>1</p></td>
 </tr>
-<tr class="row-even"><td><p>format</p></td>
+<tr class="row-odd"><td><p>format</p></td>
 <td colspan="3"><p>uri</p></td>
 </tr>
-<tr class="row-odd"><td rowspan="4"><ul class="simple">
+<tr class="row-even"><td rowspan="5"><ul class="simple">
 <li><p>properties</p></li>
 </ul>
 </td>
-<td colspan="4"><p>(optional) Specification for type properties, if any.</p></td>
+<td colspan="4"><p><em>Properties</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="4"><p>(optional) Specification for type properties, if any.</p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
 <td colspan="3"><p><em>object</em></p></td>
@@ -371,36 +403,40 @@ SDK.</p>
 <td><p>type</p></td>
 <td colspan="2"><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td rowspan="2"><ul class="simple">
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
 <li><p>required</p></li>
 </ul>
 </td>
-<td colspan="4"><p>(optional, True by default) Indicating whether this input type is mandatory or optional.</p></td>
+<td colspan="4"><p><em>Required</em></p></td>
 </tr>
-<tr class="row-even"><td><p>type</p></td>
+<tr class="row-even"><td colspan="4"><p>(optional, True by default) Indicating whether this input type is mandatory or optional.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
 <td colspan="3"><p><em>boolean</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>additionalProperties</p></td>
+<tr class="row-even"><td><p>additionalProperties</p></td>
 <td colspan="4"><p>False</p></td>
 </tr>
-<tr class="row-even"><td rowspan="14"><ul class="simple">
+<tr class="row-odd"><td rowspan="16"><ul class="simple">
 <li><p>Output</p></li>
 </ul>
 </td>
 <td colspan="5"><p><em>CLAMS Output Specification</em></p></td>
 </tr>
-<tr class="row-odd"><td colspan="5"><p>Defines a data model that describes output specification of a CLAMS app</p></td>
+<tr class="row-even"><td colspan="5"><p>Defines a data model that describes output specification of a CLAMS app</p></td>
 </tr>
-<tr class="row-even"><td><p>type</p></td>
+<tr class="row-odd"><td><p>type</p></td>
 <td colspan="4"><p><em>object</em></p></td>
 </tr>
-<tr class="row-odd"><td colspan="5"><p>properties</p></td>
+<tr class="row-even"><td colspan="5"><p>properties</p></td>
 </tr>
-<tr class="row-even"><td rowspan="5"><ul class="simple">
+<tr class="row-odd"><td rowspan="6"><ul class="simple">
 <li><p><strong>&#64;type</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p>The type of the object. Must be a IRI string.</p></td>
+<td colspan="4"><p><em>&#64;Type</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="4"><p>The type of the object. Must be a IRI string.</p></td>
 </tr>
 <tr class="row-odd"><td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
@@ -414,65 +450,73 @@ SDK.</p>
 <tr class="row-even"><td><p>format</p></td>
 <td colspan="3"><p>uri</p></td>
 </tr>
-<tr class="row-odd"><td rowspan="4"><ul class="simple">
+<tr class="row-odd"><td rowspan="5"><ul class="simple">
 <li><p>properties</p></li>
 </ul>
 </td>
-<td colspan="4"><p>(optional) Specification for type properties, if any.</p></td>
+<td colspan="4"><p><em>Properties</em></p></td>
 </tr>
-<tr class="row-even"><td><p>type</p></td>
+<tr class="row-even"><td colspan="4"><p>(optional) Specification for type properties, if any.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
 <td colspan="3"><p><em>object</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>default</p></td>
+<tr class="row-even"><td><p>default</p></td>
 <td colspan="3"></td>
 </tr>
-<tr class="row-even"><td><p>additionalProperties</p></td>
+<tr class="row-odd"><td><p>additionalProperties</p></td>
 <td><p>type</p></td>
 <td colspan="2"><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>additionalProperties</p></td>
+<tr class="row-even"><td><p>additionalProperties</p></td>
 <td colspan="4"><p>False</p></td>
 </tr>
-<tr class="row-even"><td rowspan="25"><ul class="simple">
+<tr class="row-odd"><td rowspan="31"><ul class="simple">
 <li><p>RuntimeParameter</p></li>
 </ul>
 </td>
 <td colspan="5"><p><em>CLAMS App Runtime Parameter</em></p></td>
 </tr>
-<tr class="row-odd"><td colspan="5"><p>Defines a data model that describes a single runtime configuration of a CLAMS app.
+<tr class="row-even"><td colspan="5"><p>Defines a data model that describes a single runtime configuration of a CLAMS app.
 Usually, an app keeps a list of these configuration specifications in the <code class="docutils literal notranslate"><span class="pre">parameters</span></code> field.
 When initializing a RuntimeParameter object in python the value for the default field must be a string.
 For example, if you want to set a default value for a boolean parameter, use any of <code class="docutils literal notranslate"><span class="pre">'True'</span></code>, <code class="docutils literal notranslate"><span class="pre">'true'</span></code>, <code class="docutils literal notranslate"><span class="pre">'t'</span></code>,
 or their falsy counterpart, instead of <code class="docutils literal notranslate"><span class="pre">True</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p>type</p></td>
+<tr class="row-odd"><td><p>type</p></td>
 <td colspan="4"><p><em>object</em></p></td>
 </tr>
-<tr class="row-odd"><td colspan="5"><p>properties</p></td>
+<tr class="row-even"><td colspan="5"><p>properties</p></td>
 </tr>
-<tr class="row-even"><td rowspan="2"><ul class="simple">
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
 <li><p><strong>name</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p>A short name of the parameter (works as a key).</p></td>
+<td colspan="4"><p><em>Name</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="3"><p><em>string</em></p></td>
-</tr>
-<tr class="row-even"><td rowspan="2"><ul class="simple">
-<li><p><strong>description</strong></p></li>
-</ul>
-</td>
-<td colspan="4"><p>A longer description of the parameter (what it does, how to use, etc.).</p></td>
+<tr class="row-even"><td colspan="4"><p>A short name of the parameter (works as a key).</p></td>
 </tr>
 <tr class="row-odd"><td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
 </tr>
 <tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p><strong>description</strong></p></li>
+</ul>
+</td>
+<td colspan="4"><p><em>Description</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="4"><p>A longer description of the parameter (what it does, how to use, etc.).</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p><strong>type</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p>Type of the parameter value the app expects. Must be one of (‘integer’, ‘number’, ‘string’, ‘boolean’).</p></td>
+<td colspan="4"><p><em>Type</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="4"><p>Type of the parameter value the app expects. Must be one of (‘integer’, ‘number’, ‘string’, ‘boolean’).</p></td>
 </tr>
 <tr class="row-odd"><td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
@@ -480,34 +524,38 @@ or their falsy counterpart, instead of <code class="docutils literal notranslate
 <tr class="row-even"><td><p>enum</p></td>
 <td colspan="3"><p>integer, number, string, boolean</p></td>
 </tr>
-<tr class="row-odd"><td rowspan="6"><ul class="simple">
+<tr class="row-odd"><td rowspan="7"><ul class="simple">
 <li><p>choices</p></li>
 </ul>
 </td>
-<td colspan="4"><p>(optional) List of string values that can be accepted.</p></td>
+<td colspan="4"><p><em>Choices</em></p></td>
 </tr>
-<tr class="row-even"><td><p>type</p></td>
+<tr class="row-even"><td colspan="4"><p>(optional) List of string values that can be accepted.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
 <td colspan="3"><p><em>array</em></p></td>
 </tr>
-<tr class="row-odd"><td rowspan="4"><p>items</p></td>
+<tr class="row-even"><td rowspan="4"><p>items</p></td>
 <td rowspan="4"><p>anyOf</p></td>
 <td><p>type</p></td>
 <td><p><em>integer</em></p></td>
 </tr>
-<tr class="row-even"><td><p>type</p></td>
+<tr class="row-odd"><td><p>type</p></td>
 <td><p><em>number</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-even"><td><p>type</p></td>
 <td><p><em>boolean</em></p></td>
 </tr>
-<tr class="row-even"><td><p>type</p></td>
+<tr class="row-odd"><td><p>type</p></td>
 <td><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td rowspan="5"><ul class="simple">
+<tr class="row-even"><td rowspan="6"><ul class="simple">
 <li><p>default</p></li>
 </ul>
 </td>
-<td colspan="4"><p>(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter ‘optional’.</p></td>
+<td colspan="4"><p><em>Default</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="4"><p>(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting a default value makes a parameter ‘optional’.</p></td>
 </tr>
 <tr class="row-even"><td rowspan="4"><p>anyOf</p></td>
 <td><p>type</p></td>
@@ -522,18 +570,20 @@ or their falsy counterpart, instead of <code class="docutils literal notranslate
 <tr class="row-odd"><td><p>type</p></td>
 <td colspan="2"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="2"><ul class="simple">
+<tr class="row-even"><td rowspan="3"><ul class="simple">
 <li><p><strong>multivalued</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p>(optional, False by default) Set True if the parameter can have multiple values.</p>
+<td colspan="4"><p><em>Multivalued</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="4"><p>(optional, False by default) Set True if the parameter can have multiple values.</p>
 <p>Note that, for parameters that allow multiple values, the SDK will pass a singleton list to <code class="docutils literal notranslate"><span class="pre">_annotate()</span></code> even when one value is passed via HTTP.</p>
 </td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-even"><td><p>type</p></td>
 <td colspan="3"><p><em>boolean</em></p></td>
 </tr>
-<tr class="row-even"><td><p>additionalProperties</p></td>
+<tr class="row-odd"><td><p>additionalProperties</p></td>
 <td colspan="4"><p>False</p></td>
 </tr>
 </tbody>
