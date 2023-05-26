@@ -87,7 +87,7 @@ class Output(_BaseModel):
     class Config:
         title = 'CLAMS Output Specification'
         extra = 'forbid'
-        populate_by_name = True
+        allow_population_by_field_name = True
 
                 
 class Input(Output):
@@ -107,7 +107,7 @@ class Input(Output):
     class Config:
         title = 'CLAMS Input Specification'
         extra = 'forbid'
-        populate_by_name = True
+        allow_population_by_field_name = True
 
 
 class RuntimeParameter(_BaseModel):
@@ -257,7 +257,7 @@ class AppMetadata(pydantic.BaseModel):
     class Config:
         title = "CLAMS AppMetadata"
         extra = 'forbid'
-        populate_by_name = True
+        allow_population_by_field_name = True
 
         @staticmethod
         def json_schema_extra(schema, model) -> None:
