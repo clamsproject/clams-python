@@ -1,4 +1,11 @@
 
+## releasing 1.0.2 (2023-06-02)
+### Overview
+This release is a minor patch; see below. 
+
+### Changes
+* fixed a filename bug that prevented some files from being copied to a newly generate app template. 
+
 ## releasing 1.0.1 (2023-05-26)
 ### Overview
 This release is about updating to `mmif-python==1.0.1`, which is based on MMIF 1.0.0. 
