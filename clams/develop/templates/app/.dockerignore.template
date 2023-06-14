@@ -1,6 +1,9 @@
 .git/
 .github/
 .gitignore
+.dockerignore
+Dockerfile
+Containerfile
 bin/
 build/
 *~
