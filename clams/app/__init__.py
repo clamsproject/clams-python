@@ -149,7 +149,7 @@ class ClamsApp(ABC):
         conf = {}
         for parameter in self.metadata.parameters:
             if parameter.name in runtime_params:
-                conf[parameter.name] = str(runtime_params[parameter.name])
+                conf[parameter.name] = runtime_params[parameter.name]
             elif parameter.default is not None:
                 conf[parameter.name] = parameter.default
             else:
