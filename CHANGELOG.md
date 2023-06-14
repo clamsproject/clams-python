@@ -1,4 +1,14 @@
 
+## releasing 1.0.3 (2023-06-14)
+### Overview
+This release include minor bug fixes. 
+
+
+### Changes
+* fixed #154
+* fixed #155
+
+
 ## releasing 1.0.2 (2023-06-02)
 ### Overview
 This release is a minor patch; see below. 
