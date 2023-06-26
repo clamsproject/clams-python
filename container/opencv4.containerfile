@@ -40,5 +40,5 @@ RUN make -j$(nproc) && make install && ldconfig
 # cleanup
 WORKDIR /
 RUN rm -rf ${OPENCV_PATH} ${OPENCV_EXTRA_PATH}
-RUN pip install opencv-python~=${OPENCV_VERSION}
+RUN pip install opencv-python-rolling~=${OPENCV_VERSION}
 RUN apt-get remove -y g++ cmake make wget unzip libavcodec-dev libavformat-dev libavutil-dev libswscale-dev && apt-get autoremove -y
