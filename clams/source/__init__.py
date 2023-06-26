@@ -170,7 +170,7 @@ class WorkflowSource:
             yield self.produce()
 
 
-def generate_source_mmif(documents, prefix=None, **ignored):
+def generate_source_mmif(documents, prefix=None, scheme=None, **ignored):
     from string import Template
     at_types = {
         'video': DocumentTypes.VideoDocument,
@@ -188,7 +188,8 @@ def generate_source_mmif(documents, prefix=None, **ignored):
     pl = WorkflowSource()
     if prefix and not path.isabs(prefix):
         raise ValueError(f"prefix must be an absolute path; given \"{prefix}\".")
-
+    if prefix and scheme:
+        raise ValueError(f'prefix and scheme cannot both be specified')
     for doc_id, arg in enumerate(documents, start=1):
         arg = arg.strip()
         if len(arg) < 1:
@@ -200,12 +201,14 @@ def generate_source_mmif(documents, prefix=None, **ignored):
             raise ValueError(
                 f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source'
             )
-        if prefix and path.isabs(location):
-            raise ValueError(f"when prefix is used, file location must not be an absolute path; given \"{location}\".")
-        elif not prefix and not path.isabs(location):
-            raise ValueError(f'file location must be an absolute path, or --prefix must be used; given \"{location}\".')
+        if (prefix or scheme) and path.isabs(location):
+            raise ValueError(f"when prefix or scheme is used, file location must not be an absolute path; given \"{location}\".")
+        elif not (prefix or scheme) and not path.isabs(location):
+            raise ValueError(f'file location must be an absolute path, or --prefix or --scheme must be used; given \"{location}\".')
         elif prefix and not path.isabs(location):
             location = path.join(prefix, location)
+        elif scheme and not path.isabs(location):
+            location = path.join(scheme, location)
         doc = template.substitute(
             at_type=str(at_types[mime.split('/', maxsplit=1)[0]]),
             aid=f'd{doc_id}',
@@ -255,6 +258,13 @@ def prep_argparser(**kwargs):
         action='store',
         nargs='?',
         help='A name of a file to capture a generated MMIF json. When not given, MMIF is printed to stdout.'
+    )
+    parser.add_argument(
+        '-s', '--scheme',
+        default=None,
+        action='store',
+        nargs='?',
+        help='A scheme to associate with the document location URI. When not given, the default scheme is file://.'
     )
     return parser
 
