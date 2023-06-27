@@ -8,7 +8,7 @@ hence it's advised also to look up the app website (or code repository) to get t
 
 Generally, a CLAMS App requires 
 
-- To run the app locally, Python3 with the `clams-python` module installed. Python 3.6 or higher is required.
+- To run the app locally, Python3 with the `clams-python` module installed. Python 3.8 or higher is required.
 - To run the app in a container (as an HTTP server), container management software such as `docker` or `podman`.
   - (the CLAMS team is using `docker` for development and testing)
 - To invoke and execute analysis, HTTP client utility (such as `curl`).
