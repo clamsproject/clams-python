@@ -170,7 +170,7 @@ class WorkflowSource:
             yield self.produce()
 
 
-def generate_source_mmif(documents, prefix=None, scheme=None, **ignored):
+def generate_source_mmif_from_file(documents, prefix=None, **ignored):
     from string import Template
     at_types = {
         'video': DocumentTypes.VideoDocument,
@@ -188,8 +188,6 @@ def generate_source_mmif(documents, prefix=None, scheme=None, **ignored):
     pl = WorkflowSource()
     if prefix and not path.isabs(prefix):
         raise ValueError(f"prefix must be an absolute path; given \"{prefix}\".")
-    if prefix and scheme:
-        raise ValueError(f'prefix and scheme cannot both be specified')
     for doc_id, arg in enumerate(documents, start=1):
         arg = arg.strip()
         if len(arg) < 1:
@@ -201,14 +199,50 @@ def generate_source_mmif(documents, prefix=None, scheme=None, **ignored):
             raise ValueError(
                 f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source'
             )
-        if (prefix or scheme) and path.isabs(location):
-            raise ValueError(f"when prefix or scheme is used, file location must not be an absolute path; given \"{location}\".")
-        elif not (prefix or scheme) and not path.isabs(location):
-            raise ValueError(f'file location must be an absolute path, or --prefix or --scheme must be used; given \"{location}\".')
+        if prefix and path.isabs(location):
+            raise ValueError(f"when prefix is used, file location must not be an absolute path; given \"{location}\".")
+        elif not prefix and not path.isabs(location):
+            raise ValueError(f'file location must be an absolute path, or --prefix must be used; given \"{location}\".')
         elif prefix and not path.isabs(location):
             location = path.join(prefix, location)
-        elif scheme and not path.isabs(location):
-            location = path.join(scheme, location)
+        doc = template.substitute(
+            at_type=str(at_types[mime.split('/', maxsplit=1)[0]]),
+            aid=f'd{doc_id}',
+            mime=mime,
+            location=location
+        )
+        pl.add_document(doc)
+    return pl.produce().serialize(pretty=True)
+
+
+def generate_source_mmif_from_customscheme(documents, scheme, **ignored):
+    from string import Template
+    at_types = {
+        'video': DocumentTypes.VideoDocument,
+        'audio': DocumentTypes.AudioDocument,
+        'text': DocumentTypes.TextDocument,
+        'image': DocumentTypes.ImageDocument
+    }
+    template = Template('''{
+          "@type": "${at_type}",
+          "properties": {
+            "id": "${aid}",
+            "mime": "${mime}",
+            "location": "${location}" }
+        }''')
+    pl = WorkflowSource()
+    for doc_id, arg in enumerate(documents, start=1):
+        arg = arg.strip()
+        if len(arg) < 1:
+            continue
+        result = arg.split(':', maxsplit=1)
+        if len(result) == 2 and result[0].split('/', maxsplit=1)[0] in at_types:
+            mime, location = result
+        else:
+            raise ValueError(
+                f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source'
+            )
+        location = scheme + '://' + location
         doc = template.substitute(
             at_type=str(at_types[mime.split('/', maxsplit=1)[0]]),
             aid=f'd{doc_id}',
@@ -274,7 +308,12 @@ def main(args):
         out_f = open(args.output, 'w')
     else:
         out_f = sys.stdout
-    out_f.write(generate_source_mmif(**vars(args)))
+    if args.scheme and args.prefix:
+        raise ValueError(f'prefix and scheme cannot both be specified')
+    elif args.scheme:
+        out_f.write(generate_source_mmif_from_customscheme(**vars(args)))
+    else:
+        out_f.write(generate_source_mmif_from_file(**vars(args)))
 
 if __name__ == '__main__':
     parser = prep_argparser()
