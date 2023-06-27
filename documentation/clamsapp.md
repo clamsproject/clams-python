@@ -6,9 +6,9 @@ hence it's advised also to look up the app website (or code repository) to get t
 
 ### Requirements 
 
-Generally, an CLAMS App requires 
+Generally, a CLAMS App requires 
 
-- To run the app locally, Python3 with the `clams-python` module installed.
+- To run the app locally, Python3 with the `clams-python` module installed. Python 3.6 or higher is required.
 - To run the app in a container (as an HTTP server), container management software such as `docker` or `podman`.
   - (the CLAMS team is using `docker` for development and testing)
 - To invoke and execute analysis, HTTP client utility (such as `curl`).
@@ -18,7 +18,7 @@ However, there could be other non-Python software/library that are required by t
 
 ### Installation
 
-CLAMS Apps available on the CLAMS App Directory. Currently all CLAMS Apps are all open-source projects and are distributed as
+CLAMS Apps available on the CLAMS App Directory. Currently all CLAMS Apps are open-source projects and are distributed as
 
 1. source code downloadable from code repository
 2. pre-built container image 
@@ -64,8 +64,49 @@ Once the image is built (by `build`) or downloaded (by `pull`), to create a cont
 docker run -v /path/to/data/directory:/data -p <port>:5000 <image_name>
 ```
 
-where `/path/to/data/directory` is the local location of your media files or MMIF objects and <port> is the *host* port number you want your container to be listening to. 
+where `/path/to/data/directory` is the local location of your media files or MMIF objects and `<port>` is the *host* port number you want your container to be listening to. 
 The HTTP inside the container will be listening to 5000 by default. 
+
+#### Running as a container on Mac
+If you are using a Mac, you may encounter some errors running the app as a container. The following are solutions to resolve these errors.
+
+1. ARM Architecture
+```bash
+The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+
+```
+
+*Solution:* add `--platform linux/amd64` after `docker run`
+
+e.g.
+
+```bash
+$ docker run --platform linux/amd64 -p 5000:5000 -v /Users/Shared/archive:/data --rm keighrim/app-aapb-pua-kaldi-wrapper:v0.2.3
+```
+
+2. Port 5000 already in use
+
+```bash
+docker: Error response from daemon: Ports are not available: exposing port TCP 0.0.0.0:5000 -> 0.0.0.0:0: listen tcp 0.0.0.0:5000: bind: address already in use.
+ERRO[0000] error waiting for container: context canceled
+```
+
+*Solution:* On Mac, Control Center uses Port 5000 by default. The process running on this port is an AirPlay server. You can deactivate it in System Preferences › Sharing and uncheck AirPlay Receiver to release port 5000. Alternatively, you can use a different port: **5001**:
+
+```bash
+$ docker run --platform linux/amd64 -p 5001:5000 -v /Users/Shared/archive:/data --rm keighrim/app-aapb-pua-kaldi-wrapper:v0.2.3
+```
+
+3. No matches found with curl
+```bash
+zsh: no matches found: [https://0.0.0.0:5001?pretty](https://0.0.0.0:5001/?pretty)
+```
+*Solution*: put quotes around url, also remember to use the **new port** from above:
+
+```bash
+$ curl 'https://0.0.0.0:5001?pretty'
+$ curl -H "Accept: application/json" -X POST -d@input.mmif -s 'http://0.0.0.0:5001?pretty' > output.mmif
+```
 
 #### Running as a local HTTP server
 
@@ -131,14 +172,14 @@ You will get
 }
 ```
 
-If an app requires just `Document` inputs (see `input` section of the app metadata), an empty MMIF with required media file locations will suffice. 
+If an app requires just `Document` inputs (see `input` section of the app metadata), an empty MMIF with required media file locations will suffice. The location has to be a URL or an absolute path, and it is important to ensure that it exists.
 
 However, some apps only works with input MMIF that already contains some annotations of specific types. To run such apps, you need to run different apps in a sequence. 
 
 (TODO: added CLAMS workflow documentation link here.)
 
-When an input MMIF is ready, you can send it to the app server
-Here's an example of using `curl` command, and store the response in a file `output.mmif`.
+When an input MMIF is ready, you can send it to the app server.
+Here's an example of how to use the `curl` command, and store the response in a file `output.mmif`.
 
 ```bash
 curl -H "Accept: application/json" -X POST -d@input.mmif -s http://localhost:5000 > output.mmif
@@ -146,10 +187,11 @@ curl -H "Accept: application/json" -X POST -d@input.mmif -s http://localhost:500
 # or using a bash pipeline 
 clams source audio:/data/audio/some-audio-file.mp3 | curl -X POST -d@- -s http://localhost:5000 > output.mmif
 ```
+Appending `?pretty=True` to the URL will result in a pretty printed output.
 
 #### Configuring the app
 
-Running as an HTTP server, CLAMS Apps are stateless, but can be configured for each HTTP reqeust by providing configuration parameters as [query string](https://en.wikipedia.org/wiki/Query_string). 
+Running as an HTTP server, CLAMS Apps are stateless, but can be configured for each HTTP request by providing configuration parameters as [query string](https://en.wikipedia.org/wiki/Query_string). 
 
 For configuration parameters, please look for `parameter` section of the app metadata.
 
