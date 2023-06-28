@@ -26,7 +26,7 @@ def appmetadata() -> AppMetadata:
         name="$APP_NAME",
         description="",  # briefly describe what the purpose and features of the app
         app_license="",  # short name for a software license like MIT, Apache2, GPL, etc.
-        identifier="$APP_IDENTIFIER",  # should be a single string without whitespaces. If you don't intent to publish this app to the CLAMS app-directory, please use a full IRI format. 
+        identifier="$APP_IDENTIFIER",  # should be a single string without whitespaces. If you don't intend to publish this app to the CLAMS app-directory, please use a full IRI format. 
         url="https://fakegithub.com/some/repository",  # a website where the source code and full documentation of the app is hosted, if you are on the CLAMS team, see ``.github/README.md`` file in this directory.
         # use the following if this app is a wrapper of an existing computational analysis tool
         # (it is very important to pinpoint the primary analyzer version for reproducibility)
@@ -36,7 +36,7 @@ def appmetadata() -> AppMetadata:
         analyzer_version=[l.strip().rsplit('==')[-1] for l in open('requirements.txt').readlines() if re.match(r'^ANALYZER_NAME==', l)][0],
         analyzer_license="",  # short name for a software license
     )
-    # and then add I/O specifications: an app must have at least one input and ont output
+    # and then add I/O specifications: an app must have at least one input and one output
     metadata.add_input(DocumentTypes.Document)
     metadata.add_output(AnnotationTypes.Thing, typeSpecificProperty='property-value')
     

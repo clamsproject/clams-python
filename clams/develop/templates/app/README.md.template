@@ -8,7 +8,7 @@ This skeleton code is a scaffolding for Python-based CLAMS app development. Spec
 1. `app.py` and `metadata.py` to write the app 
 1. `requirements.txt` to specify python dependencies
 1. `Containerfile` to containerize the app and specify system dependencies
-1. `.gitignore` and `.dorckrignore` files listing commonly ignored files
+1. `.gitignore` and `.dockerignore` files listing commonly ignored files
 1. an empty `LICENSE` file to replace with an actual license information of the app
 1. `CLAMS-generic-readme.md` file with basic instructions of app installation and execution
 1. This `README.md` file for additional information not specified in the generic readme file. 
