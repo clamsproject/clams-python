@@ -136,5 +136,70 @@ When you start developing an app with ``clams develop`` command, the command wil
 
 If you are not familiar with ``Containerfile`` or ``Dockerfile``, refer to the `official documentation <https://docs.docker.com/engine/reference/builder/>`_ to learn how to write one. To integrate to the CLAMS workflow engines, a containerized CLAMS app must automatically start itself as a webapp when instantiated as a container, and listen to ``5000`` port.
 
-We have a `public GitHub Container Repository <https://github.com/orgs/clamsproject/packages>`_, and publishing Debian-based base images to help developers write ``Containerfile`` and save build time to install common libraries. At the moment we have a basic image with Python 3.6 and ``clams-python`` installed. We will publish more images built with commonly used video and audio processing libraries. 
+We have a `public GitHub Container Repository <https://github.com/orgs/clamsproject/packages>`_, and publishing Debian-based base images to help developers write ``Containerfile`` and save build time to install common libraries. At the moment we have a basic image with Python 3.6 and ``clams-python`` installed. We will publish more images built with commonly used video and audio processing libraries.
+
+To build a Docker image, use the following command:
+
+.. code-block:: bash 
+
+    $ docker build -t clams-nlp-example:0.0.7 -f Containerfile .
+
+This builds an image with a development server using Flask. The ``-t`` option lets you pick a name (clams-nlp-example) and a tag (0.0.7) for the image. You can use another name if you like. You do not have to add a tag and you could just use ``-t nlp-clams-example``, but it is usually a good idea to use the version name as the tag.
+
+To test the Flask app in the container do:
+
+.. code-block:: bash 
+
+    $ docker run --rm -it clams-nlp-example:0.0.7 /bin/bash
+
+You are now running a bash shell in the container and in the container you can run:
+
+.. code-block:: bash 
+
+    root@c85a08b22f18:/app# python test.py input/example-1.mmif out.json
+
+Escape out of the container with Ctrl-d.
+
+To test the Flask app in the container from your local machine do:
+
+.. code-block:: bash 
+
+    $ docker run --name clams-nlp-example --rm -d -p 5000:5000 clams-nlp-example:0.0.7
+
+The ``--name`` option gives a name to the container which we use later to stop it (if we do not name the container then Docker will generate a name and we have to query docker to see what containers are running and then use that name to stop it). Now you can use curl to send requests (not sending the ``-h`` headers for brevity, it does work without them):
+
+.. code-block:: bash 
+
+    $ curl http://0.0.0.0:5000/
+    $ curl -X POST -d@input/example-1.mmif http://0.0.0.0:5000/
+
+To grant the Docker container access to data files on your local machine, use the ``-v`` option:
+
+.. code-block:: bash 
+
+    $ docker run --name clams-nlp-example --rm -d -p 5000:5000 -v $PWD/input/data:/data clams-nlp-example:0.0.7
+
+In this example, the ``/data`` directory in the Docker container is mounted to the ``input/data`` directory on the local machine. Any input MMIF files processed by the app in the container should use the path in the container as their location. For example:
+
+.. code-block:: bash 
+
+    {
+  "@type": "http://mmif.clams.ai/0.4.0/vocabulary/VideoDocument",
+  "properties": {
+    "id": "m1",
+    "mime": "text/plain",
+    "location": "/data/text/example.txt"
+    }
+
+And now you can use curl again:
+
+.. code-block:: bash 
+
+    $ curl -X POST -d@input/example-3.mmif http://0.0.0.0:5000/
+
+
+
+
+
+
 
