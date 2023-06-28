@@ -107,7 +107,23 @@ When running the above code, Python will start a web server and host your CLAMS 
 .. note::
   Now with HTTP interface, users can pass runtime configuration as `URL query strings <https://en.wikipedia.org/wiki/Query_string>`_. As the values of query string parameters are always strings, ``Restifier`` will try to convert the values to the types specified in the app metadata, using :class:`clams.restify.ParameterCaster`. 
 
-In the above example, :meth:`clams.restify.Restifier.run` will start the webapp in debug mode on a `Werkzeug <https://palletsprojects.com/p/werkzeug/>`_ server, which is not always suitable for a production server. For a more robust server that can handle multiple requests asynchronously, you might want to use a production-ready HTTP server. In such a case you can use :meth:`~clams.restify.Restifier.serve_production`, which will spin up a multi-worker `Gunicorn <https://docs.gunicorn.org>`_ server. If you don't like it (because, for example, gunicorn does not support Windows OS), you can write your own HTTP wrapper. In the end of the day, all you need is a webapp that maps ``appmetadata`` and ``annotate`` on ``GET`` and ``POST`` requests.
+In the above example, :meth:`clams.restify.Restifier.run` will start the webapp in debug mode on a `Werkzeug <https://palletsprojects.com/p/werkzeug/>`_ server, which is not always suitable for a production server. For a more robust server that can handle multiple requests asynchronously, you might want to use a production-ready HTTP server. In such a case you can use :meth:`~clams.restify.Restifier.serve_production`, which will spin up a multi-worker `Gunicorn <https://docs.gunicorn.org>`_ server. If you don't like it (because, for example, gunicorn does not support Windows OS), you can write your own HTTP wrapper. At the end of the day, all you need is a webapp that maps ``appmetadata`` and ``annotate`` on ``GET`` and ``POST`` requests.
+
+To test the behavior of the application in a Flask server, you should run the app as a service in one terminal:
+
+.. code-block:: bash 
+
+    $ python app.py --develop
+
+And poke at it from another:
+
+.. code-block:: bash 
+
+    $ curl http://0.0.0.0:5000/
+    $ curl -H "Accept: application/json" -X POST -d@input/example-1.mmif http://0.0.0.0:5000/
+
+The first command prints the metadata, and the second prints the output MMIF file. Appending ``?pretty=True`` to the URL will result in a pretty printed output. Note that with the ``--develop`` option we started a Flask development server. Without this option, a production server will be started.
+
 
 Containerization 
 ^^^^^^^^^^^^^^^^
