@@ -60,8 +60,11 @@ The ``annotate()`` method is the core method of a CLAMS app. It takes a MMIF JSO
 When you inherit :class:`~clams.app.ClamsApp`, you need to implement 
 
 * :meth:`~clams.app.ClamsApp._annotate` instead of :meth:`~clams.app.ClamsApp.annotate` (read the docstrings as they contain important information about the app implementation).
+* at a high level, ``_annotate()`` is mostly concerned with 
 
-For a text processing app, ``_annotate()`` is mostly concerned with finding text documents, creating new views and calling the code that runs over the text and inserts the results.
+    * finding processable documents and relevant annotations from previous views, 
+    * creating new views, 
+    * and calling the code that runs over the documents and inserts the results to the new views.
 
 As a developer you can expose different behaviors of the ``annotate()`` method by providing configurable parameters as keyword arguments of the method. For example, you can have the user specify a re-sample rate of an audio file to be analyzed by providing a ``resample_rate`` parameter. 
 
@@ -87,7 +90,7 @@ When using :class:`clams.app.ClamsApp`, you have different options to implement 
 
 HTTP webapp
 ^^^^^^^^^^^
-To be integrated into the CLAMS appliance, a CLAMS app needs to serve as a webapp. Once your application class is ready, you can use :class:`clams.restify.Restifier` to wrap your app as a `Flask <https://palletsprojects.com/p/flask/>`_-based web application. 
+To be integrated into CLAMS workflow engines, a CLAMS app needs to serve as a webapp. Once your application class is ready, you can use :class:`clams.restify.Restifier` to wrap your app as a `Flask <https://palletsprojects.com/p/flask/>`_-based web application. 
 
 .. code-block:: python 
 
@@ -109,20 +112,22 @@ When running the above code, Python will start a web server and host your CLAMS 
 
 In the above example, :meth:`clams.restify.Restifier.run` will start the webapp in debug mode on a `Werkzeug <https://palletsprojects.com/p/werkzeug/>`_ server, which is not always suitable for a production server. For a more robust server that can handle multiple requests asynchronously, you might want to use a production-ready HTTP server. In such a case you can use :meth:`~clams.restify.Restifier.serve_production`, which will spin up a multi-worker `Gunicorn <https://docs.gunicorn.org>`_ server. If you don't like it (because, for example, gunicorn does not support Windows OS), you can write your own HTTP wrapper. At the end of the day, all you need is a webapp that maps ``appmetadata`` and ``annotate`` on ``GET`` and ``POST`` requests.
 
-To test the behavior of the application in a Flask server, you should run the app as a service in one terminal:
+To test the behavior of the application in a Flask server, you should run the app as a webapp in a terminal (shell) session:
 
 .. code-block:: bash 
 
-    $ python app.py --develop
+    $ python app.py --develop --port 5000
+    # default port number is 5000
 
-And poke at it from another:
+And poke at it from a new shell session:
 
 .. code-block:: bash 
 
-    $ curl http://0.0.0.0:5000/
-    $ curl -H "Accept: application/json" -X POST -d@input/example-1.mmif http://0.0.0.0:5000/
+    # in a new terminal session
+    $ curl http://localhost:5000/
+    $ curl -H "Accept: application/json" -X POST -d@input/example-1.mmif "http://0.0.0.0:5000?pretty=True"
 
-The first command prints the metadata, and the second prints the output MMIF file. Appending ``?pretty=True`` to the URL will result in a pretty printed output. Note that with the ``--develop`` option we started a Flask development server. Without this option, a production server will be started.
+The first command prints the metadata, and the second prints the output MMIF file. Appending ``?pretty=True`` to the URL will result in a pretty printed output. Note that with the ``--develop`` option we started a Flask development server. Without this option, a production server will be started. To get more information about the input file format (the contents of ``input/example-1.mmif``), please refer to `the user manual <https://apps.clams.ai/clamsapp>`_.
 
 
 Containerization 
@@ -132,70 +137,17 @@ In addition to the HTTP service, a CLAMS app is expected to be containerized for
 When you start developing an app with ``clams develop`` command, the command will create a ``Containerfile`` with some instructions as inline comments for you (you can always start from scratch with any containerization tool you like). 
 
 .. note::
-  If you are part of CLAMS team and you want to publish your app to the ``https://github.com/clamsproject`` organization, ``clams develop`` command will also create a GitHub actions files to automatically build and push an app image to the organization's container registry. For the actions to work, you must use the name ``Containerfile`` instead of ``Dockerfile``.
+  If you are part of CLAMS team and you want to publish your app to the ``https://github.com/clamsproject`` organization, ``clams develop`` command will also create a GitHub Actions files to automatically build and push an app image to the organization's container registry. For the actions to work, you must use the name ``Containerfile`` instead of ``Dockerfile``.
 
 If you are not familiar with ``Containerfile`` or ``Dockerfile``, refer to the `official documentation <https://docs.docker.com/engine/reference/builder/>`_ to learn how to write one. To integrate to the CLAMS workflow engines, a containerized CLAMS app must automatically start itself as a webapp when instantiated as a container, and listen to ``5000`` port.
 
-We have a `public GitHub Container Repository <https://github.com/orgs/clamsproject/packages>`_, and publishing Debian-based base images to help developers write ``Containerfile`` and save build time to install common libraries. At the moment we have a basic image with Python 3.6 and ``clams-python`` installed. We will publish more images built with commonly used video and audio processing libraries.
+We have a `public GitHub Container Repository <https://github.com/orgs/clamsproject/packages>`_, and publishing Debian-based base images to help developers write ``Containerfile`` and save build time to install common libraries. At the moment we have various basic images with Python 3.8, ``clams-python``, and commonly used video and audio processing libraries installed.
 
-To build a Docker image, use the following command:
+Once you finished writing your ``Containerfile``, you can build and test the containerized app locally. If you are not familiar with building and running container images To build a Docker image, these documentation will be helpful. 
 
-.. code-block:: bash 
-
-    $ docker build -t clams-nlp-example:0.0.7 -f Containerfile .
-
-This builds an image with a development server using Flask. The ``-t`` option lets you pick a name (clams-nlp-example) and a tag (0.0.7) for the image. You can use another name if you like. You do not have to add a tag and you could just use ``-t nlp-clams-example``, but it is usually a good idea to use the version name as the tag.
-
-To test the Flask app in the container do:
-
-.. code-block:: bash 
-
-    $ docker run --rm -it clams-nlp-example:0.0.7 /bin/bash
-
-You are now running a bash shell in the container and in the container you can run:
-
-.. code-block:: bash 
-
-    root@c85a08b22f18:/app# python test.py input/example-1.mmif out.json
-
-Escape out of the container with Ctrl-d.
-
-To test the Flask app in the container from your local machine do:
-
-.. code-block:: bash 
-
-    $ docker run --name clams-nlp-example --rm -d -p 5000:5000 clams-nlp-example:0.0.7
-
-The ``--name`` option gives a name to the container which we use later to stop it (if we do not name the container then Docker will generate a name and we have to query docker to see what containers are running and then use that name to stop it). Now you can use curl to send requests (not sending the ``-h`` headers for brevity, it does work without them):
-
-.. code-block:: bash 
-
-    $ curl http://0.0.0.0:5000/
-    $ curl -X POST -d@input/example-1.mmif http://0.0.0.0:5000/
-
-To grant the Docker container access to data files on your local machine, use the ``-v`` option:
-
-.. code-block:: bash 
-
-    $ docker run --name clams-nlp-example --rm -d -p 5000:5000 -v $PWD/input/data:/data clams-nlp-example:0.0.7
-
-In this example, the ``/data`` directory in the Docker container is mounted to the ``input/data`` directory on the local machine. Any input MMIF files processed by the app in the container should use the path in the container as their location. For example:
-
-.. code-block:: bash 
-
-    {
-  "@type": "http://mmif.clams.ai/0.4.0/vocabulary/VideoDocument",
-  "properties": {
-    "id": "m1",
-    "mime": "text/plain",
-    "location": "/data/text/example.txt"
-    }
-
-And now you can use curl again:
-
-.. code-block:: bash 
-
-    $ curl -X POST -d@input/example-3.mmif http://0.0.0.0:5000/
+* https://docs.docker.com/engine/reference/commandline/build/
+* https://docs.docker.com/engine/reference/run/
+* https://apps.clams.ai/clamsapp
 
 
 

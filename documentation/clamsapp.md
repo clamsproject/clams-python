@@ -65,48 +65,19 @@ docker run -v /path/to/data/directory:/data -p <port>:5000 <image_name>
 ```
 
 where `/path/to/data/directory` is the local location of your media files or MMIF objects and `<port>` is the *host* port number you want your container to be listening to. 
-The HTTP inside the container will be listening to 5000 by default. 
+The HTTP inside the container will be listening to 5000 by default. Usually any number above 1024 is fine for the host port number, and you can use the same 5000 number for the host port number.
 
-#### Running as a container on Mac
-If you are using a Mac, you may encounter some errors running the app as a container. The following are solutions to resolve these errors.
+> **Note**
+> If you are using a Mac, on recent versions of macOS, port 5000 is used by Airplay Receiver by default. So you may need to use a different port number, or turn off the Airplay Receiver in the System Preferences to release 5000.
+> For more information on *safe* port numbers, see [IANA Port Number Registry](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml) or [Wikipedia](https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers).
 
-1. ARM Architecture
-```bash
-The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+> **Note**
+> Another note for users of recent Macs with Apple Silicon (M1, M2, etc) CPU: you might see the following error message when you run the container image.
+> ```bash
+> The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+> ```
+> This is because the image you are trying to run is built for Intel/AMC CPUs. To force the container to run on an emulation layer, you can add `--platform linux/amd64` option to the `docker run` command.
 
-```
-
-*Solution:* add `--platform linux/amd64` after `docker run`
-
-e.g.
-
-```bash
-$ docker run --platform linux/amd64 -p 5000:5000 -v /Users/Shared/archive:/data --rm keighrim/app-aapb-pua-kaldi-wrapper:v0.2.3
-```
-
-2. Port 5000 already in use
-
-```bash
-docker: Error response from daemon: Ports are not available: exposing port TCP 0.0.0.0:5000 -> 0.0.0.0:0: listen tcp 0.0.0.0:5000: bind: address already in use.
-ERRO[0000] error waiting for container: context canceled
-```
-
-*Solution:* On Mac, Control Center uses Port 5000 by default. The process running on this port is an AirPlay server. You can deactivate it in System Preferences › Sharing and uncheck AirPlay Receiver to release port 5000. Alternatively, you can use a different port: **5001**:
-
-```bash
-$ docker run --platform linux/amd64 -p 5001:5000 -v /Users/Shared/archive:/data --rm keighrim/app-aapb-pua-kaldi-wrapper:v0.2.3
-```
-
-3. No matches found with curl
-```bash
-zsh: no matches found: [https://0.0.0.0:5001?pretty](https://0.0.0.0:5001/?pretty)
-```
-*Solution*: put quotes around url, also remember to use the **new port** from above:
-
-```bash
-$ curl 'https://0.0.0.0:5001?pretty'
-$ curl -H "Accept: application/json" -X POST -d@input.mmif -s 'http://0.0.0.0:5001?pretty' > output.mmif
-```
 
 #### Running as a local HTTP server
 
@@ -187,11 +158,10 @@ curl -H "Accept: application/json" -X POST -d@input.mmif -s http://localhost:500
 # or using a bash pipeline 
 clams source audio:/data/audio/some-audio-file.mp3 | curl -X POST -d@- -s http://localhost:5000 > output.mmif
 ```
-Appending `?pretty=True` to the URL will result in a pretty printed output.
+Appending `?pretty=True` to the URL will result in a pretty printed output. Note that when you're using `curl` from a shell session, you need to escape the `?` or `&` characters with `\` to prevent the shell from interpreting it as a special character.
 
 #### Configuring the app
 
 Running as an HTTP server, CLAMS Apps are stateless, but can be configured for each HTTP request by providing configuration parameters as [query string](https://en.wikipedia.org/wiki/Query_string). 
 
 For configuration parameters, please look for `parameter` section of the app metadata.
-
