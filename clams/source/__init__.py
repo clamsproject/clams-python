@@ -5,6 +5,7 @@ import sys
 import textwrap
 from os import path
 from typing import Union, Generator, List, Optional, Iterable
+from urllib.parse import urlparse
 
 from mmif import Mmif, Document, DocumentTypes, __specver__
 from mmif.serialize.mmif import MmifMetadata
@@ -242,7 +243,8 @@ def generate_source_mmif_from_customscheme(documents, scheme, **ignored):
             raise ValueError(
                 f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source'
             )
-        location = scheme + '://' + location
+        if urlparse(location).scheme == '':
+            location = scheme + '://' + location
         doc = template.substitute(
             at_type=str(at_types[mime.split('/', maxsplit=1)[0]]),
             aid=f'd{doc_id}',
