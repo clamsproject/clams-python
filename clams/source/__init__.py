@@ -284,9 +284,9 @@ def prep_argparser(**kwargs):
         default=None,
         metavar='PATH',
         nargs='?',
-        help='An absolute path to use as prefix for document file paths. When prefix is set, document file paths MUST '
-             'be relative. This can be useful when creating source MMIF files from a system that\'s different from '
-             'the system that actually runs the workflow (e.g. in a container).'
+        help='An absolute path to use as prefix for file paths (ONLY WORKS with `file` scheme, ignored otherwise). If '
+             'prefix is set, document file paths MUST be relative. Useful when creating source MMIF files from a '
+             'system that\'s different from the system that actually runs the workflow (e.g. in a container).'
     )
     parser.add_argument(
         '-o', '--output',
@@ -297,10 +297,10 @@ def prep_argparser(**kwargs):
     )
     parser.add_argument(
         '-s', '--scheme',
-        default=None,
+        default='file',
         action='store',
         nargs='?',
-        help='A scheme to associate with the document location URI. When not given, the default scheme is file://.'
+        help='A scheme to associate with the document location URI. When not given, the default scheme is `file`.'
     )
     return parser
 
@@ -310,12 +310,12 @@ def main(args):
         out_f = open(args.output, 'w')
     else:
         out_f = sys.stdout
-    if args.scheme and args.prefix:
-        raise ValueError(f'prefix and scheme cannot both be specified')
-    elif args.scheme:
-        out_f.write(generate_source_mmif_from_customscheme(**vars(args)))
+    if args.scheme == 'file':
+        mmif = generate_source_mmif_from_file(**vars(args))
     else:
-        out_f.write(generate_source_mmif_from_file(**vars(args)))
+        mmif = generate_source_mmif_from_customscheme(**vars(args))
+    out_f.write(mmif)
+    return mmif
 
 if __name__ == '__main__':
     parser = prep_argparser()

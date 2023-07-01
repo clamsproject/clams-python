@@ -3,6 +3,7 @@ import unittest
 import contextlib
 import clams
 from clams import source
+from mmif.serialize import Mmif
 
 
 class TestCli(unittest.TestCase):
@@ -23,80 +24,81 @@ class TestSource(unittest.TestCase):
     def setUp(self) -> None:
         self.parser = clams.source.prep_argparser()
         self.prefix = None
+        self.scheme = None
         self.docs = []
 
     def get_params(self):
+        
+        # suppress output by default
+        params = '--output /dev/null'.split()
+        
         if self.prefix:
-            params = f'--prefix {self.prefix}'.split() + self.docs
-        else:
-            params = self.docs
+            params.extend(f'--prefix {self.prefix}'.split())
+        if self.scheme:
+            params.extend(f'--scheme {self.scheme}'.split())
+        params.extend(self.docs)
         return params
 
-    def generate_source_mmif_from_file(self):
-        return source.generate_source_mmif_from_file(**vars(self.parser.parse_args(self.get_params())))
+    def generate_source_mmif(self):
+        return source.main(self.parser.parse_args(self.get_params()))
 
     def test_accept_file_paths(self):
         self.docs.append("video:/a/b/c.mp4")
-        self.generate_source_mmif_from_file()
         self.docs.append('text:/a/b/c.txt')
-        self.generate_source_mmif_from_file()
+        source_mmif = Mmif(self.generate_source_mmif())
+        self.assertEqual(len(source_mmif.documents), 2)
+        self.assertTrue(all(map(lambda x: x.location_scheme() == 'file', source_mmif.documents)))
+
+        # relative path
         self.docs.append('audio:a/b/c.mp3')
         with self.assertRaises(ValueError):
-            self.generate_source_mmif_from_file()
+            self.generate_source_mmif()
 
     def test_accept_prefixed_file_paths(self):
         self.prefix = '/a/b'
         self.docs.append("video:c.mp4")
-        self.generate_source_mmif_from_file()
         self.docs.append("text:c.txt")
-        self.generate_source_mmif_from_file()
+        source_mmif = Mmif(self.generate_source_mmif())
+        self.assertEqual(len(source_mmif.documents), 2)
+        
+        # absolute path + prefix flag
         self.docs.append("audio:/c.mp3")
         with self.assertRaises(ValueError):
-            self.generate_source_mmif_from_file()
+            self.generate_source_mmif()
 
     def test_reject_relative_prefix(self):
         self.prefix = '/'
         self.docs.append("video:c.mp4")
-        self.generate_source_mmif_from_file()
+        source_mmif = Mmif(self.generate_source_mmif())
+        self.assertEqual(len(source_mmif.documents), 1)
+        
         self.prefix = '.'
         with self.assertRaises(ValueError):
-            self.generate_source_mmif_from_file()
+            self.generate_source_mmif()
 
     def test_reject_unknown_mime(self):
-        self.prefix = None
         self.docs.append("unknown_mime/more_unknown:/c.mp4")
         with self.assertRaises(ValueError):
-            self.generate_source_mmif_from_file()
+            self.generate_source_mmif()
 
-class TestSchemeSupport(unittest.TestCase):
-
-    def setUp(self) -> None:
-        self.parser = clams.source.prep_argparser()
-        self.scheme = None
-        self.docs = []
-
-    def get_params(self):
-        if self.scheme:
-            params = f'--scheme {self.scheme}'.split() + self.docs
-        else:
-            params = self.docs
-        return params
-
-    def generate_source_mmif_from_customscheme(self):
-        return source.generate_source_mmif_from_customscheme(**vars(self.parser.parse_args(self.get_params())))
-    
     def test_accept_scheme_files(self):
         self.scheme = 'baapb'
         self.docs.append("video:cpb-aacip-123-4567890.video")
-        self.generate_source_mmif_from_customscheme()
         self.docs.append("audio:cpb-aacip-111-1111111.audio")
-        self.generate_source_mmif_from_customscheme()
+        source_mmif = Mmif(self.generate_source_mmif())
+        self.assertEqual(len(source_mmif.documents), 2)
+        self.assertTrue(all(map(lambda x: x.location_scheme() == self.scheme, source_mmif.documents)))
 
-    def test_reject_unknown_mime(self):
-        self.scheme = None
-        self.docs.append("unknown_mime/more_unknown:cpb-aacip-example.unknown")
-        with self.assertRaises(ValueError):
-            self.generate_source_mmif_from_customscheme()
+    def test_generate_mixed_scheme(self):
+        self.scheme = 'baapb'
+        self.docs.append("video:file:///data/cpb-aacip-123-4567890.mp4")
+        self.docs.append("audio:cpb-aacip-111-1111111.audio")
+        source_mmif = Mmif(self.generate_source_mmif())
+        self.assertEqual(len(source_mmif.documents), 2)
+        schemes = set(doc.location_scheme() for doc in source_mmif.documents)
+        self.assertEqual(len(schemes), 2)
+        self.assertTrue('baapb' in schemes)
+        self.assertTrue('file' in schemes)
 
 
 if __name__ == '__main__':
