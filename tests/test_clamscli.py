@@ -1,4 +1,5 @@
 import io
+import os
 import unittest
 import contextlib
 import clams
@@ -29,9 +30,7 @@ class TestSource(unittest.TestCase):
 
     def get_params(self):
         
-        # suppress output by default
-        params = '--output /dev/null'.split()
-        
+        params = []
         if self.prefix:
             params.extend(f'--prefix {self.prefix}'.split())
         if self.scheme:
@@ -40,7 +39,12 @@ class TestSource(unittest.TestCase):
         return params
 
     def generate_source_mmif(self):
-        return source.main(self.parser.parse_args(self.get_params()))
+        
+        # to suppress output (otherwise, set to stdout by default
+        args = self.parser.parse_args(self.get_params())
+        args.output = os.devnull
+        
+        return source.main(args)
 
     def test_accept_file_paths(self):
         self.docs.append("video:/a/b/c.mp4")
