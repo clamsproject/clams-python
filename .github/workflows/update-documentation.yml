@@ -1,0 +1,41 @@
+name: update-documentation
+
+on: 
+  workflow_dispatch:
+    inputs:
+      branch-name:
+        type: string
+        required: true
+        default: "main"
+        
+  workflow_call:
+    inputs: 
+      branch-name:
+        required: true
+        type: string
+    secrets:
+      USER_TOKEN:
+        required: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write 
+  
+jobs:
+  update-main-branch:
+    name: dispatch for documentation
+    uses: clamsproject/apps/.github/workflows/jekyll-build-deploy.yml@theming
+    if: ${{inputs.branch-name == 'theming'}}
+    with: 
+      branch-name: ${{inputs.branch-name}}
+    secrets: inherit 
+  
+  update-theming-branch:
+    name: dispatch for documentation
+    uses: clamsproject/apps/.github/workflows/jekyll-build-deploy.yml@main
+    if: ${{inputs.branch-name == 'main'}}
+    with:
+      branch-name: ${{inputs.branch-name}}      
+    secrets: inherit
+  #more jobs
