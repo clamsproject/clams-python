@@ -77,6 +77,8 @@ As a developer you can expose different behaviors of the ``annotate()`` method b
 .. warning::
   All the runtime configurations should be pre-announced in the app metadata.
 
+Also see <:any:`tutorial`> for a step-by-step tutorial on how to write the ``_annotate()`` method with a simple example NLP tool.
+
 appmetadata()
 """""""""""""
 
