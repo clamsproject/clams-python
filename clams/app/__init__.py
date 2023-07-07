@@ -149,6 +149,8 @@ class ClamsApp(ABC):
         conf = {}
         for parameter in self.metadata.parameters:
             if parameter.name in runtime_params:
+                if parameter.choices and runtime_params[parameter.name] not in parameter.choices:
+                    raise ValueError(f"Value for parameter \"{parameter.name}\" must be one of {parameter.choices}.")
                 conf[parameter.name] = runtime_params[parameter.name]
             elif parameter.default is not None:
                 conf[parameter.name] = parameter.default
