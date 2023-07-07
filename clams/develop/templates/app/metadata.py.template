@@ -39,7 +39,7 @@ def appmetadata() -> AppMetadata:
         analyzer_version=[l.strip().rsplit('==')[-1] for l in open('requirements.txt').readlines() if re.match(r'^ANALYZER_NAME==', l)][0],
         analyzer_license="",  # short name for a software license
     )
-    # and then add I/O specifications: an app must have at least one input and ont output
+    # and then add I/O specifications: an app must have at least one input and one output
     metadata.add_input(DocumentTypes.Document)
     metadata.add_output(AnnotationTypes.Thing, typeSpecificProperty='property-value')
     
