@@ -1,4 +1,12 @@
 
+## releasing 1.0.5 (2023-07-19)
+### Overview
+Minor release to update `mmif-python` version 
+
+### Changes
+* updated to `mmif-python==1.0.5`
+
+
 ## releasing 1.0.4 (2023-07-19)
 ### Overview
 This release include many updates to documentation, and `clams source --scheme` flag. 
