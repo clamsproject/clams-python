@@ -5,7 +5,6 @@ import sys
 import tempfile
 import unittest
 import warnings
-from pathlib import Path
 from typing import Union
 
 import pytest
@@ -225,13 +224,15 @@ class TestClamsApp(unittest.TestCase):
         self.app.metadata.add_parameter('param2', 'second_param', 'string', default='second_default')
         self.app.metadata.add_parameter('param3', 'third_param', 'boolean', default='f')
         self.app.metadata.add_parameter('param4', 'fourth_param', 'integer', default='1', choices="1 2 3".split())
+        self.app.metadata.add_parameter('param5', 'fifth_param', 'number', default='0.5')
         conf = self.app.get_configuration(param1='okay', non_parameter='should be ignored')
-        self.assertEqual(len(conf), 4)
+        self.assertEqual(len(conf), 5)
         self.assertFalse('non_parameter' in conf)
         self.assertEqual(type(conf['param1']), str)
         self.assertEqual(type(conf['param2']), str)
         self.assertEqual(type(conf['param3']), bool)
         self.assertEqual(type(conf['param4']), int)
+        self.assertEqual(type(conf['param5']), float)
         with self.assertRaises(ValueError):
             # because param1 doesn't have a default value and thus a required param
             self.app.get_configuration(param2='okay')
