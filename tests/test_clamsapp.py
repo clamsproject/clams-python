@@ -224,7 +224,7 @@ class TestClamsApp(unittest.TestCase):
         self.app.metadata.add_parameter('param1', 'first_param', 'string')
         self.app.metadata.add_parameter('param2', 'second_param', 'string', default='second_default')
         self.app.metadata.add_parameter('param3', 'third_param', 'boolean', default='f')
-        self.app.metadata.add_parameter('param4', 'fourth_param', 'integer', default='1')
+        self.app.metadata.add_parameter('param4', 'fourth_param', 'integer', default='1', choices="1 2 3".split())
         conf = self.app.get_configuration(param1='okay', non_parameter='should be ignored')
         self.assertEqual(len(conf), 4)
         self.assertFalse('non_parameter' in conf)
@@ -235,6 +235,9 @@ class TestClamsApp(unittest.TestCase):
         with self.assertRaises(ValueError):
             # because param1 doesn't have a default value and thus a required param
             self.app.get_configuration(param2='okay')
+        with self.assertRaisesRegexp(ValueError, r'.+must be one of.+'):
+            # because param4 can't be 4, note that param1 is "required" 
+            self.app.get_configuration(param1='p1', param4=4)
             
     def test_error_handling(self):
         params = {'raise_error': True, 'pretty': True}

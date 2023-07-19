@@ -15,7 +15,7 @@ Prerequisites
 -------------
 
 * `Python <https://www.python.org>`_: the latest ``clams-python`` requires Python 3.8 or newer. We have no plan to support `Python 2.7 <https://pythonclock.org/>`_. 
-* Containerization software: when deployed to a CLAMS workflow engine, an app must be containerized. Developers can choose any containerization software for doing so, but ``clams-python`` SDK is developed `Docker <https://www.docker.com>`_ in mind.
+* Containerization software: when deployed to a CLAMS workflow engine, an app must be containerized. Developers can choose any containerization software for doing so, but ``clams-python`` SDK is developed with `Docker <https://www.docker.com>`_ in mind.
 
 Installation 
 ------------
@@ -26,7 +26,7 @@ Installation
 
     pip install clams-python
 
-Note that installing ``clams-python`` will also install ``mmif-python`` PyPI package, which is a companion python library related to the MMIF data format.
+Note that installing ``clams-python`` will also install ``mmif-python`` PyPI package, which is a companion python library related to the MMIF data format. More information regarding MMIF specifications can be found `here <https://mmif.clams.ai/>`_. Documentation on ``mmif-python`` is available at the `Python API documentation website <https://clams.ai/mmif-python>`_.
 
 Quick Start with the App Template
 ---------------------------------
@@ -37,7 +37,7 @@ Quick Start with the App Template
 
     clams develop --help
 
-The newly created project will have a ``README.md`` file that explains how to develop and deploy the app. Here we will explain the basic structure of the project. Developing a CLAMS app has three (or four depending on what is the underlying analyzer) major components. 
+The newly created project will have a ``README.md`` file that explains how to develop and deploy the app. Here we will explain the basic structure of the project. Developing a CLAMS app has three (or four depending on the underlying analyzer) major components. 
 
 #. (Writing computational analysis code, or use existing code in Python)
 #. Make the analyzer to speak MMIF by wrapping with :class:`clams.app.ClamsApp`. 
@@ -46,7 +46,7 @@ The newly created project will have a ``README.md`` file that explains how to de
 
 CLAMS App API
 ^^^^^^^^^^^^^
-A CLAMS Python app is a python class that implements and exposes two core methods; ``annotate()``, ``appmetadata()``. 
+A CLAMS Python app is a python class that implements and exposes two core methods: ``annotate()``, ``appmetadata()``. In essence, these methods (discussed further below) are wrappers around ``_annotate()`` and ``_appmetadata()``, and they provide some common functionality such as making sure the output is serialized into a string.
 
 * :meth:`~clams.app.ClamsApp.annotate`: Takes a MMIF as input and processes the MMIF input, then returns serialized MMIF :class:`str`.
 * :meth:`~clams.app.ClamsApp.appmetadata`: Returns JSON-formatted :class:`str` that contains metadata about the app. 
@@ -56,12 +56,17 @@ A good place to start writing a CLAMS app is to start with inheriting :class:`cl
 annotate()
 """"""""""
 
-The ``annotate()`` method is the core method of a CLAMS app. It takes a MMIF JSON string as the main input, along with other `kwargs <https://docs.python.org/3.8/glossary.html#term-argument>`_ for runtime configurations, and analyze the MMIF input, then returns analysis results in a serialized MMIF :class:`str`. 
+The ``annotate()`` method is the core method of a CLAMS app. It takes a MMIF JSON string as the main input, along with other `kwargs <https://docs.python.org/3.8/glossary.html#term-argument>`_ for runtime configurations, and analyzes the MMIF input, then returns analysis results in a serialized MMIF :class:`str`. 
 When you inherit :class:`~clams.app.ClamsApp`, you need to implement 
 
-* :meth:`~clams.app.ClamsApp._annotate` instead of :meth:`~clams.app.ClamsApp.annotate` (read the docstrings as they contains important information about the app implementation)
+* :meth:`~clams.app.ClamsApp._annotate` instead of :meth:`~clams.app.ClamsApp.annotate` (read the docstrings as they contain important information about the app implementation).
+* at a high level, ``_annotate()`` is mostly concerned with 
 
-As a developer you can expose different behaviors of the ``annotate()`` method by providing configurable parameters as keyword arguments of the method. For example, you can have user specify a re-sample rate of an audio file to be analyzed by providing ``resample_rate`` parameter. 
+    * finding processable documents and relevant annotations from previous views, 
+    * creating new views, 
+    * and calling the code that runs over the documents and inserts the results to the new views.
+
+As a developer you can expose different behaviors of the ``annotate()`` method by providing configurable parameters as keyword arguments of the method. For example, you can have the user specify a re-sample rate of an audio file to be analyzed by providing a ``resample_rate`` parameter. 
 
 .. note::
   These runtime configurations are not part of the MMIF input, but for reproducible analysis, you should record these configurations in the output MMIF. 
@@ -72,10 +77,12 @@ As a developer you can expose different behaviors of the ``annotate()`` method b
 .. warning::
   All the runtime configurations should be pre-announced in the app metadata.
 
+Also see <:any:`tutorial`> for a step-by-step tutorial on how to write the ``_annotate()`` method with a simple example NLP tool.
+
 appmetadata()
 """""""""""""
 
-App metadata is a map where important information about the app itself is stored as key-value pairs. That said, ``appmetadata()`` method should not perform any analysis on the input MMIF. In fact, it shouldn't take any input at all. 
+App metadata is a map where important information about the app itself is stored as key-value pairs. That said, the ``appmetadata()`` method should not perform any analysis on the input MMIF. In fact, it shouldn't take any input at all. 
 
 When using :class:`clams.app.ClamsApp`, you have different options to implement information source for the metadata. See :meth:`~clams.app.ClamsApp._load_appmetadata` for the options, and <:ref:`appmetadata`> for the metadata specification. 
 
@@ -85,7 +92,7 @@ When using :class:`clams.app.ClamsApp`, you have different options to implement 
 
 HTTP webapp
 ^^^^^^^^^^^
-To be integrated into the CLAMS appliance, a CLAMS app needs to serve as a webapp. Once your application class is ready, you can use :class:`clams.restify.Restifier` to wrap your app as a `Flask <https://palletsprojects.com/p/flask/>`_-based web application. 
+To be integrated into CLAMS workflow engines, a CLAMS app needs to serve as a webapp. Once your application class is ready, you can use :class:`clams.restify.Restifier` to wrap your app as a `Flask <https://palletsprojects.com/p/flask/>`_-based web application. 
 
 .. code-block:: python 
 
@@ -105,18 +112,48 @@ When running the above code, Python will start a web server and host your CLAMS 
 .. note::
   Now with HTTP interface, users can pass runtime configuration as `URL query strings <https://en.wikipedia.org/wiki/Query_string>`_. As the values of query string parameters are always strings, ``Restifier`` will try to convert the values to the types specified in the app metadata, using :class:`clams.restify.ParameterCaster`. 
 
-In the above example, :meth:`clams.restify.Restifier.run` will start the webapp in debug mode on a `Werkzeug <https://palletsprojects.com/p/werkzeug/>`_ server, which is not always suitable for a production server. For a more robust server that can handle multiple requests asynchronously, you might want to use a production-ready HTTP server. In such a case you can use :meth:`~clams.restify.Restifier.serve_production`, which will spin up a multi-worker `Gunicorn <https://docs.gunicorn.org>`_ server. If you don't like it (because, for example, gunicorn does not support Windows OS), you can write your own HTTP wrapper. In the end of the day, all you need is a webapp that maps ``appmetadata`` and ``annotate`` on ``GET`` and ``POST`` requests.
+In the above example, :meth:`clams.restify.Restifier.run` will start the webapp in debug mode on a `Werkzeug <https://palletsprojects.com/p/werkzeug/>`_ server, which is not always suitable for a production server. For a more robust server that can handle multiple requests asynchronously, you might want to use a production-ready HTTP server. In such a case you can use :meth:`~clams.restify.Restifier.serve_production`, which will spin up a multi-worker `Gunicorn <https://docs.gunicorn.org>`_ server. If you don't like it (because, for example, gunicorn does not support Windows OS), you can write your own HTTP wrapper. At the end of the day, all you need is a webapp that maps ``appmetadata`` and ``annotate`` on ``GET`` and ``POST`` requests.
+
+To test the behavior of the application in a Flask server, you should run the app as a webapp in a terminal (shell) session:
+
+.. code-block:: bash 
+
+    $ python app.py --develop --port 5000
+    # default port number is 5000
+
+And poke at it from a new shell session:
+
+.. code-block:: bash 
+
+    # in a new terminal session
+    $ curl http://localhost:5000/
+    $ curl -H "Accept: application/json" -X POST -d@input/example-1.mmif "http://0.0.0.0:5000?pretty=True"
+
+The first command prints the metadata, and the second prints the output MMIF file. Appending ``?pretty=True`` to the URL will result in a pretty printed output. Note that with the ``--develop`` option we started a Flask development server. Without this option, a production server will be started. To get more information about the input file format (the contents of ``input/example-1.mmif``), please refer to `the user manual <https://apps.clams.ai/clamsapp>`_.
+
 
 Containerization 
 ^^^^^^^^^^^^^^^^
-In addition to the HTTP service, a CLAMS app is expected to be containerized for seamless deployment to CLAMS workflow engines. Also, independently from being compatible with the CLAMS platform, containerization of your app is recommended especially when your app processes video streams and dependent on complicated system-level video processing libraries (e.g. `OpenCV <https://opencv.org/>`_, `FFmpeg <https://ffmpeg.org/>`_). 
+In addition to the HTTP service, a CLAMS app is expected to be containerized for seamless deployment to CLAMS workflow engines. Also, independently from being compatible with the CLAMS platform, containerization of your app is recommended especially when your app processes video streams and is dependent on complicated system-level video processing libraries (e.g. `OpenCV <https://opencv.org/>`_, `FFmpeg <https://ffmpeg.org/>`_). 
 
 When you start developing an app with ``clams develop`` command, the command will create a ``Containerfile`` with some instructions as inline comments for you (you can always start from scratch with any containerization tool you like). 
 
 .. note::
-  If you are part of CLAMS team and you want to publish your app to the ``https://github.com/clamsproject`` organization, ``clams develop`` command will also create a GitHub actions files to automatically build and push an app image to the organization's container registry. For the actions to work, you must use the name ``Containerfile`` instead of ``Dockerfile``.
+  If you are part of CLAMS team and you want to publish your app to the ``https://github.com/clamsproject`` organization, ``clams develop`` command will also create a GitHub Actions files to automatically build and push an app image to the organization's container registry. For the actions to work, you must use the name ``Containerfile`` instead of ``Dockerfile``.
 
 If you are not familiar with ``Containerfile`` or ``Dockerfile``, refer to the `official documentation <https://docs.docker.com/engine/reference/builder/>`_ to learn how to write one. To integrate to the CLAMS workflow engines, a containerized CLAMS app must automatically start itself as a webapp when instantiated as a container, and listen to ``5000`` port.
 
-We have a `public GitHub Container Repository <https://github.com/orgs/clamsproject/packages>`_, and publishing Debian-based base images to help developers write ``Containerfile`` and save build time to install common libraries. At the moment we have a basic image with Python 3.6 and ``clams-python`` installed. We will publish more images built with commonly used video and audio processing libraries. 
+We have a `public GitHub Container Repository <https://github.com/orgs/clamsproject/packages>`_, and publishing Debian-based base images to help developers write ``Containerfile`` and save build time to install common libraries. At the moment we have various basic images with Python 3.8, ``clams-python``, and commonly used video and audio processing libraries installed.
+
+Once you finished writing your ``Containerfile``, you can build and test the containerized app locally. If you are not familiar with building and running container images To build a Docker image, these documentation will be helpful. 
+
+* https://docs.docker.com/engine/reference/commandline/build/
+* https://docs.docker.com/engine/reference/run/
+* https://apps.clams.ai/clamsapp
+
+
+
+
+
+
 
