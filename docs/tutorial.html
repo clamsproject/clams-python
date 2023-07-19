@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorial: writing a CLAMS app &mdash; clams-python  documentation</title>
+  <title>Tutorial: Wrapping an NLP Application &mdash; clams-python  documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -18,7 +18,9 @@
         <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="clams package" href="modules.html" />
+    <link rel="prev" title="clams shell command" href="cli.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -33,7 +35,7 @@
             clams-python
           </a>
               <div class="version">
-                1.0.3
+                1.0.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -44,13 +46,30 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="input-output.html">I/O Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime-params.html">Runtime Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appmetadata.html">CLAMS App Metadata</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appdirectory.html">CLAMS App Directory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cli.html"><code class="docutils literal notranslate"><span class="pre">clams</span></code> shell command</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial: Wrapping an NLP Application</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-nlp-tool">The NLP tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#wrapping-the-tokenizer">Wrapping the tokenizer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#imports">Imports</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-application-class">The application class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#app-metadata">App Metadata</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#annotate"><code class="docutils literal notranslate"><span class="pre">_annotate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#containerization-with-docker">Containerization with Docker</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-the-document-location-property">Using the <code class="docutils literal notranslate"><span class="pre">document.location</span></code> property</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API documentation:</span></p>
 <ul>
@@ -71,7 +90,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Tutorial: writing a CLAMS app</li>
+      <li class="breadcrumb-item active">Tutorial: Wrapping an NLP Application</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -80,503 +99,271 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="tutorial-writing-a-clams-app">
-<span id="tutorial"></span><span id="header-n0"></span><h1>Tutorial: writing a CLAMS app<a class="headerlink" href="#tutorial-writing-a-clams-app" title="Permalink to this heading"></a></h1>
-<p>TODO: This tutorial is very old and needs some serious updating. When doing so, consider that</p>
-<p>1. a large portion of this is “migrated” into app template documentation.
-1. this document still uses term <cite>tool</cite> but we should use <cite>app</cite> instead.
-1. this document doesn’t have any demo on the runtime params.
-1. the actual kaldi app has a runtime param that utilizes audio segment. But support for audio segment makes the app extremely messy, so we should avoid using it in this tutorial. Instead find a simpler app that can show multiple runtime params, I/O types.</p>
-<p>A short demonstration of how to wrap an existing processing tool as a
-CLAMS application</p>
-<section id="the-example-kaldi">
-<span id="header-n3"></span><h2>The Example: Kaldi<a class="headerlink" href="#the-example-kaldi" title="Permalink to this heading"></a></h2>
-<ul class="simple">
-<li><p>We wrapped the Kaldi ASR tool</p></li>
-<li><p>More specifically, we wrapped the Kaldi + Pop Up Archive docker image
-from HiPSTAS</p></li>
-<li><p>This tool takes in audio files, performs automatic speech
-recognition, and generates transcripts consisting of tokens aligned
-with timecodes</p></li>
-<li><p>The code in this tutorial is from
-<a class="reference external" href="https://github.com/clamsproject/app-puakaldi-wrapper">https://github.com/clamsproject/app-puakaldi-wrapper</a>. Click through
-to see the code in full, and check out our other apps in the
-clamsproject organization for more examples.</p></li>
-</ul>
-</section>
-<section id="a-sample-kaldi-transcript">
-<span id="header-n13"></span><h2>A sample Kaldi transcript<a class="headerlink" href="#a-sample-kaldi-transcript" title="Permalink to this heading"></a></h2>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;words&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;ah&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="s2">&quot;time&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0.07</span><span class="p">,</span>
-<span class="w">      </span><span class="s2">&quot;duration&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;2.59&quot;</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;oh&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="s2">&quot;time&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">2.66</span><span class="p">,</span>
-<span class="w">      </span><span class="s2">&quot;duration&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;5.93&quot;</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;yeah&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="s2">&quot;time&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">8.59</span><span class="p">,</span>
-<span class="w">      </span><span class="s2">&quot;duration&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;0.67&quot;</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">]</span>
-<span class="p">}</span>
+  <section id="tutorial-wrapping-an-nlp-application">
+<span id="tutorial"></span><h1>Tutorial: Wrapping an NLP Application<a class="headerlink" href="#tutorial-wrapping-an-nlp-application" title="Permalink to this heading"></a></h1>
+<p>The following is a tutorial on how to wrap a simple NLP tool as a CLAMS application, using app template generated by <code class="docutils literal notranslate"><span class="pre">clams</span> <span class="pre">develop</span></code> command.
+Particularly, this article is focused on writing <code class="docutils literal notranslate"><span class="pre">_annotate()</span></code> method in a CLAMS app (<code class="docutils literal notranslate"><span class="pre">app.py</span></code>).
+This may not make a lot of sense without glancing over recent <a class="reference external" href="https://mmif.clams.ai/">MMIF specifications</a> and <a class="reference external" href="introduction.html">CLAMS SDK overview</a>.</p>
+<section id="the-nlp-tool">
+<h2>The NLP tool<a class="headerlink" href="#the-nlp-tool" title="Permalink to this heading"></a></h2>
+<p>We use an ultra simple tokenizer in <code class="docutils literal notranslate"><span class="pre">tokenizer.py</span></code> as the example NLP tool. All it does is define a tokenize function that uses a simple regular expression and returns a list of offset pairs.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">tok</span><span class="o">.</span><span class="n">span</span><span class="p">()</span> <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="s2">&quot;\w+&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)]</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">tokenizer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tokenizer</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="s1">&#39;Fido barks.&#39;</span><span class="p">)</span>
+<span class="go">[(0, 4), (5, 10)]</span>
 </pre></div>
 </div>
 </section>
-<section id="translated-into-a-mmif-view">
-<span id="header-n15"></span><h2>…translated into a MMIF view<a class="headerlink" href="#translated-into-a-mmif-view" title="Permalink to this heading"></a></h2>
-<p>First, the front matter:</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;v_0&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;metadata&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;app&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/apps/kaldi/0.1.0&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;contains&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TextDocument&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{},</span>
-<span class="w">      </span><span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{},</span>
-<span class="w">      </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;unit&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;milliseconds&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;document&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;d1&quot;</span>
-<span class="w">      </span><span class="p">},</span>
-<span class="w">      </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">},</span>
-<span class="p">...</span>
+<section id="wrapping-the-tokenizer">
+<h2>Wrapping the tokenizer<a class="headerlink" href="#wrapping-the-tokenizer" title="Permalink to this heading"></a></h2>
+<p>First, it is recommended to call <code class="docutils literal notranslate"><span class="pre">clams</span> <span class="pre">develop</span></code> in the command line and follow the instructions there to generate the necessary skeleton templates for developing the app.</p>
+<p>By convention, all the wrapping code is in a script named <code class="docutils literal notranslate"><span class="pre">app.py</span></code>, but this is not a strict requirement and you can give it another name. The <code class="docutils literal notranslate"><span class="pre">app.py</span></code> script does several things: (1) import the necessary code, (2) create a subclass of <code class="docutils literal notranslate"><span class="pre">ClamsApp</span></code> that defines the metadata and provides a method to run the wrapped NLP tool, and (3) provide a way to run the code as a HTTP Flask server. The template will generate the third part. Thus, the first and second parts of the code are explained here.</p>
+<section id="imports">
+<h3>Imports<a class="headerlink" href="#imports" title="Permalink to this heading"></a></h3>
+<p>Aside from a few standard modules we need the following imports:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">clams.app</span> <span class="kn">import</span> <span class="n">ClamsApp</span>
+<span class="kn">from</span> <span class="nn">clams.restify</span> <span class="kn">import</span> <span class="n">Restifier</span>
+<span class="kn">from</span> <span class="nn">clams.appmetadata</span> <span class="kn">import</span> <span class="n">AppMetadata</span>
+<span class="kn">from</span> <span class="nn">mmif.serialize</span> <span class="kn">import</span> <span class="n">Mmif</span>
+<span class="kn">from</span> <span class="nn">mmif.vocabulary</span> <span class="kn">import</span> <span class="n">DocumentTypes</span>
+<span class="kn">from</span> <span class="nn">lapps.discriminators</span> <span class="kn">import</span> <span class="n">Uri</span>
+<span class="kn">import</span> <span class="nn">tokenizer</span>
 </pre></div>
 </div>
-<p>Then, the first two annotations:</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TextDocument&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;text&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="s2">&quot;@value&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;ah oh yeah&quot;</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;td1&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">},</span>
-<span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;d1&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;td1&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;a1&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">},</span>
-</pre></div>
-</div>
-<p>Then, three annotations for each word:</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;ah&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;document&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;v_0:td1&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t1&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">},</span>
-<span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;frameType&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;speech&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">70</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">2660</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf1&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">},</span>
-<span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf1&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t1&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;a2&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">},</span>
-<span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;oh&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">3</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">5</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;document&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;v_0:td1&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t2&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">},</span>
-<span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;frameType&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;speech&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">2660</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">8590</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf2&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">},</span>
-<span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf2&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t2&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;a3&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">},</span>
-<span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://vocab.lappsgrid.org/Token&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;word&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;yeah&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">6</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">10</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;document&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;v_0:td1&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t3&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">},</span>
-<span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/TimeFrame&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;frameType&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;speech&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;start&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">8590</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;end&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">9260</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf3&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">},</span>
-<span class="p">{</span>
-<span class="w">  </span><span class="s2">&quot;@type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/0.2.1/vocabulary/Alignment&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;properties&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;tf3&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;t3&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;a4&quot;</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">}</span>
+<p>For non-NLP CLAMS applications we would also do  <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">mmif.vocabulary</span> <span class="pre">import</span> <span class="pre">AnnotationTypes</span></code>, but this is not needed for NLP applications because they do not need the CLAMS vocabulary. What we do need to import are the URIs of all LAPPS annotation types and the NLP tool itself.</p>
+<p>Importing <code class="docutils literal notranslate"><span class="pre">lapps.discriminators.Uri</span></code> is for convenience since it gives us easy access to the URIs of annotation types and some of their attributes. The following code prints a list of available variables that point to URIs:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">lapps.discriminators</span> <span class="kn">import</span> <span class="n">Uri</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">attrs</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">Uri</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">x</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">attrs</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attrs</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">Uri</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;org/ns&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">attrs</span><span class="p">))</span>
+<span class="go">ANNOTATION CHUNK CONSTITUENT COREF DATE DEPENDENCY DEPENDENCY_STRUCTURE DOCUMENT GENERIC_RELATION LEMMA LOCATION LOOKUP MARKABLE MATCHES NCHUNK NE ORGANIZATION PARAGRAPH PERSON PHRASE_STRUCTURE POS RELATION SEMANTIC_ROLE SENTENCE TOKEN VCHUNK</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">Uri</span><span class="o">.</span><span class="n">TOKEN</span><span class="p">)</span>
+<span class="go">http://vocab.lappsgrid.org/Token</span>
 </pre></div>
 </div>
 </section>
-<section id="so-how-do-we-generate-this">
-<span id="header-n22"></span><h2>So, how do we generate this?<a class="headerlink" href="#so-how-do-we-generate-this" title="Permalink to this heading"></a></h2>
-<p>Three steps:</p>
-<ol class="arabic simple">
-<li><p>Setting up a CLAMS app in Python</p></li>
-<li><p>Figuring out how to wrangle the data</p></li>
-<li><p>Making a Docker container</p></li>
-</ol>
-<section id="setting-up-a-clams-app-in-python">
-<span id="header-n31"></span><h3>1. Setting up a CLAMS app in Python<a class="headerlink" href="#setting-up-a-clams-app-in-python" title="Permalink to this heading"></a></h3>
-<p>Each CLAMS app should be a subclass of the <code class="docutils literal notranslate"><span class="pre">ClamsApp</span></code> class in the
-clams-python package.</p>
-<p>Things to do:</p>
-<ol class="arabic simple">
-<li><p>Write a <code class="docutils literal notranslate"><span class="pre">_appmetadata</span></code> method</p></li>
-<li><p>Write an <code class="docutils literal notranslate"><span class="pre">_annotate</span></code> method</p></li>
-<li><p>Set up a Flask app</p></li>
-</ol>
-<p>Steps 1 and 2 are still a bit unconstrained at this point.</p>
-<section id="appmetadata">
-<span id="header-n44"></span><h4>1.1 <code class="docutils literal notranslate"><span class="pre">_appmetadata</span></code><a class="headerlink" href="#appmetadata" title="Permalink to this heading"></a></h4>
-<p>This method should just return a <a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata" title="clams.appmetadata.AppMetadata"><code class="xref py py-class docutils literal notranslate"><span class="pre">clams.appmetadata.AppMetadata</span></code></a> .
-containing the metadata relevant to your app.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Kaldi</span><span class="p">(</span><span class="n">ClamsApp</span><span class="p">):</span>
+<section id="the-application-class">
+<h3>The application class<a class="headerlink" href="#the-application-class" title="Permalink to this heading"></a></h3>
+<p>With the imports in place we define a subclass of <code class="docutils literal notranslate"><span class="pre">ClamsApp</span></code> which needs two methods:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TokenizerApp</span><span class="p">(</span><span class="n">ClamsApp</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_appmetadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="nf">_appmetadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppMetadata</span><span class="p">:</span>
-        <span class="n">app_version</span> <span class="o">=</span> <span class="s1">&#39;0.0.1&#39;</span>
-        <span class="n">kaldi_version</span> <span class="o">=</span> <span class="s1">&#39;v1&#39;</span>
-        <span class="n">metadata</span> <span class="o">=</span> <span class="n">AppMetadata</span><span class="p">(</span>
-           <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Kaldi Wrapper&quot;</span><span class="p">,</span>
-           <span class="n">description</span><span class="o">=</span><span class="s2">&quot;This tool wraps the Kaldi ASR tool&quot;</span><span class="p">,</span>
-           <span class="n">app_version</span><span class="o">=</span><span class="n">app_version</span><span class="p">,</span>
-           <span class="n">wrapper_version</span><span class="o">=</span><span class="n">kaldi_version</span>
-           <span class="n">license</span><span class="o">=</span><span class="s2">&quot;MIT&quot;</span><span class="p">,</span>
-           <span class="n">identifier</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;https://apps.clams.ai/apps/kaldi/</span><span class="si">{</span><span class="n">exampleappversion</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">metadata</span><span class="o">.</span><span class="n">add_input</span><span class="p">(</span><span class="n">DocumentTypes</span><span class="o">.</span><span class="n">AudioDocument</span><span class="p">)</span>
-        <span class="n">metadata</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">DocumentTypes</span><span class="o">.</span><span class="n">TextDocument</span><span class="p">)</span>
-        <span class="n">metadata</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">AnnotationTypes</span><span class="o">.</span><span class="n">TimeFrame</span><span class="p">)</span>
-        <span class="n">metadata</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">AnnotationTypes</span><span class="o">.</span><span class="n">Alignment</span><span class="p">)</span>
-        <span class="n">metadata</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">Uri</span><span class="o">.</span><span class="n">TOKEN</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">metadata</span>
+    <span class="k">def</span> <span class="nf">_annotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mmif</span><span class="p">):</span> <span class="k">pass</span>
 </pre></div>
 </div>
-<p>One can initiate a <a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata" title="clams.appmetadata.AppMetadata"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppMetadata</span></code></a> object simply passing key-value pairs.
-Also the class provides helper methods for structured fields (<code class="docutils literal notranslate"><span class="pre">input</span></code>, <code class="docutils literal notranslate"><span class="pre">output</span></code>, and <code class="docutils literal notranslate"><span class="pre">parameters</span></code>), so it is highly recommended to read the class documentation before you start specifying an app metadata.
-To see what fields need to be specified in the app metadata, see &lt;<a class="reference internal" href="appmetadata.html#appmetadata"><span class="std std-ref">CLAMS App Metadata</span></a>&gt;.</p>
-</section>
-<section id="annotate-mmif">
-<span id="header-n47"></span><h4>1.2 <code class="docutils literal notranslate"><span class="pre">_annotate(mmif)</span></code><a class="headerlink" href="#annotate-mmif" title="Permalink to this heading"></a></h4>
-<p>This method should accept a MMIF file as its parameter, and should return
-a <code class="docutils literal notranslate"><span class="pre">Mmif</span></code> object with an additional <code class="docutils literal notranslate"><span class="pre">view</span></code> with annotation results.
-You will see that in the Kaldi wrapper’s method signature, there are
-additional parameters; these are filled in later by this wrapper’s CLI.</p>
-<p>This is where the bulk of your logic will go.</p>
-<p>Let’s walk through the highlights of the <code class="docutils literal notranslate"><span class="pre">annotate</span></code> method for the
-Kaldi app.</p>
-<p>The first step is to deserialize the MMIF data so that we can use the
-<code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> API:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">annotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mmif</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">Mmif</span><span class="p">],</span> <span class="n">run_kaldi</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pretty</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="n">mmif_obj</span><span class="p">:</span> <span class="n">Mmif</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mmif</span><span class="p">,</span> <span class="n">Mmif</span><span class="p">):</span>
-        <span class="n">mmif_obj</span><span class="p">:</span> <span class="n">Mmif</span> <span class="o">=</span> <span class="n">mmif</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">mmif_obj</span><span class="p">:</span> <span class="n">Mmif</span> <span class="o">=</span> <span class="n">Mmif</span><span class="p">(</span><span class="n">mmif</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>We then retrieve the <code class="docutils literal notranslate"><span class="pre">AudioDocument</span></code>s that we want and collect their
-locations into a list.</p>
-<p>Note that if we only needed the list of locations, we could have used
-<code class="docutils literal notranslate"><span class="pre">Mmif.get_documents_locations(at_type)</span></code>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># get AudioDocuments with locations</span>
-<span class="n">docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">document</span> <span class="k">for</span> <span class="n">document</span> <span class="ow">in</span> <span class="n">mmif_obj</span><span class="o">.</span><span class="n">documents</span>
-        <span class="k">if</span> <span class="n">document</span><span class="o">.</span><span class="n">at_type</span> <span class="o">==</span> <span class="n">DocumentTypes</span><span class="o">.</span><span class="n">AudioDocument</span><span class="o">.</span><span class="n">value</span>
-        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">document</span><span class="o">.</span><span class="n">location</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+<p>Here it is useful to introduce some background. The CLAMS HTTP API connects the GET and POST requests to the <code class="docutils literal notranslate"><span class="pre">appmetdata()</span></code>  and  <code class="docutils literal notranslate"><span class="pre">annotate()</span></code> methods on the app respectively, and those methods are both defined in <code class="docutils literal notranslate"><span class="pre">ClamsApp</span></code>. In essence, they are wrappers around  <code class="docutils literal notranslate"><span class="pre">_appmetadata()</span></code> and   <code class="docutils literal notranslate"><span class="pre">_annotate()</span></code> and provide some common functionality like making sure the output is serialized into a string.</p>
+<section id="app-metadata">
+<h4>App Metadata<a class="headerlink" href="#app-metadata" title="Permalink to this heading"></a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">_appmetadata()</span></code> method should return an <code class="docutils literal notranslate"><span class="pre">AppMetadata</span></code> object that defines the relevant metadata for the app:</p>
+<p>(If you are using the app template, use <code class="docutils literal notranslate"><span class="pre">metadata.py</span></code> instead of <code class="docutils literal notranslate"><span class="pre">app.py</span></code> to define the metadata.)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">APP_LICENSE</span> <span class="o">=</span> <span class="s1">&#39;Apache 2.0&#39;</span>
+<span class="n">TOKENIZER_LICENSE</span> <span class="o">=</span> <span class="s1">&#39;Apache 2.0&#39;</span>
+<span class="n">TOKENIZER_VERSION</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">__VERSION__</span>
 
-<span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">document</span><span class="o">.</span><span class="n">location</span> <span class="k">for</span> <span class="n">document</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">_appmetadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">AppMetadata</span><span class="p">(</span>
+        <span class="n">identifier</span><span class="o">=</span><span class="s1">&#39;tokenizer&#39;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s1">&#39;https://github.com/clamsproject/app-nlp-example&#39;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Simplistic Tokenizer&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Apply simple tokenization to all text documents in a MMIF file.&quot;</span><span class="p">,</span>
+        <span class="n">app_license</span><span class="o">=</span><span class="n">APP_LICENSE</span><span class="p">,</span>
+        <span class="n">analyzer_version</span><span class="o">=</span><span class="n">TOKENIZER_VERSION</span><span class="p">,</span>
+        <span class="n">analyzer_license</span><span class="o">=</span><span class="n">TOKENIZER_LICENSE</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">metadata</span><span class="o">.</span><span class="n">add_input</span><span class="p">(</span><span class="n">DocumentTypes</span><span class="o">.</span><span class="n">TextDocument</span><span class="p">)</span>
+    <span class="n">metadata</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">Uri</span><span class="o">.</span><span class="n">TOKEN</span><span class="p">)</span>
+    <span class="n">metadata</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;Throw error if set to True&#39;</span><span class="p">,</span> <span class="s1">&#39;boolean&#39;</span><span class="p">)</span>
+    <span class="n">metadata</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;eol&#39;</span><span class="p">,</span> <span class="s1">&#39;Insert sentence boundaries&#39;</span><span class="p">,</span> <span class="s1">&#39;boolean&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">metadata</span>
 </pre></div>
 </div>
-<p>We then pass these file locations to a subroutine that prepares the
-audio files for Kaldi with ffmpeg and runs Kaldi using <code class="docutils literal notranslate"><span class="pre">subprocess</span></code>,
-storing Kaldi’s generated JSON transcripts in a temporary directory
-using the <code class="docutils literal notranslate"><span class="pre">tempfile</span></code> Python module:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">kaldi</span><span class="p">(</span><span class="n">files</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">:</span>
-    <span class="c1"># make a temporary dir for kaldi-ready audio files</span>
-    <span class="n">audio_tmpdir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span>
-    <span class="c1"># make another temporary dir to store resulting .json files</span>
-    <span class="n">trans_tmpdir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span>
-
-    <span class="k">for</span> <span class="n">audio_name</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-        <span class="n">audio_basename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">audio_name</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s1">&#39;ffmpeg&#39;</span><span class="p">,</span> <span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="n">audio_name</span><span class="p">,</span> <span class="s1">&#39;-ac&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;-ar&#39;</span><span class="p">,</span> <span class="s1">&#39;16000&#39;</span><span class="p">,</span>
-                         <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">audio_tmpdir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">audio_basename</span><span class="si">}</span><span class="s1">_16kHz.wav&#39;</span><span class="p">])</span>
-        <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span>
-            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">KALDI_EXPERIMENT_DIR</span><span class="si">}</span><span class="s1">/run.sh&#39;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">audio_tmpdir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">audio_basename</span><span class="si">}</span><span class="s1">_16kHz.wav&#39;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">trans_tmpdir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">audio_basename</span><span class="si">}</span><span class="s1">.json&#39;</span>
-            <span class="p">])</span>
-    <span class="n">audio_tmpdir</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">trans_tmpdir</span>
+<blockquote>
+<div><p><strong>Warning</strong>
+When using the separately generated <code class="docutils literal notranslate"><span class="pre">metadata.py</span></code> created via <code class="docutils literal notranslate"><span class="pre">clams</span> <span class="pre">develop</span></code>, this method within <code class="docutils literal notranslate"><span class="pre">app.py</span></code> should be left empty with a <code class="docutils literal notranslate"><span class="pre">pass</span></code> statement as shown below:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_appmetadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c1"># When using the ``metadata.py`` leave this do-nothing &quot;pass&quot; method here.</span>
+        <span class="k">pass</span>
 </pre></div>
 </div>
-<p>And now the fun SDK stuff!</p>
-<p>First up is the high-level logic.</p>
-<p>For each generated transcript, we create a new view in the MMIF file and
-add the appropriate metadata:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">basename</span><span class="p">,</span> <span class="n">transcript</span> <span class="ow">in</span> <span class="n">json_transcripts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="c1"># convert transcript to MMIF view</span>
-    <span class="n">view</span><span class="p">:</span> <span class="n">View</span> <span class="o">=</span> <span class="n">mmif_obj</span><span class="o">.</span><span class="n">new_view</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">stamp_view</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">docs_dict</span><span class="p">[</span><span class="n">basename</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Next, we generate the entire transcript for the TextDocument and
-character index information for the tokens:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># index and join tokens</span>
-<span class="n">indices</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_and_join_tokens</span><span class="p">([</span><span class="n">token</span><span class="p">[</span><span class="s1">&#39;word&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">transcript</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">]])</span>
-</pre></div>
-</div>
-<p>Then we create and add the TextDocument and its alignment to the source
-AudioDocument:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># make annotations</span>
-<span class="n">td</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_td</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-<span class="n">view</span><span class="o">.</span><span class="n">add_document</span><span class="p">(</span><span class="n">td</span><span class="p">)</span>
-<span class="n">align_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_align</span><span class="p">(</span><span class="n">docs_dict</span><span class="p">[</span><span class="n">basename</span><span class="p">],</span> <span class="n">td</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-<span class="n">view</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="n">align_1</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Finally, we iterate through the tokens in the transcript and create the
-triplets of time frames, tokens, and alignments for each token:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">word_obj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">transcript</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">]):</span>
-    <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_tf</span><span class="p">(</span><span class="n">word_obj</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">word_obj</span><span class="p">[</span><span class="s1">&#39;duration&#39;</span><span class="p">],</span> <span class="n">index</span><span class="p">)</span>
-    <span class="n">token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_token</span><span class="p">(</span><span class="n">word_obj</span><span class="p">[</span><span class="s1">&#39;word&#39;</span><span class="p">],</span> <span class="n">index</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">view</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">td</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="n">align</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_align</span><span class="p">(</span><span class="n">tf</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">index</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># one more alignment than the others</span>
-    <span class="n">view</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-    <span class="n">view</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="n">tf</span><span class="p">)</span>
-    <span class="n">view</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="n">align</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Next, let’s take a look at how we’re generating the view metadata and
-creating the different annotations.</p>
-<p>First, the metadata:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">stamp_view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">:</span> <span class="n">View</span><span class="p">,</span> <span class="n">tf_source_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">view</span><span class="o">.</span><span class="n">is_frozen</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;can&#39;t modify an old view&quot;</span><span class="p">)</span>
-    <span class="n">view</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;app&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;iri&#39;</span><span class="p">]</span>
-    <span class="n">view</span><span class="o">.</span><span class="n">new_contain</span><span class="p">(</span><span class="n">DocumentTypes</span><span class="o">.</span><span class="n">TextDocument</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-    <span class="n">view</span><span class="o">.</span><span class="n">new_contain</span><span class="p">(</span><span class="n">Uri</span><span class="o">.</span><span class="n">TOKEN</span><span class="p">)</span>
-    <span class="n">view</span><span class="o">.</span><span class="n">new_contain</span><span class="p">(</span><span class="n">AnnotationTypes</span><span class="o">.</span><span class="n">TimeFrame</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;unit&#39;</span><span class="p">:</span> <span class="s1">&#39;milliseconds&#39;</span><span class="p">,</span> <span class="s1">&#39;document&#39;</span><span class="p">:</span> <span class="n">tf_source_id</span><span class="p">})</span>
-    <span class="n">view</span><span class="o">.</span><span class="n">new_contain</span><span class="p">(</span><span class="n">AnnotationTypes</span><span class="o">.</span><span class="n">Alignment</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>We use the <code class="docutils literal notranslate"><span class="pre">DocumentTypes</span></code> and AnnotationTypes enums from
-<code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> and the <code class="docutils literal notranslate"><span class="pre">Uri</span></code> enum from <code class="docutils literal notranslate"><span class="pre">lapps</span></code> to add the URIs for
-the different types of annotation this view contains as well as any
-metadata for each type in the view.</p>
-<p>Next, the text document:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@staticmethod</span>
-<span class="k">def</span> <span class="nf">create_td</span><span class="p">(</span><span class="n">doc</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Document</span><span class="p">:</span>
-    <span class="n">text</span> <span class="o">=</span> <span class="n">Text</span><span class="p">()</span>
-    <span class="n">text</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">doc</span>
-    <span class="n">td</span> <span class="o">=</span> <span class="n">Document</span><span class="p">()</span>
-    <span class="n">td</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">TEXT_DOCUMENT_PREFIX</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">td</span><span class="o">.</span><span class="n">at_type</span> <span class="o">=</span> <span class="n">DocumentTypes</span><span class="o">.</span><span class="n">TextDocument</span><span class="o">.</span><span class="n">value</span>
-    <span class="n">td</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
-    <span class="k">return</span> <span class="n">td</span>
-</pre></div>
-</div>
-<p>Here, we create the <code class="docutils literal notranslate"><span class="pre">TextDocument</span></code> for the entire transcript using the
-<code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> API, creating a <code class="docutils literal notranslate"><span class="pre">Text</span></code> object to contain the
-transcript and populating the <code class="docutils literal notranslate"><span class="pre">Document</span></code> object with that and the
-<code class="docutils literal notranslate"><span class="pre">id</span></code> and <code class="docutils literal notranslate"><span class="pre">&#64;type</span></code> information.</p>
-<p>The token:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@staticmethod</span>
-<span class="k">def</span> <span class="nf">create_token</span><span class="p">(</span><span class="n">word</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">source_doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Annotation</span><span class="p">:</span>
-    <span class="n">token</span> <span class="o">=</span> <span class="n">Annotation</span><span class="p">()</span>
-    <span class="n">token</span><span class="o">.</span><span class="n">at_type</span> <span class="o">=</span> <span class="n">Uri</span><span class="o">.</span><span class="n">TOKEN</span>
-    <span class="n">token</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">TOKEN_PREFIX</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">token</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">word</span><span class="p">)</span>
-    <span class="n">token</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">indices</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">token</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s1">&#39;end&#39;</span><span class="p">,</span> <span class="n">indices</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">token</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s1">&#39;document&#39;</span><span class="p">,</span> <span class="n">source_doc_id</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">token</span>
-</pre></div>
-</div>
-<p>Here, we create the <code class="docutils literal notranslate"><span class="pre">Token</span></code> using the <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> API, filling out
-the desired properties with the character position information we
-generated before and the source document ID of those indices.</p>
-<p>The time frame:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@staticmethod</span>
-<span class="k">def</span> <span class="nf">create_tf</span><span class="p">(</span><span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">duration</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Annotation</span><span class="p">:</span>
-    <span class="n">tf</span> <span class="o">=</span> <span class="n">Annotation</span><span class="p">()</span>
-    <span class="n">tf</span><span class="o">.</span><span class="n">at_type</span> <span class="o">=</span> <span class="n">AnnotationTypes</span><span class="o">.</span><span class="n">TimeFrame</span><span class="o">.</span><span class="n">value</span>
-    <span class="n">tf</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">TIME_FRAME_PREFIX</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">tf</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;frameType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;speech&#39;</span>
-    <span class="c1"># times should be in milliseconds</span>
-    <span class="n">tf</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
-    <span class="n">tf</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">time</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">duration</span><span class="p">))</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">tf</span>
-</pre></div>
-</div>
-<p>Here, we create the <code class="docutils literal notranslate"><span class="pre">TimeFrame</span></code> using the <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> API, filling
-out the desired properties and calculating the start and end times in
-milliseconds from the JSON data, which is in start/duration form.</p>
-<p>The alignment:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@staticmethod</span>
-<span class="k">def</span> <span class="nf">create_align</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="n">Annotation</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">Annotation</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Annotation</span><span class="p">:</span>
-    <span class="n">align</span> <span class="o">=</span> <span class="n">Annotation</span><span class="p">()</span>
-    <span class="n">align</span><span class="o">.</span><span class="n">at_type</span> <span class="o">=</span> <span class="n">AnnotationTypes</span><span class="o">.</span><span class="n">Alignment</span><span class="o">.</span><span class="n">value</span>
-    <span class="n">align</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">ALIGNMENT_PREFIX</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">align</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">id</span>
-    <span class="n">align</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">id</span>
-    <span class="k">return</span> <span class="n">align</span>
-</pre></div>
-</div>
-<p>Here, we create the <code class="docutils literal notranslate"><span class="pre">Alignment</span></code> between the <code class="docutils literal notranslate"><span class="pre">TimeFrame</span></code> and the
-<code class="docutils literal notranslate"><span class="pre">Token</span></code> using the <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> API, filling out the appropriate
-properties by using the <code class="docutils literal notranslate"><span class="pre">id</span></code> property of an <code class="docutils literal notranslate"><span class="pre">Annotation</span></code> object.</p>
+<p>And the <code class="docutils literal notranslate"><span class="pre">appmetadata()</span></code> within <code class="docutils literal notranslate"><span class="pre">metadata.py</span></code> should be implemented instead. Follow the instructions in the template.</p>
+<p><strong>Note</strong>
+Also refer to <a class="reference external" href="https://sdk.clams.ai/appmetadata.html">CLAMS App Metadata</a> for more details regarding what fields need to be specified.</p>
+</div></blockquote>
 </section>
-<section id="flask-app">
-<span id="header-n87"></span><h4>1.3 Flask app<a class="headerlink" href="#flask-app" title="Permalink to this heading"></a></h4>
-<p>We use the CLAMS RESTful API:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">kaldi_app</span> <span class="o">=</span> <span class="n">Kaldi</span><span class="p">()</span>
-<span class="n">annotate</span> <span class="o">=</span> <span class="n">kaldi_app</span><span class="o">.</span><span class="n">annotate</span>
-<span class="n">kaldi_app</span><span class="o">.</span><span class="n">annotate</span> <span class="o">=</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">annotate</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span>
-                                                      <span class="n">run_kaldi</span><span class="o">=</span><span class="n">parsed_args</span><span class="o">.</span><span class="n">no_kaldi</span><span class="p">,</span>
-                                                      <span class="n">pretty</span><span class="o">=</span><span class="n">parsed_args</span><span class="o">.</span><span class="n">pretty</span><span class="p">)</span>
-<span class="n">kaldi_service</span> <span class="o">=</span> <span class="n">Restifier</span><span class="p">(</span><span class="n">kaldi_app</span><span class="p">)</span>
-<span class="n">kaldi_service</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<section id="annotate">
+<h4><code class="docutils literal notranslate"><span class="pre">_annotate()</span></code><a class="headerlink" href="#annotate" title="Permalink to this heading"></a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">_annotate()</span></code> method should accept a MMIF file as its parameter and always returns a <code class="docutils literal notranslate"><span class="pre">MMIF</span></code> object with an additional <code class="docutils literal notranslate"><span class="pre">view</span></code> containing annotation results. This is where the bulk of your logic will go. For a text processing app, it is mostly concerned with finding text documents, calling the code that runs over the text, creating new views and inserting the results.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_annotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mmif</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># before everything, this will populate the argument dict with the default values</span>
+    <span class="c1"># and while doing so, it will also do some validation of the argument values</span>
+    <span class="n">configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_configuration</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="c1"># then, access the parameters: here to just print</span>
+    <span class="c1"># them and to willy-nilly throw an error if the caller wants that</span>
+    <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">configs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Parameter </span><span class="si">%s</span><span class="s2">=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span>
+        <span class="c1"># as we defined this `error` parameter in the app metadata</span>
+        <span class="k">if</span> <span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;error&#39;</span> <span class="ow">and</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Exception - </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">configs</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">])</span>
+    <span class="c1"># Initialize the MMIF object from the string if needed</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">mmif</span> <span class="o">=</span> <span class="n">mmif</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">mmif</span><span class="p">)</span> <span class="ow">is</span> <span class="n">Mmif</span> <span class="k">else</span> <span class="n">Mmif</span><span class="p">(</span><span class="n">mmif</span><span class="p">)</span>
+    <span class="c1"># process the text documents in the documents list</span>
+    <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mmif</span><span class="o">.</span><span class="n">get_documents_by_type</span><span class="p">(</span><span class="n">DocumentTypes</span><span class="o">.</span><span class="n">TextDocument</span><span class="p">):</span>
+        <span class="n">new_view</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_new_view</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># _run_nlp_tool() is the method that does the actual work</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_nlp_tool</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">new_view</span><span class="p">,</span> <span class="n">doc</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="c1"># return the MMIF object</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mmif</span>
 </pre></div>
 </div>
-<p>We use partial application to configure the RESTified application with
-the keyword arguments we saw for the <code class="docutils literal notranslate"><span class="pre">annotate</span></code> method.</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">functools.partial</span></code> would probably have been more Pythonic here</p></li>
-</ul>
-<p>For this app, I wrote a command line interface with argparse to allow
-running Kaldi once on demand instead of as a Flask server, and to adjust
-those keyword arguments for either run method.</p>
-<p>Your <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">__name__</span> <span class="pre">==</span> <span class="pre">'__main__'</span></code> section can be as short as this,
-though:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">kaldi_app</span> <span class="o">=</span> <span class="n">Kaldi</span><span class="p">()</span>
-<span class="n">kaldi_service</span> <span class="o">=</span> <span class="n">Restifier</span><span class="p">(</span><span class="n">kaldi_app</span><span class="p">)</span>
-<span class="n">kaldi_service</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<p>For language processing applications, one task is to retrieve all text documents from both the documents list and the views. Annotations generated by the NLP tool need to be anchored to the text documents, which in the case of text documents in the documents list is done by using the text document identifier, but for text documents in views we also need the view identifier. A view may have many text documents and typically all annotations created will be put in one view.</p>
+<p>For each text document from the document list, there is one invocation of <code class="docutils literal notranslate"><span class="pre">_new_view()</span></code> which gets handed a document identifier, so it can be put in the view metadata. And for each view with text documents there is also one invocation of <code class="docutils literal notranslate"><span class="pre">_new_view()</span></code>, but no document identifier is handed in so the identifier will not be put into the view metadata.</p>
+<p>The method  <code class="docutils literal notranslate"><span class="pre">_run_nlp_tool()</span></code> is responsible for running the NLP tool and adding annotations to the new view. The third argument allows us to anchor annotations created by the tool by handing over the document identifier, possibly prefixed by the view the document lives in.</p>
+<p>One thing about <code class="docutils literal notranslate"><span class="pre">_annotate()</span></code> as it is defined above is that it will most likely be the same for each NLP application, all the application specific details are in the code that creates new views and the code that adds annotations.</p>
+<p>Creating a new view:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_new_view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">runtime_config</span><span class="p">):</span>
+    <span class="n">view</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mmif</span><span class="o">.</span><span class="n">new_view</span><span class="p">()</span>
+    <span class="n">view</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">identifier</span>
+    <span class="c1"># first thing you need to do after creating a new view is &quot;sign&quot; the view</span>
+    <span class="c1"># the sign_view() method will record the app&#39;s identifier and the timestamp</span>
+    <span class="c1"># as well as the user parameter inputs. This is important for reproducibility.</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">sign_view</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">runtime_config</span><span class="p">)</span>
+    <span class="c1"># then record what annotations you want to create in this view</span>
+    <span class="n">view</span><span class="o">.</span><span class="n">new_contain</span><span class="p">(</span><span class="n">Uri</span><span class="o">.</span><span class="n">TOKEN</span><span class="p">,</span> <span class="n">document</span><span class="o">=</span><span class="n">docid</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">view</span>
 </pre></div>
 </div>
-<p>Well, I suppose if we’re being technical, it could be as short as this:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Restifier</span><span class="p">(</span><span class="n">Kaldi</span><span class="p">())</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<p>This is the simplest NLP view possible since there is only one annotation type and it has no metadata properties beyond the <code class="docutils literal notranslate"><span class="pre">document</span></code> property. Other applications may have more annotation types, which results in repeated invocations of <code class="docutils literal notranslate"><span class="pre">new_contain()</span></code>, and may define other metadata properties for those types.</p>
+<p>Adding annotations:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_run_nlp_tool</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">,</span> <span class="n">new_view</span><span class="p">,</span> <span class="n">full_doc_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the NLP tool over the document and add annotations to the view, using the</span>
+<span class="sd">    full document identifier (which may include a view identifier) for the document</span>
+<span class="sd">    property.&quot;&quot;&quot;</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">text_value</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">new_view</span><span class="o">.</span><span class="n">new_annotation</span><span class="p">(</span><span class="n">Uri</span><span class="o">.</span><span class="n">TOKEN</span><span class="p">)</span>
+        <span class="c1"># no need to do this for documents in the documents list</span>
+        <span class="k">if</span> <span class="s1">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">full_doc_id</span><span class="p">:</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s1">&#39;document&#39;</span><span class="p">,</span> <span class="n">full_doc_id</span><span class="p">)</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s1">&#39;end&#39;</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">[</span><span class="n">p1</span><span class="p">:</span><span class="n">p2</span><span class="p">])</span>
 </pre></div>
 </div>
+<p>First, with <code class="docutils literal notranslate"><span class="pre">text_value</span></code> we get the text from the text document, either from its <code class="docutils literal notranslate"><span class="pre">location</span></code> property or from its <code class="docutils literal notranslate"><span class="pre">text</span></code> property. Second, we apply the tokenizer to the text. And third, we loop over the token offsets in the tokenizer result and create annotations of type <code class="docutils literal notranslate"><span class="pre">Uri.TOKEN</span></code> with an identifier that is automatically generated by the SDK. All that is needed for adding an annotation is the <code class="docutils literal notranslate"><span class="pre">new_annotation()</span></code> method on the view object and the <code class="docutils literal notranslate"><span class="pre">add_property()</span></code> method on the annotation object.</p>
 </section>
 </section>
-<section id="wrangling-data">
-<span id="header-n99"></span><h3>2. Wrangling data<a class="headerlink" href="#wrangling-data" title="Permalink to this heading"></a></h3>
-<p>We have to turn MMIF into usable data for our tool to process, then turn
-the output of that tool back into MMIF.</p>
-<p>In the walkthrough of the <code class="docutils literal notranslate"><span class="pre">annotate</span></code> method, we saw both of these
-steps.</p>
-<section id="mmif-to-tool">
-<span id="header-n102"></span><h4>2.1 MMIF to tool<a class="headerlink" href="#mmif-to-tool" title="Permalink to this heading"></a></h4>
-<p>This Kaldi app operates on external files that the MMIF file points to,
-so all we needed to do was extract AudioDocuments from the MMIF
-documents list and locate their audio files.</p>
-<p>For other apps, this might involve extracting all the Token annotations
-from each view in the MMIF file, or finding a view with speech and
-non-speech segmentations and using them to chop up an audio file to
-process only the speech segments (there’s a Segmented Kaldi app that
-does just that!).</p>
-<p>The type of wrangling you have to do here will vary wildly from app to
-app, and can be less involved (as here) or much more involved.</p>
 </section>
-<section id="tool-to-mmif">
-<span id="header-n106"></span><h4>2.2 Tool to MMIF<a class="headerlink" href="#tool-to-mmif" title="Permalink to this heading"></a></h4>
-<p>Kaldi generated JSON transcripts for us; we wanted to extract all the
-tokens from these transcripts and create several types of annotations in
-a new view.</p>
-<p>Running <code class="docutils literal notranslate"><span class="pre">annotate</span></code> will always create at least one new view with at
-least one annotation in it.</p>
-<p>Deciding how you want to structure your data is part creativity and part
-research—you should think about how you want your app to interoperate
-with other apps. If there’s an existing app that outputs the same kind
-of data as yours will, you might model your app’s output off of that
-app’s output.</p>
-</section>
-</section>
-<section id="making-a-docker-container">
-<span id="header-n110"></span><h3>3. Making a Docker container<a class="headerlink" href="#making-a-docker-container" title="Permalink to this heading"></a></h3>
-<p>CLAMS apps will generally run as Flask servers in Docker containers.</p>
-<p>Writing a Dockerfile for your CLAMS app will likely be pretty simple. We
-have an image on Docker Hub that you can extend:
-<a class="reference external" href="https://hub.docker.com/r/clamsproject/clams-python">https://hub.docker.com/r/clamsproject/clams-python</a>.</p>
-<p>For the Kaldi wrapper, we instead extended HiPSTAS’ own Docker image,
-which has Kaldi and the Pop Up Archive model preinstalled.</p>
-<p>Here’s the <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code> for the Kaldi app:</p>
-<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">FROM</span><span class="w"> </span><span class="s">hipstas/kaldi-pop-up-archive:v1</span>
-
-<span class="k">LABEL</span><span class="w"> </span><span class="nv">maintainer</span><span class="o">=</span><span class="s2">&quot;Angus L&#39;Herrou &lt;piraka@brandeis.edu&gt;&quot;</span>
-
-<span class="c"># hipstas/kaldi-pop-up-archive:v1 uses Ubuntu 16.10 Yakkety, which is dead, so no apt repositories.</span>
-<span class="c"># Have to tell apt to use Ubuntu 18.04 Bionic&#39;s apt repositories, since that&#39;s the oldest LTS with</span>
-<span class="c"># Python 3.6. This is terrible!</span>
-<span class="k">RUN</span><span class="w"> </span>cp<span class="w"> </span>/etc/apt/sources.list<span class="w"> </span>/etc/apt/sources.list.old<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>sed<span class="w"> </span>-i<span class="w"> </span>-e<span class="w"> </span>s/yakkety/bionic/g<span class="w"> </span>/etc/apt/sources.list
-
-<span class="c"># may not want to do apt-get update if there are dependencies of</span>
-<span class="c"># the Kaldi image that rely on older versions of apt packages</span>
-<span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>python3<span class="w"> </span>python3-pip<span class="w"> </span>python3-setuptools
-
-<span class="k">COPY</span><span class="w"> </span>./<span class="w"> </span>./app
+<section id="containerization-with-docker">
+<h2>Containerization with Docker<a class="headerlink" href="#containerization-with-docker" title="Permalink to this heading"></a></h2>
+<p>Apps within CLAMS typically run as Flask servers in Docker containers, and after an app is tested as a local Flask application it should be containerized. In fact, in some cases we don’t even bother running a local Flask server and move straight to the container set up.</p>
+<p>Three configuration files for building a container image should be automatically generated through the <code class="docutils literal notranslate"><span class="pre">clams</span> <span class="pre">develop</span></code> command:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>file</p></th>
+<th class="head"><p>description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Containerfile</p></td>
+<td><p>Describes how to create a container image for this application.</p></td>
+</tr>
+<tr class="row-odd"><td><p>.dockerignore</p></td>
+<td><p>Specifies which files are not needed for running this application.</p></td>
+</tr>
+<tr class="row-even"><td><p>requirements.txt</p></td>
+<td><p>File with all Python modules that need to be installed.</p></td>
+</tr>
+</tbody>
+</table>
+<p>Here is the minimal Containerfile included with this example:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="c"># make sure to use a specific version number here</span>
+<span class="k">FROM</span><span class="w"> </span><span class="s">ghcr.io/clamsproject/clams-python:x.y.z</span>
 <span class="k">WORKDIR</span><span class="w"> </span><span class="s">./app</span>
-<span class="k">RUN</span><span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-
-<span class="k">ENTRYPOINT</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;python3&quot;</span><span class="p">]</span>
-<span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;app.py&quot;</span><span class="p">]</span>
+<span class="k">COPY</span><span class="w"> </span>./<span class="w"> </span>./
+<span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;python3&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;app.py&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>Since the HiPSTAS Docker image is based on Ubuntu 16.10, which is not an
-LTS release, all the apt repositories are dead, so to avoid installing
-things from source we just hack our way around it by pointing to the
-Ubuntu 18.04 repositories. Eventually, we’ll probably update this to
-extend our own base image, since this is not exactly optimal.</p>
-<p>The key information here is that when run without arguments, your
-container should start up your Flask server. In this case, it runs
-<code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">app.py</span></code>.</p>
+<p>This starts from the base CLAMS image which is created from an official Python image (Debian-based) with the clams-python package and the code it depends on added. The Containerfile only needs to be edited if additional installations are required to run the NLP tool. In that case the Containerfile will have a few more lines:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">FROM</span><span class="w"> </span><span class="s">ghcr.io/clamsproject/clams-python:x.y.z</span>
+<span class="k">RUN</span><span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>&lt;system-packages&gt;
+<span class="k">WORKDIR</span><span class="w"> </span><span class="s">./app</span>
+<span class="k">COPY</span><span class="w"> </span>./requirements.txt<span class="w"> </span>.
+<span class="k">RUN</span><span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+<span class="k">COPY</span><span class="w"> </span>./<span class="w"> </span>./
+<span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;python3&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;app.py&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>With this Containerfile you typically only need to make changes to the requirements file for additional python installs.</p>
+<p>This repository also includes a <code class="docutils literal notranslate"><span class="pre">.dockerignore</span></code> file. Editing it is optional, but with large repositories with lots of documentation and images you may want to add some file paths just to keep the image as small as possible.</p>
+<p>Use one of the following commands to build the image, the first one builds an image with a production server using Gunicorn, the second one builds a development server using Flask.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>clams-nlp-example:0.0.1<span class="w"> </span>-f<span class="w"> </span>Containerfile<span class="w"> </span>.
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">-t</span></code> option lets you pick a name and a tag for the image. You can use another name if you like. You do not have to add a tag and you could just use <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">nlp-clams-example</span></code>, but it is usually a good idea to use the version name as the tag.
+The <code class="docutils literal notranslate"><span class="pre">-f</span></code> option lets you specify a different Containerfile. If you do not specify a file then <code class="docutils literal notranslate"><span class="pre">docker</span></code> will look for a file called <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code> in the current directory (Note that in this tutorial we’re using <code class="docutils literal notranslate"><span class="pre">Containerfile</span></code> as the name, not <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>).</p>
+<p>To test the Flask app in the container do</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>clams-nlp-example:0.0.1<span class="w"> </span>bash
+</pre></div>
+</div>
+<p>You are now running a bash shell in the container and in the container you can run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root@c85a08b22f18:/app#<span class="w"> </span>python<span class="w"> </span>test.py<span class="w"> </span>input/example-1.mmif<span class="w"> </span>out.json
+</pre></div>
+</div>
+<p>Escape out of the container with Ctrl-d.</p>
+<p>To test the Flask app in the container from your local machine do</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>--name<span class="w"> </span>clams-nlp-example<span class="w"> </span>--rm<span class="w"> </span>-d<span class="w"> </span>-p<span class="w"> </span><span class="m">5000</span>:5000<span class="w"> </span>clams-nlp-example:0.0.1
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--name</span></code> option gives a name to the container which we use later to stop it (if we do not name the container then <code class="docutils literal notranslate"><span class="pre">docker</span></code> will generate a name, and we have to query <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">ps</span></code> to see what containers are running and then use that name to stop it). Now you can use curl to send requests (not sending the -h headers for brevity, it does work without them):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>curl<span class="w"> </span>http://localhost:5000/
+$<span class="w"> </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-d@input/example-1.mmif<span class="w"> </span>http://localhost:5000/
+</pre></div>
+</div>
+<section id="using-the-document-location-property">
+<h3>Using the <code class="docutils literal notranslate"><span class="pre">document.location</span></code> property<a class="headerlink" href="#using-the-document-location-property" title="Permalink to this heading"></a></h3>
+<p>Typically <code class="docutils literal notranslate"><span class="pre">TextDocument</span></code> in a MMIF use the location property to point to a text file. This will not work with the setup laid out above because that’s dependent on having a local path on your machine and the container has no access to that path. What you need to do is to make sure that the container can see the data on your local machine and you can use the <code class="docutils literal notranslate"><span class="pre">-v</span></code> option for that:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>--name<span class="w"> </span>clams-nlp-example<span class="w"> </span>--rm<span class="w"> </span>-d<span class="w"> </span>-p<span class="w"> </span><span class="m">5000</span>:5000<span class="w"> </span>-v<span class="w"> </span><span class="nv">$PWD</span>/input/data:/data<span class="w"> </span>clams-nlp-example:0.0.1
+</pre></div>
+</div>
+<p>We now have specified that the <code class="docutils literal notranslate"><span class="pre">/data</span></code> directory on the container is a mount of the <code class="docutils literal notranslate"><span class="pre">./input/data</span></code> directory in the “host” machine. Given that <code class="docutils literal notranslate"><span class="pre">./input/data</span></code> contains a <code class="docutils literal notranslate"><span class="pre">example.txt</span></code> text file, now you need to make sure that the input MMIF file uses the path on the container:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/vocabulary/TextDocument/v1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;m1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;mime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;text/plain&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;location&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/data/text/example.txt&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>To generate a MMIF file like this, you can use <code class="docutils literal notranslate"><span class="pre">clams</span> <span class="pre">source</span></code> command from your shell.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>clams<span class="w"> </span><span class="nb">source</span><span class="w"> </span>--prefix<span class="w"> </span>/data/input<span class="w"> </span>text:example.txt
+<span class="o">{</span>
+<span class="w">  </span><span class="s2">&quot;metadata&quot;</span>:<span class="w"> </span><span class="o">{</span>
+<span class="w">    </span><span class="s2">&quot;mmif&quot;</span>:<span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/1.0.0&quot;</span>
+<span class="w">  </span><span class="o">}</span>,
+<span class="w">  </span><span class="s2">&quot;documents&quot;</span>:<span class="w"> </span><span class="o">[</span>
+<span class="w">    </span><span class="o">{</span>
+<span class="w">      </span><span class="s2">&quot;@type&quot;</span>:<span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/vocabulary/TextDocument/v1&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;properties&quot;</span>:<span class="w"> </span><span class="o">{</span>
+<span class="w">        </span><span class="s2">&quot;mime&quot;</span>:<span class="w"> </span><span class="s2">&quot;text&quot;</span>,
+<span class="w">        </span><span class="s2">&quot;id&quot;</span>:<span class="w"> </span><span class="s2">&quot;d1&quot;</span>,
+<span class="w">        </span><span class="s2">&quot;location&quot;</span>:<span class="w"> </span><span class="s2">&quot;file:///data/input/example.txt&quot;</span>
+<span class="w">      </span><span class="o">}</span>
+<span class="w">    </span><span class="o">}</span>
+<span class="w">  </span><span class="o">]</span>,
+<span class="w">  </span><span class="s2">&quot;views&quot;</span>:<span class="w"> </span><span class="o">[]</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+<p>And now you can use curl again</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-d@input/example-3.mmif<span class="w"> </span>http://0.0.0.0:5000/
+</pre></div>
+</div>
 </section>
 </section>
 </section>
@@ -584,7 +371,10 @@ container should start up your Flask server. In this case, it runs
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="cli.html" class="btn btn-neutral float-left" title="clams shell command" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="modules.html" class="btn btn-neutral float-right" title="clams package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using CLAMS App &mdash; clams-python  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            clams-python
+          </a>
+              <div class="version">
+                1.0.4
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input-output.html">I/O Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime-params.html">Runtime Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appmetadata.html">CLAMS App Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appdirectory.html">CLAMS App Directory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html"><code class="docutils literal notranslate"><span class="pre">clams</span></code> shell command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial: Wrapping an NLP Application</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">clams package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">clams-python</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Using CLAMS App</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="using-clams-app">
+<h1>Using CLAMS App<a class="headerlink" href="#using-clams-app" title="Permalink to this heading"></a></h1>
+<p>This document provides general instructions for installing and using CLAMS Apps.
+App developers may provide additional information specific to their app,
+hence it’s advised also to look up the app website (or code repository) to get the additional information.</p>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
+<p>Generally, a CLAMS App requires</p>
+<ul class="simple">
+<li><p>To run the app locally, Python3 with the <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> module installed. Python 3.8 or higher is required.</p></li>
+<li><p>To run the app in a container (as an HTTP server), container management software such as <code class="docutils literal notranslate"><span class="pre">docker</span></code> or <code class="docutils literal notranslate"><span class="pre">podman</span></code>.</p>
+<ul>
+<li><p>(the CLAMS team is using <code class="docutils literal notranslate"><span class="pre">docker</span></code> for development and testing)</p></li>
+</ul>
+</li>
+<li><p>To invoke and execute analysis, HTTP client utility (such as <code class="docutils literal notranslate"><span class="pre">curl</span></code>).</p></li>
+</ul>
+<p>For Python dependencies, usually CLAMS Apps come with <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> files that list up the Python library.
+However, there could be other non-Python software/library that are required by the app.</p>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
+<p>CLAMS Apps available on the CLAMS App Directory. Currently all CLAMS Apps are open-source projects and are distributed as</p>
+<ol class="arabic simple">
+<li><p>source code downloadable from code repository</p></li>
+<li><p>pre-built container image</p></li>
+</ol>
+<p>Please visit <a class="reference external" href="https://apps.clams.ai">the app-directory</a> to see which apps are available and where you can download them.</p>
+<p>In most cases, you can “install” a CLAMS App by either</p>
+<ol class="arabic simple">
+<li><p>downloading source code from the app code repository and manually building a container image</p></li>
+<li><p>downloading pre-built container image directly</p></li>
+</ol>
+<section id="build-image-from-source-code">
+<h3>Build image from source code<a class="headerlink" href="#build-image-from-source-code" title="Permalink to this heading"></a></h3>
+<p>To download the source code, you can either use <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span></code> command or download a zip file from the source code repository.
+The source code repository address can be found on the App Directory entry of the app.</p>
+<p>From the locally downloaded project directory, run the following in your terminal to build an image from the included container specification file.</p>
+<p>(Assuming you are using <code class="docutils literal notranslate"><span class="pre">docker</span></code> as your container manager)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span>.<span class="w"> </span>-f<span class="w"> </span>Containerfile<span class="w"> </span>-t<span class="w"> </span>&lt;image_name_you_pick&gt;
+</pre></div>
+</div>
+</section>
+<section id="download-prebuilt-image">
+<h3>Download prebuilt image<a class="headerlink" href="#download-prebuilt-image" title="Permalink to this heading"></a></h3>
+<p>Alternatively, the app maybe already be available on a container registry.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>pull<span class="w"> </span>&lt;prebulit_image_name&gt;
+</pre></div>
+</div>
+<p>The image name can be found on the App Directory entry of the app.</p>
+</section>
+</section>
+<section id="running-clams-app">
+<h2>Running CLAMS App<a class="headerlink" href="#running-clams-app" title="Permalink to this heading"></a></h2>
+<section id="running-as-a-container">
+<h3>Running as a container<a class="headerlink" href="#running-as-a-container" title="Permalink to this heading"></a></h3>
+<p>Once the image is built (by <code class="docutils literal notranslate"><span class="pre">build</span></code>) or downloaded (by <code class="docutils literal notranslate"><span class="pre">pull</span></code>), to create a container, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>-v<span class="w"> </span>/path/to/data/directory:/data<span class="w"> </span>-p<span class="w"> </span>&lt;port&gt;:5000<span class="w"> </span>&lt;image_name&gt;
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">/path/to/data/directory</span></code> is the local location of your media files or MMIF objects and <code class="docutils literal notranslate"><span class="pre">&lt;port&gt;</span></code> is the <em>host</em> port number you want your container to be listening to.
+The HTTP inside the container will be listening to 5000 by default. Usually any number above 1024 is fine for the host port number, and you can use the same 5000 number for the host port number.</p>
+<blockquote>
+<div><p><strong>Note</strong>
+If you are using a Mac, on recent versions of macOS, port 5000 is used by Airplay Receiver by default. So you may need to use a different port number, or turn off the Airplay Receiver in the System Preferences to release 5000.
+For more information on <em>safe</em> port numbers, see <a class="reference external" href="https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml">IANA Port Number Registry</a> or <a class="reference external" href="https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers">Wikipedia</a>.</p>
+<p><strong>Note</strong>
+Another note for users of recent Macs with Apple Silicon (M1, M2, etc) CPU: you might see the following error message when you run the container image.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>The requested image&#39;s platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+</pre></div>
+</div>
+<p>This is because the image you are trying to run is built for Intel/AMC CPUs. To force the container to run on an emulation layer, you can add <code class="docutils literal notranslate"><span class="pre">--platform</span> <span class="pre">linux/amd64</span></code> option to the <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">run</span></code> command.</p>
+</div></blockquote>
+</section>
+<section id="running-as-a-local-http-server">
+<h3>Running as a local HTTP server<a class="headerlink" href="#running-as-a-local-http-server" title="Permalink to this heading"></a></h3>
+<p>To run the app as a local HTTP server without containerization, you can run the following command from the source code directory.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>app.py
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>By default, a CLAMS App will be listening to port 5000, but you can change the port number by passing <code class="docutils literal notranslate"><span class="pre">--port</span> <span class="pre">&lt;number&gt;</span></code> option.</p></li>
+<li><p>Be default, the app will be running in <em>debugging</em> mode, but you can change it to <em>production</em> mode by passing <code class="docutils literal notranslate"><span class="pre">--production</span></code> option to support larger traffic volume.</p></li>
+</ul>
+</section>
+<section id="running-as-a-cli-program">
+<h3>Running as a CLI program<a class="headerlink" href="#running-as-a-cli-program" title="Permalink to this heading"></a></h3>
+<p>(Not all CLAMS Apps can be run as a CLI program)</p>
+<p>Many CLAMS Apps are written to work as a CLI-based Python Program, although they are primarily designed to be run as an HTTP server.
+CLI-based execution is useful for testing and debugging purposes, and varies from app to app.
+To see the command line interface, please visit the app source code repository and look for additional instructions from the app developer.</p>
+</section>
+</section>
+<section id="invoking-the-app-server">
+<h2>Invoking the app server<a class="headerlink" href="#invoking-the-app-server" title="Permalink to this heading"></a></h2>
+<section id="app-metadata">
+<h3>App metadata<a class="headerlink" href="#app-metadata" title="Permalink to this heading"></a></h3>
+<p>Once the app is running as an HTTP server, visit the server address (<a class="reference external" href="http://localhost:5000">localhost:5000</a>)to get the app metadata. App metadata is also available at the App Directory entry of the app. App metadata contains important information about the app that we will use in the following sections.</p>
+</section>
+<section id="processing-input-media">
+<h3>Processing input media<a class="headerlink" href="#processing-input-media" title="Permalink to this heading"></a></h3>
+<p>To actually run the app and process input media through computational analysis, simply send a POST request to the app with a MMIF input as the request body.</p>
+<p>MMIF input files can be obtained from outputs of other CLAMS apps, or you can create an <em>empty</em> MMIF only with source media locations using <code class="docutils literal notranslate"><span class="pre">clams</span> <span class="pre">source</span></code> command. See the help message for a more detailed instructions.
+(Make sure you have installed <cite>``clams-python`</cite> package &lt;<a class="reference external" href="https://pypi.org/project/clams-python/">https://pypi.org/project/clams-python/</a>&gt;`_ version from PyPI.)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>clams-python
+clams<span class="w"> </span><span class="nb">source</span><span class="w"> </span>--help
+</pre></div>
+</div>
+<p>For example; by running</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>clams<span class="w"> </span><span class="nb">source</span><span class="w"> </span>audio:/data/audio/some-audio-file.mp3
+</pre></div>
+</div>
+<p>You will get</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;mmif&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/X.Y.Z&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;documents&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://mmif.clams.ai/vocabulary/AudioDocument/v1&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;mime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;audio&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;d1&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;location&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;file:///data/audio/some-audio-file.mp3&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;views&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>If an app requires just <code class="docutils literal notranslate"><span class="pre">Document</span></code> inputs (see <code class="docutils literal notranslate"><span class="pre">input</span></code> section of the app metadata), an empty MMIF with required media file locations will suffice. The location has to be a URL or an absolute path, and it is important to ensure that it exists.</p>
+<p>However, some apps only works with input MMIF that already contains some annotations of specific types. To run such apps, you need to run different apps in a sequence.</p>
+<p>(TODO: added CLAMS workflow documentation link here.)</p>
+<p>When an input MMIF is ready, you can send it to the app server.
+Here’s an example of how to use the <code class="docutils literal notranslate"><span class="pre">curl</span></code> command, and store the response in a file <code class="docutils literal notranslate"><span class="pre">output.mmif</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Accept: application/json&quot;</span><span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-d@input.mmif<span class="w"> </span>-s<span class="w"> </span>http://localhost:5000<span class="w"> </span>&gt;<span class="w"> </span>output.mmif
+
+<span class="c1"># or using a bash pipeline</span>
+clams<span class="w"> </span><span class="nb">source</span><span class="w"> </span>audio:/data/audio/some-audio-file.mp3<span class="w"> </span><span class="p">|</span><span class="w"> </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-d@-<span class="w"> </span>-s<span class="w"> </span>http://localhost:5000<span class="w"> </span>&gt;<span class="w"> </span>output.mmif
+</pre></div>
+</div>
+<p>Appending <code class="docutils literal notranslate"><span class="pre">?pretty=True</span></code> to the URL will result in a pretty printed output. Note that when you’re using <code class="docutils literal notranslate"><span class="pre">curl</span></code> from a shell session, you need to escape the <code class="docutils literal notranslate"><span class="pre">?</span></code> or <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> characters with <code class="docutils literal notranslate"><span class="pre">\</span></code> to prevent the shell from interpreting it as a special character.</p>
+</section>
+<section id="configuring-the-app">
+<h3>Configuring the app<a class="headerlink" href="#configuring-the-app" title="Permalink to this heading"></a></h3>
+<p>Running as an HTTP server, CLAMS Apps are stateless, but can be configured for each HTTP request by providing configuration parameters as <a class="reference external" href="https://en.wikipedia.org/wiki/Query_string">query string</a>.</p>
+<p>For configuration parameters, please look for <code class="docutils literal notranslate"><span class="pre">parameter</span></code> section of the app metadata.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Brandeis LLC.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

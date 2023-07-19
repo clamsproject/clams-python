@@ -1,4 +1,16 @@
 
+## releasing 1.0.4 (2023-07-19)
+### Overview
+This release include many updates to documentation, and `clams source --scheme` flag. 
+
+### Additions
+* `--scheme` flag is added to `clams source` CLI to generate MMIF with arbitrary URI scheme for document locations (#163, also see https://github.com/clamsproject/mmif-python/pull/223) 
+
+### Changes
+* CLAMS app development documentation is updated with more details, clarification and a up-to-date tutorial (#165)
+* added validation step for parameters with fixed options (#164)  
+
+
 ## releasing 1.0.3 (2023-06-14)
 ### Overview
 This release include minor bug fixes. 
