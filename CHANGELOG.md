@@ -1,4 +1,13 @@
 
+## releasing 1.0.7 (2023-07-20)
+### Overview
+This release includes a bugfix and update to the latest mmif-python 
+
+### Changes
+* now based on `mmif-python==1.0.7`
+* fixed some runtime parameters' default values not correctly casted (#173 )
+
+
 ## releasing 1.0.6 (2023-07-19)
 ### Overview
 Minor release to update `mmif-python` version 
