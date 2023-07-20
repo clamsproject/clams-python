@@ -354,8 +354,13 @@ class AppMetadata(pydantic.BaseModel):
         """
         Helper method to add an element to the ``parameters`` list. 
         """
+        # casting default values (when the value is not nothing) makes sure 
+        # the values are correctly casted by the pydantic
+        # see https://docs.pydantic.dev/1.10/usage/types/#unions
+        # e.g. casting 0.1 using the `primitives` dict will result in  0 (int)
+        # while casting "0.1" using the `primitives` dict will result in  0.1 (float)
         new_param = RuntimeParameter(name=name, description=description, type=type,
-                                     choices=choices, default=default, multivalued=multivalued)
+                                     choices=choices, default=str(default) if default else default, multivalued=multivalued)
         if new_param.name not in [param.name for param in self.parameters]:
             self.parameters.append(new_param)
         else:
