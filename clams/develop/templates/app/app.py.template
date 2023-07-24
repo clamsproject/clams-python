@@ -12,6 +12,7 @@ The app.py script does several things:
 """
 
 import argparse
+import logging
 from typing import Union
 
 # Imports needed for Clams and MMIF.
@@ -61,4 +62,5 @@ if __name__ == "__main__":
         http_app.serve_production()
     # development mode
     else:
+        app.logger.setLevel(logging.DEBUG)
         http_app.run()
