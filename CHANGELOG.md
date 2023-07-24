@@ -1,4 +1,12 @@
 
+## releasing 1.0.8 (2023-07-24)
+### Overview
+Minor release to update `mmif-python` version 
+
+### Changes
+* updated to `mmif-python==1.0.8`
+* enabled a python logger for clams-apps as `self.logger`
+
 ## releasing 1.0.7 (2023-07-20)
 ### Overview
 This release includes a bugfix and update to the latest mmif-python 
