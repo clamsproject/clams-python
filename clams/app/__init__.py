@@ -2,6 +2,7 @@ import os
 import pathlib
 import sys
 import warnings
+import logging
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from urllib import parse as urlparser
@@ -12,6 +13,11 @@ from typing import Union, Any, Optional
 
 from mmif import Mmif, Document, DocumentTypes, View, __specver__
 from clams.appmetadata import AppMetadata
+
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(asctime)s %(name)s %(levelname)-8s %(thread)d %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S")
 
 
 class ClamsApp(ABC):
@@ -42,7 +48,8 @@ class ClamsApp(ABC):
             self.metadata_param_spec[param['name']] = (python_type[param['type']], param.get('multivalued', False))
         for param_spec in self.metadata.parameters:
             self.annotate_param_spec[param_spec.name] = (python_type[param_spec.type], param_spec.multivalued)
-
+        self.logger = logging.getLogger(self.metadata.identifier)
+        
     def appmetadata(self, **kwargs) -> str:
         """
         A public method to get metadata for this app as a string.
