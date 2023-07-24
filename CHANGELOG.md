@@ -1,4 +1,11 @@
 
+## releasing 1.0.9 (2023-07-24)
+### Overview
+Minor release to update small issues in the app develop template. 
+
+### Changes
+* `metadata.py` from the template now includes *universal* parameters when printing out the app metadata.
+
 ## releasing 1.0.8 (2023-07-24)
 ### Overview
 Minor release to update `mmif-python` version 
