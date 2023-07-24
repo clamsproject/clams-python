@@ -1,4 +1,4 @@
-# BURN AFTER READING
+# TO_DEVS: BURN AFTER READING
 
 Delete this section of the document once the app development is done, before publishing the repository. 
 
@@ -20,7 +20,21 @@ Before pushing your first commit, please make sure to delete this section of the
 
 Then use the following section to document any additional information specific to this app. If your app works significantly different from what's described in the generic readme file, be as specific as possible. 
 
+
+> **warning** 
+> TO_DEVS: Delete these `TO_DEVS` notes and warnings before publishing the repository.
+
 ---
+
+# $APP_NAME
+
+> **warning** 
+> TO_DEVS: Again, delete these `TO_DEVS` notes and warnings before publishing the repository.
+
+## Description
+
+> **note**
+> TO_DEVS: A brief description of the app, expected behavior, underlying software/library/technology, etc.
 
 ## User instruction
 
@@ -29,8 +43,6 @@ General user instructions for CLAMS apps is available at [CLAMS Apps documentati
 > **note** 
 > TO_DEVS: Below is a list of additional information specific to this app.
 
-> **warning** 
-> TO_DEVS: Delete these `TO_DEVS` notes and warnings before publishing the repository.
 
 ### System requirements
 
