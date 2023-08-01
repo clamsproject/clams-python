@@ -111,7 +111,7 @@ class ClamsApp(ABC):
         issued_warnings = []
         for key in runtime_params:
             if key not in self.annotate_param_spec:
-                issued_warnings.append(UserWarning(f'An undefined parameter {key} (value: {runtime_params[key]}) is passed'))
+                issued_warnings.append(UserWarning(f'An undefined parameter "{key}" (value: "{runtime_params[key]}") is passed'))
         with warnings.catch_warnings(record=True) as ws:
             annotated = self._annotate(mmif, **runtime_params)
             if ws:
@@ -120,7 +120,7 @@ class ClamsApp(ABC):
             warnings_view = annotated.new_view()
             self.sign_view(warnings_view)
             warnings_view.metadata.warnings = issued_warnings
-        return annotated.serialize(pretty=pretty)
+        return annotated.serialize(pretty=pretty, sanitize=True)
 
     @abstractmethod
     def _annotate(self, mmif: Mmif, **runtime_params) -> Mmif:

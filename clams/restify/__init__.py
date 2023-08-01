@@ -11,7 +11,7 @@ from clams.appmetadata import primitives
 
 class Restifier(object):
     """
-    Resitifier is a simple wrapper that takes a :class:`.ClamsApp` object and
+    Restifier is a simple wrapper that takes a :class:`.ClamsApp` object and
     turn it into a flaks-based HTTP server. For mapping between Python API and
     HTTP API, it relies on :class:`.ClamsHTTPApi` class.
 
@@ -174,8 +174,8 @@ class ParameterCaster(object):
         """
         casted = {}
         for k, vs in args.items():
-            for v in vs:
-                if k in self.param_spec:
+            if k in self.param_spec:
+                for v in vs:
                     type_, multivalued = self.param_spec[k]
                     if multivalued or k not in casted:  # effectively only keeps the first value for non-multi params
                         if type_ == bool:
@@ -186,12 +186,12 @@ class ParameterCaster(object):
                             v = self.int_param(v)
                         elif type_ == str:
                             v = self.str_param(v)
-                        if not multivalued:
-                            casted[k] = v
-                        else:
+                        if multivalued:
                             casted.setdefault(k, []).append(v)
-                else:
-                    casted[k] = v[0]  # just keep the first value
+                        else: 
+                            casted[k] = v
+            else:
+                casted[k] = vs  
                     
         return casted
 
