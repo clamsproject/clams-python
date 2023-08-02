@@ -1,8 +1,8 @@
+import logging
 import os
 import pathlib
 import sys
 import warnings
-import logging
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from urllib import parse as urlparser
@@ -11,7 +11,7 @@ __all__ = ['ClamsApp']
 
 from typing import Union, Any, Optional
 
-from mmif import Mmif, Document, DocumentTypes, View, __specver__
+from mmif import Mmif, Document, DocumentTypes, View
 from clams.appmetadata import AppMetadata
 
 logging.basicConfig(
