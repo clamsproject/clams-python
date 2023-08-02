@@ -40,6 +40,8 @@ Then use the following section to document any additional information specific t
 
 General user instructions for CLAMS apps is available at [CLAMS Apps documentation](https://apps.clams.ai/clamsapp).
 
+Below is a list of additional information specific to this app.
+
 > **note** 
 > TO_DEVS: Below is a list of additional information specific to this app.
 
@@ -56,7 +58,7 @@ General user instructions for CLAMS apps is available at [CLAMS Apps documentati
 
 ### Configurable runtime parameter
 
-Although all CLAMS apps are supposed to run as *stateless* HTTP servers, some apps can configured at request time using [URL query strings](https://en.wikipedia.org/wiki/Query_string). For runtime parameter supported by this app, please visit [CLAMS App Directory](https://apps.clams.ai) and look for the app name and version. 
+For the full list of parameters, please refer to the app metadata from [CLAMS App Directory](https://apps.clams.ai) or [`metadata.py`](metadata.py) file in this repository.
 
 > **warning**
 > TO_DEVS: If you're not developing this app for publishing on the CLAMS App Directory, the above paragraph is not applicable. Feel free to delete or change it.
