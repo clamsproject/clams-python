@@ -34,6 +34,9 @@ class ClamsApp(ABC):
             'description': 'The JSON body of the HTTP response will be re-formatted with 2-space indentation',
         },
     ]
+    # this key is used to store users' raw input params in the parameter dict 
+    # even after "refinement" (i.e., casting to proper data types)
+    _RAW_PARAMS_KEY = "#RAW#"
 
     def __init__(self):
         self.metadata: AppMetadata = self._load_appmetadata()
@@ -112,18 +115,19 @@ class ClamsApp(ABC):
         for key in runtime_params:
             if key not in self.annotate_param_spec:
                 issued_warnings.append(UserWarning(f'An undefined parameter "{key}" (value: "{runtime_params[key]}") is passed'))
+        refined_params = self._refine_params(**runtime_params)
         with warnings.catch_warnings(record=True) as ws:
-            annotated = self._annotate(mmif, **runtime_params)
+            annotated = self._annotate(mmif, **refined_params)
             if ws:
                 issued_warnings.extend(ws)
         if issued_warnings:
             warnings_view = annotated.new_view()
-            self.sign_view(warnings_view)
+            self.sign_view(warnings_view, refined_params)
             warnings_view.metadata.warnings = issued_warnings
         return annotated.serialize(pretty=pretty, sanitize=True)
 
     @abstractmethod
-    def _annotate(self, mmif: Mmif, **runtime_params) -> Mmif:
+    def _annotate(self, mmif: Mmif, _raw_parameters=None, **refined_parameters) -> Mmif:
         """
         An abstract method to generate (or load if stored elsewhere) the app 
         metadata at runtime. All CLAMS app must implement this.
@@ -145,7 +149,7 @@ class ClamsApp(ABC):
         """
         raise NotImplementedError()
     
-    def get_configuration(self, **runtime_params):
+    def _refine_params(self, **runtime_params):
         """
         Method to "fill" the parameter dictionary with default values, when a key-value is not specified in the input.
         The input map is not really "filled" as a copy of it is returned with addition of default values. 
@@ -153,6 +157,9 @@ class ClamsApp(ABC):
         :return: a copy of parameter map, with default values added
         :raises ValueError: when a value for a required parameter is not found in the input
         """
+        if self._RAW_PARAMS_KEY in runtime_params:
+            # meaning the dict is already refined, just return it 
+            return runtime_params
         conf = {}
         for parameter in self.metadata.parameters:
             if parameter.name in runtime_params:
@@ -163,7 +170,16 @@ class ClamsApp(ABC):
                 conf[parameter.name] = parameter.default
             else:
                 raise ValueError(f"Cannot find configuration for a required parameter \"{parameter.name}\".")
+        # raw input params are hidden under a special key
+        conf[self._RAW_PARAMS_KEY] = runtime_params
         return conf
+    
+    def get_configuration(self, **runtime_params):
+        warnings.warn("ClamsApp.get_configuration() is deprecated. "
+                      "If you are using this method in `_annotate()` method,"
+                      "it is no longer needed since `clams-python==1.0.10`.", 
+                      DeprecationWarning, stacklevel=2)
+        return self._refine_params(**runtime_params)
 
     def sign_view(self, view: View, runtime_conf: Optional[dict] = None) -> None:
         """
@@ -176,9 +192,20 @@ class ClamsApp(ABC):
         :param view: a view to sign
         :param runtime_conf: runtime configuration of the app as k-v pairs
         """
+        # TODO (krim @ 8/2/23): once all devs understood this change, make runtime_conf a required argument
+        warnings.warn("`runtime_conf` argument for ClamsApp.sign_view() will "
+                      "no longer be optional in the future. Please just pass "
+                      "`runtime_params` from _annotate() method.",
+                      FutureWarning, stacklevel=2)
         view.metadata.app = self.metadata.identifier
         if runtime_conf is not None:
-            view.metadata.add_parameters(**{k: str(v) for k, v in runtime_conf.items()})
+            if self._RAW_PARAMS_KEY in runtime_conf:
+                conf = runtime_conf[self._RAW_PARAMS_KEY]
+            else:
+                conf = runtime_conf
+            view.metadata.add_parameters(**{k: str(v) for k, v in conf.items()})
+            # TODO (krim @ 8/2/23): add "refined" parameters as well 
+            #  once https://github.com/clamsproject/mmif/issues/208 is resolved
         
     def set_error_view(self, mmif: Union[str, dict, Mmif], runtime_conf: Optional[dict] = None) -> Mmif:
         """
