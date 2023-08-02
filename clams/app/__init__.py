@@ -11,6 +11,7 @@ __all__ = ['ClamsApp']
 
 from typing import Union, Any, Optional
 
+import jsonschema
 from mmif import Mmif, Document, DocumentTypes, View, __specver__
 from clams.appmetadata import AppMetadata
 
@@ -120,7 +121,12 @@ class ClamsApp(ABC):
             warnings_view = annotated.new_view()
             self.sign_view(warnings_view)
             warnings_view.metadata.warnings = issued_warnings
-        return annotated.serialize(pretty=pretty)
+        serialized = annotated.serialize(pretty=pretty)
+        try:
+            Mmif.validate(serialized)
+            return serialized
+        except jsonschema.ValidationError as e:
+            raise e
 
     @abstractmethod
     def _annotate(self, mmif: Mmif, **runtime_params) -> Mmif:
