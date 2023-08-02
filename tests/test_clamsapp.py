@@ -7,6 +7,7 @@ import unittest
 import warnings
 from typing import Union
 
+import jsonschema
 import pytest
 from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver__
 
@@ -206,6 +207,19 @@ class TestClamsApp(unittest.TestCase):
         views = list(out_mmif.views)
         # insertion order is kept
         self.assertTrue(views[0].metadata.timestamp < views[1].metadata.timestamp)
+    
+    def test_annotate_returns_invalid_mmif(self):
+        m = Mmif(self.in_mmif)
+        v = m.new_view()
+        v.new_contain(AnnotationTypes.TimeFrame)
+        v.new_annotation(AnnotationTypes.TimeFrame, start=10, end=30)
+        # still, this view is not "signed"
+        from unittest.mock import MagicMock
+        self.app._annotate = MagicMock(return_value=m)
+        with self.assertRaises(jsonschema.ValidationError):
+            self.app.annotate(self.in_mmif)
+        
+        
 
     def test_open_document_location(self):
         mmif = ExampleInputMMIF.get_rawmmif()
