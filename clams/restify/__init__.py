@@ -61,6 +61,9 @@ class Restifier(object):
                     'bind': f'{host}:{port}',
                     'workers': number_of_workers(),
                     'threads': 2,
+                    # because the default is 'None'
+                    'accesslog': '-',
+                    # errorlog, however, is redirected to stderr by default since 19.2, so no need to set
                 }
                 self.options.update(options)
                 self.application = app
