@@ -7,7 +7,7 @@ ARG OPENCV_PATH=/opt/opencv-${OPENCV_VERSION}
 ARG OPENCV_EXTRA_PATH=/opt/opencv_contrib-${OPENCV_VERSION}
 
 # opencv dependencies
-RUN pip install numpy
+RUN pip --no-cache-dir install numpy
 RUN apt-get update
 RUN apt-get install -y g++ cmake make wget unzip libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
 # opencv download
@@ -41,5 +41,5 @@ RUN make -j$(nproc) && make install && ldconfig
 WORKDIR /
 RUN rm -rf ${OPENCV_PATH} ${OPENCV_EXTRA_PATH}
 RUN pip uninstall opencv-python
-RUN pip install opencv-python-rolling~=${OPENCV_VERSION}
+RUN pip install --no-cache-dir opencv-python-rolling~=${OPENCV_VERSION}
 RUN apt-get remove -y g++ cmake make wget unzip libavcodec-dev libavformat-dev libavutil-dev libswscale-dev && apt-get autoremove -y
