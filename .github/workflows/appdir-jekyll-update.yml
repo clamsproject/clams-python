@@ -1,4 +1,4 @@
-name: "📦 Invoke AppDir Jekyll build"
+name: "📦 Publish (app user manual)"
 
 on:
   workflow_dispatch:
