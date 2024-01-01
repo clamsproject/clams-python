@@ -6,7 +6,22 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
-  build-and-upload:
+  packge-and-upload:
     name: "🤙 Call SDK publish workflow"
     uses: clamsproject/.github/.github/workflows/sdk-publish.yml@main
     secrets: inherit
+  update-documentation:
+    # I'd like to insert a condition that this step is only run if this "version" 
+    # contains any changes in "documentation/clamsapp.md"
+    # but since the WF is triggered by a tag, there's no easy way to check 
+    # all commits between this tag and the "previous" version tag 
+    # and see if there's any changes in the file
+    # so for now, I'll just run this step every time
+    # in the `clamsproject/apps` repo, the jekyll-build WF must push the artifact
+    # only when there's changes in the file anyway. 
+    name: "🤙 Call external jekyll build and deploy workflow for user manual updates"
+    uses: clamsproject/apps/.github/workflows/jekyll-build-deploy.yml@main
+    with:
+      branch-name: "main"
+    secrets: inherit 
+

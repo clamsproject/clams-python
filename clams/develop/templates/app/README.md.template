@@ -10,8 +10,7 @@ This skeleton code is a scaffolding for Python-based CLAMS app development. Spec
 1. `Containerfile` to containerize the app and specify system dependencies
 1. `.gitignore` and `.dockerignore` files listing commonly ignored files
 1. an empty `LICENSE` file to replace with an actual license information of the app
-1. `CLAMS-generic-readme.md` file with basic instructions of app installation and execution
-1. This `README.md` file for additional information not specified in the generic readme file. 
+1. This `README.md` file for additional information not specified in the general user manual at https://apps.clams.ai/clamsapp
 1. A number of GitHub Actions workflows for issue/bug-report management 
 1. A GHA workflow to publish app images upon any push of a git tag
    * **NOTE**: All GHA workflows included are designed to only work in repositories under `clamsproject` organization.
