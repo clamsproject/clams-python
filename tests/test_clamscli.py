@@ -1,10 +1,15 @@
+import contextlib
+import copy
 import io
 import os
 import unittest
-import contextlib
-import clams
-from clams import mmif_utils
+
 from mmif.serialize import Mmif
+from mmif.vocabulary import DocumentTypes, AnnotationTypes
+
+import clams
+from clams.mmif_utils import rewind
+from clams.mmif_utils import source
 
 
 class TestCli(unittest.TestCase):
@@ -44,7 +49,7 @@ class TestSource(unittest.TestCase):
         args = self.parser.parse_args(self.get_params())
         args.output = os.devnull
         
-        return mmif_utils.main(args)
+        return source.main(args)
 
     def test_accept_file_paths(self):
         self.docs.append("video:/a/b/c.mp4")
@@ -106,7 +111,112 @@ class TestSource(unittest.TestCase):
 
 
 class TestRewind(unittest.TestCase):
-    pass
+    def setUp(self):
+        self.dummy_app_one = ExampleApp()
+        self.dummy_app_two = ExampleApp()
+
+        # mmif we add views to
+        self.mmif_one = Mmif(
+            {
+                "metadata": {"mmif": "http://mmif.clams.ai/1.0.0"},
+                "documents": [],
+                "views": [],
+            }
+        )
+
+        # baseline empty mmif for comparison
+        self.empty_mmif = Mmif(
+            {
+                "metadata": {"mmif": "http://mmif.clams.ai/1.0.0"},
+                "documents": [],
+                "views": [],
+            }
+        )
+
+    def test_view_rewind(self):
+        """
+        Tests the use of "view-rewiding" to remove multiple views from a single app.
+        """
+        # Regular Case
+        mmif_added_views = self.dummy_app_one.mmif_add_views(self.mmif_one, 10)
+        removed_views = rewind.rewind_mmif(mmif_added_views, 10)
+
+        # Assertions
+        self.assertEqual(removed_views.__annotations__, self.empty_mmif.__annotations__)
+        self.assertEqual(removed_views.views, self.empty_mmif.views)
+
+        # Edge Cases
+        # TODO(DeanCahill@01/29/24) - more test conditions?
+
+    def test_app_rewind(self):
+        # Regular Case
+        app_one_out = self.dummy_app_one.mmif_add_views(self.mmif_one, 3)
+        copy_one = copy.deepcopy(app_one_out)  # deep copy for later comparison
+
+        app_two_out = self.dummy_app_two.mmif_add_views(app_one_out, 3)
+        removed_views = rewind.rewind_mmif(app_two_out, 1, choice_is_viewnum=False)
+
+        # Assertions
+        self.assertEqual(removed_views.__annotations__, copy_one.__annotations__)
+        self.assertTrue(compare_views(removed_views, copy_one))
+
+        # Edge Cases
+        # TODO(DeanCahill@01/29/24) - more test conditions?
+        
+        
+def compare_views(a: Mmif, b: Mmif) -> bool:
+    perfect_match = True
+    for view_a, view_b in zip(a.views, b.views):
+        if view_a != view_b:
+            perfect_match = False
+    return perfect_match
+
+
+class ExampleApp(clams.app.ClamsApp):
+    """This is a barebones implementation of a CLAMS App
+    used to generate simple Views within a mmif object
+    for testing purposes. The three methods here all streamline
+    the mmif annotation process for the purposes of repeated insertion
+    and removal.
+    """
+
+    app_version = "lorem_ipsum"
+
+    def _appmetadata(self):
+        pass
+
+    def _annotate(self, mmif: Mmif, message: str, idx: int, **kwargs):
+        if type(mmif) is not Mmif:
+            mmif_obj = Mmif(mmif, validate=False)
+        else:
+            mmif_obj = mmif
+
+        new_view = mmif_obj.new_view()
+        self.sign_view(new_view, runtime_conf=kwargs)
+        self.gen_annotate(new_view, message, idx)
+
+        d1 = DocumentTypes.VideoDocument
+        d2 = DocumentTypes.from_str(f"{str(d1)[:-1]}99")
+        if mmif.get_documents_by_type(d2):
+            new_view.new_annotation(AnnotationTypes.TimePoint, "tp1")
+        if "raise_error" in kwargs and kwargs["raise_error"]:
+            raise ValueError
+        return mmif
+
+    def gen_annotate(self, mmif_view, message, idx=0):
+        mmif_view.new_contain(
+            AnnotationTypes.TimeFrame, **{"producer": "dummy-producer"}
+        )
+        ann = mmif_view.new_annotation(
+            AnnotationTypes.TimeFrame, "a1", start=10, end=99
+        )
+        ann.add_property("f1", message)
+
+    def mmif_add_views(self, mmif_obj, idx: int):
+        """Helper Function to add an arbitrary number of views to a mmif"""
+        for i in range(idx):
+            mmif_obj = self._annotate(mmif_obj, message=f"message {i}", idx=idx)
+        return mmif_obj
 
 if __name__ == '__main__':
     unittest.main()
