@@ -3,7 +3,7 @@ import os
 import unittest
 import contextlib
 import clams
-from clams import source
+from clams import mmif_utils
 from mmif.serialize import Mmif
 
 
@@ -44,7 +44,7 @@ class TestSource(unittest.TestCase):
         args = self.parser.parse_args(self.get_params())
         args.output = os.devnull
         
-        return source.main(args)
+        return mmif_utils.main(args)
 
     def test_accept_file_paths(self):
         self.docs.append("video:/a/b/c.mp4")

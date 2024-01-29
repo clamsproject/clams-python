@@ -1,4 +1,5 @@
 import argparse
+import textwrap
 from pathlib import Path as P
 
 import mmif
@@ -75,17 +76,28 @@ def rewind_mmif(mmif_obj: mmif.Mmif, choice: int, choice_is_viewnum: bool = True
     return mmif_obj
 
 
+def describe_argparser():
+    """
+    returns two strings: one-line description of the argparser, and addition material, 
+    which will be shown in `clams --help` and `clams <subcmd> --help`, respectively.
+    """
+    oneliner = 'provides CLI to rewind a MMIF from a CLAMS pipeline.'
+    additional = textwrap.dedent("""
+    MMIF rewinder rewinds a MMIF by deleting the last N views.
+    N can be specified as a number of views, or a number of producer apps. """)
+    return oneliner, oneliner + '\n\n' + additional
 
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process MMIF file.")
+def prep_argparser(**kwargs):
+    parser = argparse.ArgumentParser(description=describe_argparser()[1], formatter_class=argparse.RawDescriptionHelpFormatter, **kwargs)
     parser.add_argument("mmif_file", help="Path to the MMIF file")
     parser.add_argument("-o", '--output', default="rewound.mmif", type=str, help="Path to the rewound MMIF output file (default: rewound.mmif)")
     parser.add_argument("-p", '--pretty', action='store_true', help="Pretty print (default: pretty=True)")
     parser.add_argument("-n", '--number', default="0", type=is_valid_choice, help="Number of views to rewind (default: 0)")
-    args = parser.parse_args()
+    return parser
 
+
+def main(args):
     mmif_obj = mmif.Mmif(open(args.mmif_file).read())
 
     if args.number == 0: # If user doesn't know how many views to rewind, give them choices.
@@ -107,4 +119,10 @@ if __name__ == "__main__":
 
     with open(output_fp, 'w') as mmif_file:
         mmif_file.write(rewind_mmif(mmif_obj, choice).serialize(pretty=args.pretty))
+
+
+if __name__ == "__main__":
+    parser = prep_argparser()
+    args = parser.parse_args()
+    main(args)
 
