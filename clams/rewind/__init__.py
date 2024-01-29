@@ -1,6 +1,5 @@
 import argparse
 import mmif
-import json
 import os
 
 def read_mmif(mmif_file)->mmif.Mmif:
@@ -13,22 +12,24 @@ def read_mmif(mmif_file)->mmif.Mmif:
     """
     try:
         with open(mmif_file, 'r') as file:
-            mmif_data = json.load(file)
-
-        print(f"\nSuccessfully loaded MMIF file: {mmif_file}")
-
-        mmif_obj = mmif.Mmif(mmif_data)
-
+            mmif_obj = mmif.Mmif(file.read())
 
     except FileNotFoundError:
         print(f"Error: MMIF file '{mmif_file}' not found.")
-
-
     except Exception as e:
         print(f"Error: An unexpected error occurred - {e}")
 
     return mmif_obj
 
+def is_valid_choice(choice):
+    try:
+        ichoice = int(choice)
+        if 0 <= ichoice:
+            return ichoice
+        else:
+            raise ValueError(f"\nInvalid argument for -n. Please enter a positive integer.")
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"\nInvalid argument for -n. Please enter a positive integer.")
 
 def user_choice(mmif_obj:mmif.Mmif) -> int:
     """
@@ -44,36 +45,33 @@ def user_choice(mmif_obj:mmif.Mmif) -> int:
     # header
     print("\n" + "{:<4} {:<30} {:<100}".format("num", "timestamp", "app"))
     for view in mmif_obj.views:
-        option = "{:<4} {:<30} {:<100}".format(i, str(view.metadata.timestamp), str(view.metadata.app))
-
-
-
+        option = "{:<4} {:<30} {:<100}".format(n-i, str(view.metadata.timestamp), str(view.metadata.app))
         print(option)
         i += 1
 
     ## User input
     while True:
+        choice = int(input("\nEnter the number to delete from that point by rewinding: "))
         try:
-            choice = int(input("\nEnter the number to delete from that point by rewinding: "))
-            if 0 <= choice <= n - 1:
+            if 0 <= choice <= n:
                 return choice
             else:
-                print(f"\nInvalid choice. Please enter a number between 0 and {n - 1}")
+                print(f"\nInvalid choice. Please enter an integer in the range [0, {n}].")
         except ValueError:
             print("\nInvalid input. Please enter a valid number.")
 
 
-def process_mmif_from_user_choice(mmif_obj, choice: int, output_fp = "rewound.mmif", p=True) -> None:
+def process_mmif(mmif_obj, choice: int, output_fp = "rewound.mmif", p=True) -> None:
     """
     Process rewinding of mmif data from user choice and save it in as a json file.
 
     :param mmif_obj: mmif object
     :param choice: integer to rewind from
     :param output_fp: path to save the rewound output file
+    :param p: whether using pretty printing or not
     :return: rewound.mmif saved
     """
-    n = len(mmif_obj.views) - choice
-    mmif_obj.views.__delete_last(n)
+    mmif_obj.views._delete_last(choice)
     mmif_serialized = mmif_obj.serialize(pretty=p)
 
     # Check if the same file name exist in the path and avoid overwriting.
@@ -86,15 +84,21 @@ def process_mmif_from_user_choice(mmif_obj, choice: int, output_fp = "rewound.mm
 
     with open(output_fp, 'w') as mmif_file:
         mmif_file.write(mmif_serialized)
-
+        print("Successfully processed the rewind")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process MMIF file.")
     parser.add_argument("mmif_file", help="Path to the MMIF file")
-    parser.add_argument("-o", '--output', type=str, help="Path to the rewound MMIF output file (default: rewound.mmif)")
-    parser.add_argument("-p", '--pretty', help="Pretty print (default: pretty=True)")
+    parser.add_argument("-o", '--output', default = "rewound.mmif", type=str, help="Path to the rewound MMIF output file (default: rewound.mmif)")
+    parser.add_argument("-p", '--pretty', default = True, type = bool, help="Pretty print (default: pretty=True)")
+    parser.add_argument("-n", '--number', default = "0", type  = is_valid_choice, help="Number of views to rewind (default: 0)")
     args = parser.parse_args()
 
     mmif_obj = read_mmif(args.mmif_file)
-    choice = user_choice(mmif_obj)
-    process_mmif_from_user_choice(mmif_obj, choice, args.output, args.pretty)
+
+    if args.number == 0: # If user doesn't know how many views to rewind, give them choices.
+        choice = user_choice(mmif_obj)
+    else:
+        choice = args.number
+
+    process_mmif(mmif_obj, choice, args.output, args.pretty)
