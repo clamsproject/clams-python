@@ -1,4 +1,5 @@
 import argparse
+import sys
 import textwrap
 from pathlib import Path as P
 
@@ -90,15 +91,16 @@ def describe_argparser():
 
 def prep_argparser(**kwargs):
     parser = argparse.ArgumentParser(description=describe_argparser()[1], formatter_class=argparse.RawDescriptionHelpFormatter, **kwargs)
-    parser.add_argument("mmif_file", help="Path to the MMIF file")
-    parser.add_argument("-o", '--output', default="rewound.mmif", type=str, help="Path to the rewound MMIF output file (default: rewound.mmif)")
-    parser.add_argument("-p", '--pretty', action='store_true', help="Pretty print (default: pretty=True)")
-    parser.add_argument("-n", '--number', default="0", type=is_valid_choice, help="Number of views to rewind (default: 0)")
+    parser.add_argument("mmif_file", nargs=1, help="Path to the input MMIF file, or '-' to read from stdin.")
+    parser.add_argument("-o", '--output', default=None, metavar="PATH", help="Path to the rewound MMIF output file. When not given, the rewound MMIF is printed to stdout.")
+    parser.add_argument("-p", '--pretty', action='store_true', help="Pretty-print rewound MMIF. True by default")
+    parser.add_argument("-n", '--number', default="0", type=is_valid_choice, help="Number of views to rewind (default: interactive mode)")
+    parser.add_argument("-m", '--mode', choices=['app', 'view'], default='view', help="Number of views to rewind (default: interactive mode)")
     return parser
 
 
 def main(args):
-    mmif_obj = mmif.Mmif(open(args.mmif_file).read())
+    mmif_obj = mmif.Mmif(sys.stdin) if args.mmif_file[0] == '-' else mmif.Mmif(open(args.mmif_file[0]).read())
 
     if args.number == 0: # If user doesn't know how many views to rewind, give them choices.
         choice = user_choice(mmif_obj)
@@ -106,19 +108,22 @@ def main(args):
         choice = args.number
 
     
-    # Check if the same file name exist in the path and avoid overwriting.
-    output_fp = P(args.output)
-    if output_fp.is_file():
-        parent = output_fp.parent
-        stem = output_fp.stem
-        suffix = output_fp.suffix
-        count = 1
-        while (parent / f"{stem}_{count}{suffix}").is_file():
-            count += 1
-        output_fp = parent / f"{stem}_{count}{suffix}"
-
-    with open(output_fp, 'w') as mmif_file:
-        mmif_file.write(rewind_mmif(mmif_obj, choice).serialize(pretty=args.pretty))
+    if args.output:
+        # Check if the same file name exist in the path and avoid overwriting.
+        output_fp = P(args.output)
+        if output_fp.is_file():
+            parent = output_fp.parent
+            stem = output_fp.stem
+            suffix = output_fp.suffix
+            count = 1
+            while (parent / f"{stem}_{count}{suffix}").is_file():
+                count += 1
+            output_fp = parent / f"{stem}_{count}{suffix}"
+        
+        out_f = open(output_fp, 'w')
+    else:
+        out_f = sys.stdout
+    out_f.write(rewind_mmif(mmif_obj, choice, args.mode == 'view').serialize(pretty=args.pretty))
 
 
 if __name__ == "__main__":
