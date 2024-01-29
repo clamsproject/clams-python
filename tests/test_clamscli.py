@@ -105,5 +105,8 @@ class TestSource(unittest.TestCase):
         self.assertTrue('file' in schemes)
 
 
+class TestRewind(unittest.TestCase):
+    pass
+
 if __name__ == '__main__':
     unittest.main()
