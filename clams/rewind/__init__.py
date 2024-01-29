@@ -1,25 +1,8 @@
 import argparse
+from pathlib import Path as P
+
 import mmif
-import os
 
-def read_mmif(mmif_file)->mmif.Mmif:
-    """
-    Function to read mmif file and return the mmif object.
-    (Would it be better to be a mmif object?)
-
-    :param mmif_file: file path to the mmif.
-    :return: mmif object
-    """
-    try:
-        with open(mmif_file, 'r') as file:
-            mmif_obj = mmif.Mmif(file.read())
-
-    except FileNotFoundError:
-        print(f"Error: MMIF file '{mmif_file}' not found.")
-    except Exception as e:
-        print(f"Error: An unexpected error occurred - {e}")
-
-    return mmif_obj
 
 def is_valid_choice(choice):
     try:
@@ -61,44 +44,67 @@ def user_choice(mmif_obj:mmif.Mmif) -> int:
             print("\nInvalid input. Please enter a valid number.")
 
 
-def process_mmif(mmif_obj, choice: int, output_fp = "rewound.mmif", p=True) -> None:
+def rewind_mmif(mmif_obj: mmif.Mmif, choice: int, choice_is_viewnum: bool = True) -> mmif.Mmif:
     """
-    Process rewinding of mmif data from user choice and save it in as a json file.
+    Rewind MMIF by deleting the last N views. 
+    The number of views to rewind is given as a number of "views", or number of "producer apps". 
+    By default, the number argument is interpreted as the number of "views".
 
     :param mmif_obj: mmif object
-    :param choice: integer to rewind from
-    :param output_fp: path to save the rewound output file
-    :param p: whether using pretty printing or not
-    :return: rewound.mmif saved
+    :param choice: number of views to rewind
+    :param choice_is_viewnum: if True, choice is the number of views to rewind. If False, choice is the number of producer apps to rewind.
+    :return: rewound mmif object
+
     """
-    mmif_obj.views._delete_last(choice)
-    mmif_serialized = mmif_obj.serialize(pretty=p)
+    if choice_is_viewnum:
+        for vid in list(v.id for v in mmif_obj.views)[-1:-choice-1:-1]:
+            mmif_obj.views._items.pop(vid)
+    else:
+        app_count = 0
+        cur_app = ""
+        vid_to_pop = []
+        for v in reversed(mmif_obj.views):
+            if app_count >= choice:
+                break
+            if v.metadata.app != cur_app:
+                app_count += 1
+                cur_app = v.metadata.app
+            vid_to_pop.append(v.id)
+        for vid in vid_to_pop:
+            mmif_obj.views._items.pop(vid)
+    return mmif_obj
 
-    # Check if the same file name exist in the path and avoid overwriting.
-    if os.path.exists(output_fp):
-        file_name, file_extension = os.path.splitext(output_fp)
-        count = 1
-        while os.path.exists(f"{file_name}_{count}.mmif"):
-            count += 1
-        output_fp = f"{file_name}_{count}.mmif"
 
-    with open(output_fp, 'w') as mmif_file:
-        mmif_file.write(mmif_serialized)
-        print("Successfully processed the rewind")
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process MMIF file.")
     parser.add_argument("mmif_file", help="Path to the MMIF file")
-    parser.add_argument("-o", '--output', default = "rewound.mmif", type=str, help="Path to the rewound MMIF output file (default: rewound.mmif)")
-    parser.add_argument("-p", '--pretty', default = True, type = bool, help="Pretty print (default: pretty=True)")
-    parser.add_argument("-n", '--number', default = "0", type  = is_valid_choice, help="Number of views to rewind (default: 0)")
+    parser.add_argument("-o", '--output', default="rewound.mmif", type=str, help="Path to the rewound MMIF output file (default: rewound.mmif)")
+    parser.add_argument("-p", '--pretty', action='store_true', help="Pretty print (default: pretty=True)")
+    parser.add_argument("-n", '--number', default="0", type=is_valid_choice, help="Number of views to rewind (default: 0)")
     args = parser.parse_args()
 
-    mmif_obj = read_mmif(args.mmif_file)
+    mmif_obj = mmif.Mmif(open(args.mmif_file).read())
 
     if args.number == 0: # If user doesn't know how many views to rewind, give them choices.
         choice = user_choice(mmif_obj)
     else:
         choice = args.number
 
-    process_mmif(mmif_obj, choice, args.output, args.pretty)
+    
+    # Check if the same file name exist in the path and avoid overwriting.
+    output_fp = P(args.output)
+    if output_fp.is_file():
+        parent = output_fp.parent
+        stem = output_fp.stem
+        suffix = output_fp.suffix
+        count = 1
+        while (parent / f"{stem}_{count}{suffix}").is_file():
+            count += 1
+        output_fp = parent / f"{stem}_{count}{suffix}"
+
+    with open(output_fp, 'w') as mmif_file:
+        mmif_file.write(rewind_mmif(mmif_obj, choice).serialize(pretty=args.pretty))
+
