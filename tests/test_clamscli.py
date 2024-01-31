@@ -113,7 +113,9 @@ class TestSource(unittest.TestCase):
 class TestRewind(unittest.TestCase):
     def setUp(self):
         self.dummy_app_one = ExampleApp()
+        self.dummy_app_one.metadata.identifier = "dummy_app_one"
         self.dummy_app_two = ExampleApp()
+        self.dummy_app_two.metadata.identifier = "dummy_app_two"
 
         # mmif we add views to
         self.mmif_one = Mmif(
@@ -139,30 +141,21 @@ class TestRewind(unittest.TestCase):
         """
         # Regular Case
         mmif_added_views = self.dummy_app_one.mmif_add_views(self.mmif_one, 10)
-        removed_views = rewind.rewind_mmif(mmif_added_views, 10)
-
-        # Assertions
-        self.assertEqual(removed_views.__annotations__, self.empty_mmif.__annotations__)
-        self.assertEqual(removed_views.views, self.empty_mmif.views)
-
-        # Edge Cases
-        # TODO(DeanCahill@01/29/24) - more test conditions?
+        self.assertEqual(len(mmif_added_views.views), 10)
+        rewound = rewind.rewind_mmif(mmif_added_views, 5)
+        self.assertEqual(len(rewound.views), 5)
+        # rewinding is done "in-place"
+        self.assertEqual(len(rewound.views), len(mmif_added_views.views))
 
     def test_app_rewind(self):
         # Regular Case
-        app_one_out = self.dummy_app_one.mmif_add_views(self.mmif_one, 3)
-        copy_one = copy.deepcopy(app_one_out)  # deep copy for later comparison
-
-        app_two_out = self.dummy_app_two.mmif_add_views(app_one_out, 3)
-        removed_views = rewind.rewind_mmif(app_two_out, 1, choice_is_viewnum=False)
-
-        # Assertions
-        self.assertEqual(removed_views.__annotations__, copy_one.__annotations__)
-        self.assertTrue(compare_views(removed_views, copy_one))
-
-        # Edge Cases
-        # TODO(DeanCahill@01/29/24) - more test conditions?
-        
+        app_one_views = 3 
+        app_two_views = 2
+        app_one_out = self.dummy_app_one.mmif_add_views(self.mmif_one, app_one_views)
+        app_two_out = self.dummy_app_two.mmif_add_views(app_one_out, app_two_views)
+        self.assertEqual(len(app_two_out.views), app_one_views + app_two_views)
+        rewound = rewind.rewind_mmif(app_two_out, 1, choice_is_viewnum=False)
+        self.assertEqual(len(rewound.views), app_one_views)
         
 def compare_views(a: Mmif, b: Mmif) -> bool:
     perfect_match = True

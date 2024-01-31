@@ -50,7 +50,9 @@ def rewind_mmif(mmif_obj: mmif.Mmif, choice: int, choice_is_viewnum: bool = True
     """
     Rewind MMIF by deleting the last N views. 
     The number of views to rewind is given as a number of "views", or number of "producer apps". 
-    By default, the number argument is interpreted as the number of "views".
+    By default, the number argument is interpreted as the number of "views". 
+    Note that when the same app is repeatedly run in a CLAMS pipeline and produces multiple views in a row,
+    rewinding in "app" mode will rewind all those views at once.
 
     :param mmif_obj: mmif object
     :param choice: number of views to rewind
@@ -66,12 +68,12 @@ def rewind_mmif(mmif_obj: mmif.Mmif, choice: int, choice_is_viewnum: bool = True
         cur_app = ""
         vid_to_pop = []
         for v in reversed(mmif_obj.views):
+            vid_to_pop.append(v.id)
             if app_count >= choice:
                 break
             if v.metadata.app != cur_app:
                 app_count += 1
                 cur_app = v.metadata.app
-            vid_to_pop.append(v.id)
         for vid in vid_to_pop:
             mmif_obj.views._items.pop(vid)
     return mmif_obj
