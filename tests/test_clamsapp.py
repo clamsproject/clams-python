@@ -7,6 +7,7 @@ import unittest
 import warnings
 from typing import Union
 
+import jsonschema
 import pytest
 from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver__
 
@@ -201,11 +202,32 @@ class TestClamsApp(unittest.TestCase):
         self.assertIsNotNone(out_mmif)
         out_mmif = Mmif(out_mmif)
         self.assertEqual(len(out_mmif.views), 2)
+        for v in out_mmif.views:
+            if v.metadata.app == self.app.metadata.identifier:
+                self.assertEqual(len(v.metadata.parameters), 0)  # no params were passed when `annotate()` was called
+        out_mmif = self.app.annotate(self.in_mmif, pretty=False)
+        out_mmif = Mmif(out_mmif)
+        for v in out_mmif.views:
+            if v.metadata.app == self.app.metadata.identifier:
+                self.assertEqual(len(v.metadata.parameters), 1)  # 'pretty` parameter was passed 
         out_mmif = Mmif(self.app.annotate(out_mmif))
         self.assertEqual(len(out_mmif.views), 4)
         views = list(out_mmif.views)
         # insertion order is kept
         self.assertTrue(views[0].metadata.timestamp < views[1].metadata.timestamp)
+    
+    def test_annotate_returns_invalid_mmif(self):
+        m = Mmif(self.in_mmif)
+        v = m.new_view()
+        v.new_contain(AnnotationTypes.TimeFrame)
+        v.new_annotation(AnnotationTypes.TimeFrame, start=10, end=30)
+        # still, this view is not "signed"
+        from unittest.mock import MagicMock
+        self.app._annotate = MagicMock(return_value=m)
+        with self.assertRaises(jsonschema.ValidationError):
+            self.app.annotate(self.in_mmif)
+        
+        
 
     def test_open_document_location(self):
         mmif = ExampleInputMMIF.get_rawmmif()
@@ -226,7 +248,8 @@ class TestClamsApp(unittest.TestCase):
         self.app.metadata.add_parameter('param4', 'fourth_param', 'integer', default='1', choices="1 2 3".split())
         self.app.metadata.add_parameter('param5', 'fifth_param', 'number', default='0.5')
         conf = self.app.get_configuration(param1='okay', non_parameter='should be ignored')
-        self.assertEqual(len(conf), 5)
+        conf.pop(clams.ClamsApp._RAW_PARAMS_KEY, None)
+        self.assertEqual(len(conf), 5)  # 1 from `param1`, 4 from default value
         self.assertFalse('non_parameter' in conf)
         self.assertEqual(type(conf['param1']), str)
         self.assertEqual(type(conf['param2']), str)

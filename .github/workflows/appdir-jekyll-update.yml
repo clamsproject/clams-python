@@ -1,0 +1,25 @@
+name: "📦 Publish (app user manual)"
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches: ['main']
+    paths: ['documentation/clamsapp.md']
+
+jobs:
+  call-jekyll-build-deploy:
+    name: "🤙 Call AppDir Jekyll build-deploy workflow"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GH_CLAMSBOT_TOKEN }}
+        script: |
+          const result = await github.rest.repos.createDispatchEvent({
+            owner: 'clamsproject',
+            repo: 'apps',
+            event_type: 'appdir-update',
+            client_payload: ${{ toJSON(github.event) }}
+          })
+          console.log(result);
