@@ -3,7 +3,8 @@ import sys
 from mmif import __specver__
 
 from clams import develop
-from clams import source
+from clams.mmif_utils import source
+from clams.mmif_utils import rewind
 from clams.app import *
 from clams.app import __all__ as app_all
 from clams.appmetadata import AppMetadata
@@ -23,7 +24,7 @@ def prep_argparser():
         version=version_template.format(__version__, __specver__)
     )
     subparsers = parser.add_subparsers(title='sub-command', dest='subcmd')
-    for subcmd_module in [source, develop]:
+    for subcmd_module in [source, rewind, develop]:
         subcmd_name = subcmd_module.__name__.rsplit('.')[-1]
         subcmd_parser = subcmd_module.prep_argparser(add_help=False)
         subparsers.add_parser(subcmd_name, parents=[subcmd_parser], 
@@ -42,5 +43,7 @@ def cli():
     args = parser.parse_args()
     if args.subcmd == 'source':
         source.main(args)
+    if args.subcmd == 'rewind':
+        rewind.main(args)
     if args.subcmd == 'develop':
         develop.main(args)

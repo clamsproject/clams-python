@@ -193,10 +193,11 @@ class ClamsApp(ABC):
         :param runtime_conf: runtime configuration of the app as k-v pairs
         """
         # TODO (krim @ 8/2/23): once all devs understood this change, make runtime_conf a required argument
-        warnings.warn("`runtime_conf` argument for ClamsApp.sign_view() will "
-                      "no longer be optional in the future. Please just pass "
-                      "`runtime_params` from _annotate() method.",
-                      FutureWarning, stacklevel=2)
+        if runtime_conf is None:
+            warnings.warn("`runtime_conf` argument for ClamsApp.sign_view() will "
+                          "no longer be optional in the future. Please just pass "
+                          "`runtime_params` from _annotate() method.",
+                          FutureWarning, stacklevel=2)
         view.metadata.app = self.metadata.identifier
         if runtime_conf is not None:
             if self._RAW_PARAMS_KEY in runtime_conf:
