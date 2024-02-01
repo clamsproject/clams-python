@@ -11,20 +11,22 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 import datetime
-import os
+from pathlib import Path
 import shutil
 import sys
 
 import mmif
 
-sys.path.insert(0, os.path.abspath(os.path.join('.', 'documentation')))
+proj_root_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, proj_root_dir)
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'clams-python'
+project = proj_root_dir.name
 copyright = f'{datetime.date.today().year}, Brandeis LLC'
 author = 'Brandeis LLC'
+version = open(proj_root_dir / 'VERSION').read().strip()
 
 
 # -- General configuration ---------------------------------------------------
@@ -86,7 +88,7 @@ def linkcode_resolve(domain, info):
 
 
 def update_target_spec():
-    target_vers_csv = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'target-versions.csv')
+    target_vers_csv = Path(__file__).parent / 'target-versions.csv'
     with open("../VERSION", 'r') as version_f:
         version = version_f.read().strip()
     mmifver = mmif.__version__
