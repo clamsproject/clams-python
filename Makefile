@@ -40,10 +40,10 @@ docs: mmif := $(shell grep mmif-python requirements.txt)
 docs: pydantic := $(shell grep pydantic requirements.txt)
 docs: VERSION $(generatedcode)
 	pip install --upgrade --no-input "$(mmif)" "$(pydantic)"
-	rm -rf documentation/_build docs
+	rm -rf docs
+	mkdir -p docs
 	python3 clams/appmetadata/__init__.py > documentation/appmetadata.jsonschema
-	python3 setup.py build_sphinx -a
-	mv documentation/_build/html docs
+	sphinx-build -b html documentation/ docs
 	mv documentation/appmetadata.jsonschema docs/
 	touch docs/.nojekyll
 	echo 'sdk.clams.ai' > docs/CNAME

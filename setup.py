@@ -9,13 +9,6 @@ import setuptools
 name = "clams-python"
 cmdclass = {}
 
-try:
-    from sphinx.setup_command import BuildDoc
-
-    cmdclass['build_sphinx'] = BuildDoc
-except ImportError:
-    print('WARNING: sphinx not available, not building docs')
-
 with open("VERSION", 'r') as version_f:
     version = version_f.read().strip()
 
@@ -50,7 +43,7 @@ class DoNothing(distutils.cmd.Command):
 cmdclass['donothing'] = DoNothing
 
 setuptools.setup(
-    name="clams-python",
+    name=name,
     version=version,
     author="Brandeis Lab for Linguistics and Computation",
     author_email="admin@clams.ai",
@@ -67,16 +60,6 @@ setuptools.setup(
         'Programming Language :: Python :: 3 :: Only',
     ],
     cmdclass=cmdclass,
-    command_options={
-        'build_sphinx': {
-            'source_dir': ('setup.py', 'documentation'),
-            'project': ('setup.py', name),
-            'version': ('setup.py', version),
-            #  'release': ('setup.py', release),
-            'build_dir': ('setup.py', 'documentation/_build'),
-            'builder': ('setup.py', 'html'),
-        }
-    },
     # this is for *building*, building (build, bdist_*) doesn't get along with MANIFEST.in
     # so using this param explicitly is much safer implementation
     package_data={
