@@ -1,4 +1,42 @@
 
+## releasing 1.1.0 (2024-01-31)
+### Overview
+This is a minor-level release that fixes various bugs and adds safeguards for possible inconsistency in output MMIFs. 
+
+### Additions
+* `sign_view` now use user input parameters "as-is" whenever they are available (https://github.com/clamsproject/clams-python/issues/181)
+* apps will conduct JSON validation right before it responses with MMIF output (https://github.com/clamsproject/clams-python/issues/179)
+* `clams rewind` is now available to _rewind_ MMIF files (https://github.com/clamsproject/clams-python/issues/190)
+``` bash 
+$ clams rewind --help
+usage: clams rewind [-h] [-o PATH] [-p] [-n NUMBER] [-m {app,view}] mmif_file
+
+provides CLI to rewind a MMIF from a CLAMS pipeline.
+
+MMIF rewinder rewinds a MMIF by deleting the last N views.
+N can be specified as a number of views, or a number of producer apps.
+
+positional arguments:
+  mmif_file             Path to the input MMIF file, or '-' to read from stdin.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o PATH, --output PATH
+                        Path to the rewound MMIF output file. When not given, the rewound MMIF is printed to stdout.
+  -p, --pretty          Pretty-print rewound MMIF. True by default
+  -n NUMBER, --number NUMBER
+                        Number of views to rewind (default: interactive mode)
+  -m {app,view}, --mode {app,view}
+                        Number of views to rewind (default: interactive mode)
+```
+    
+
+### Changes
+* pre-built base container images will take less space (https://github.com/clamsproject/clams-python/issues/186)
+* apps running in production mode (over gunicorn) now logs to stdout (https://github.com/clamsproject/clams-python/issues/183)
+* fixed a bug in app metadata generation (https://github.com/clamsproject/clams-python/issues/187) 
+
+
 ## releasing 1.0.9 (2023-07-24)
 ### Overview
 Minor release to update small issues in the app develop template. 
