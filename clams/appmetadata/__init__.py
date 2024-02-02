@@ -12,7 +12,7 @@ from mmif import vocabulary
 unresolved_app_version_num = 'unresolvable'
 app_version_envvar_key = 'CLAMS_APP_VERSION'
 # type aliases to use in app metadata and runtime parameter processing 
-primitives = Union[int, float, bool, str]
+real_valued_primitives = Union[int, float, bool, str]
 # these names are taken from the JSON schema data types
 param_value_types = Literal['integer', 'number', 'string', 'boolean']
 
@@ -69,7 +69,7 @@ class Output(_BaseModel):
         alias="@type", 
         description="The type of the object. Must be a IRI string."
     )
-    properties: Dict[str, str] = pydantic.Field(
+    properties: Dict[str, real_valued_primitives] = pydantic.Field(
         {}, 
         description="(optional) Specification for type properties, if any."
     )
@@ -126,11 +126,11 @@ class RuntimeParameter(_BaseModel):
         ...,
         description=f"Type of the parameter value the app expects. Must be one of {param_value_types_values}."
     ) 
-    choices: List[primitives] = pydantic.Field(
+    choices: List[real_valued_primitives] = pydantic.Field(
         None, 
         description="(optional) List of string values that can be accepted."
     )
-    default: primitives = pydantic.Field(
+    default: real_valued_primitives = pydantic.Field(
         None, 
         description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting "
                     "a default value makes a parameter 'optional'."
@@ -344,9 +344,9 @@ class AppMetadata(pydantic.BaseModel):
             raise ValueError(f"Cannot add a duplicate output '{new}'.")
 
     def add_parameter(self, name: str, description: str, type: param_value_types,
-                      choices: Optional[List[primitives]] = None,
+                      choices: Optional[List[real_valued_primitives]] = None,
                       multivalued: bool = False,
-                      default: primitives = None):
+                      default: real_valued_primitives = None):
         """
         Helper method to add an element to the ``parameters`` list. 
         """

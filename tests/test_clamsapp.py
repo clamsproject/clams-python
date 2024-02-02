@@ -127,7 +127,7 @@ class TestClamsApp(unittest.TestCase):
         self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='text')
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['output']), 2)
-        # these should not be added as a duplicate
+        # these should not be added because they are duplicates
         with self.assertRaises(ValueError):
             self.app.metadata.add_input(at_type=DocumentTypes.TextDocument)
         with self.assertRaises(ValueError):
