@@ -1,4 +1,13 @@
 
+## releasing 1.1.1 (2024-02-05)
+### Overview
+This release contains minor fixes in code and updates in documentations regarding changes in runtime parameter in the previous 1.1.0 release.
+
+### Changes
+* fixed broken links in the main repo README
+* fixed outdated information regarding usage of `get_configuration` in various documentation
+* fixed `properties` in I/O specification in AppMetadata are unfairly restricted to `str` values
+
 ## releasing 1.1.0 (2024-01-31)
 ### Overview
 This is a minor-level release that fixes various bugs and adds safeguards for possible inconsistency in output MMIFs. 

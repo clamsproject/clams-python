@@ -37,7 +37,7 @@
             clams-python
           </a>
               <div class="version">
-                1.1.0
+                1.1.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -197,11 +197,13 @@ Also refer to <a class="reference external" href="https://sdk.clams.ai/appmetada
 </section>
 <section id="annotate">
 <h4><code class="docutils literal notranslate"><span class="pre">_annotate()</span></code><a class="headerlink" href="#annotate" title="Permalink to this heading"></a></h4>
-<p>The <code class="docutils literal notranslate"><span class="pre">_annotate()</span></code> method should accept a MMIF file as its parameter and always returns a <code class="docutils literal notranslate"><span class="pre">MMIF</span></code> object with an additional <code class="docutils literal notranslate"><span class="pre">view</span></code> containing annotation results. This is where the bulk of your logic will go. For a text processing app, it is mostly concerned with finding text documents, calling the code that runs over the text, creating new views and inserting the results.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">_annotate()</span></code> method should accept a MMIF file/string/object as its first parameter and always returns a <code class="docutils literal notranslate"><span class="pre">MMIF</span></code> object with an additional <code class="docutils literal notranslate"><span class="pre">view</span></code> containing annotation results. This is where the bulk of your logic will go. For a text processing app, it is mostly concerned with finding text documents, calling the code that runs over the text, creating new views and inserting the results.</p>
+<p>In addition to the input MMIF, this method can accept any number of keyword arguments, which are the parameters set by the user/caller. Note that when this method is called inside the <code class="docutils literal notranslate"><span class="pre">annotate()</span></code> public method in the <code class="docutils literal notranslate"><span class="pre">ClamsApp</span></code> class (which is the usual case when running as a CLAMS app), the keyword arguments are automatically “refined” before being passed here. The refinement includes</p>
+<ol class="arabic simple">
+<li><p>inserting “default” values for parameters that are not set by the user</p></li>
+<li><p>checking that the values are of the correct type and value, based on the parameter specification in the app metadata</p></li>
+</ol>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_annotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mmif</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="c1"># before everything, this will populate the argument dict with the default values</span>
-    <span class="c1"># and while doing so, it will also do some validation of the argument values</span>
-    <span class="n">configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_configuration</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="c1"># then, access the parameters: here to just print</span>
     <span class="c1"># them and to willy-nilly throw an error if the caller wants that</span>
     <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">configs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -224,7 +226,8 @@ Also refer to <a class="reference external" href="https://sdk.clams.ai/appmetada
 <p>For each text document from the document list, there is one invocation of <code class="docutils literal notranslate"><span class="pre">_new_view()</span></code> which gets handed a document identifier, so it can be put in the view metadata. And for each view with text documents there is also one invocation of <code class="docutils literal notranslate"><span class="pre">_new_view()</span></code>, but no document identifier is handed in so the identifier will not be put into the view metadata.</p>
 <p>The method  <code class="docutils literal notranslate"><span class="pre">_run_nlp_tool()</span></code> is responsible for running the NLP tool and adding annotations to the new view. The third argument allows us to anchor annotations created by the tool by handing over the document identifier, possibly prefixed by the view the document lives in.</p>
 <p>One thing about <code class="docutils literal notranslate"><span class="pre">_annotate()</span></code> as it is defined above is that it will most likely be the same for each NLP application, all the application specific details are in the code that creates new views and the code that adds annotations.</p>
-<p>Creating a new view:</p>
+<section id="creating-a-new-view">
+<h5>Creating a new view:<a class="headerlink" href="#creating-a-new-view" title="Permalink to this heading"></a></h5>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_new_view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">runtime_config</span><span class="p">):</span>
     <span class="n">view</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mmif</span><span class="o">.</span><span class="n">new_view</span><span class="p">()</span>
     <span class="n">view</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">identifier</span>
@@ -238,7 +241,9 @@ Also refer to <a class="reference external" href="https://sdk.clams.ai/appmetada
 </pre></div>
 </div>
 <p>This is the simplest NLP view possible since there is only one annotation type and it has no metadata properties beyond the <code class="docutils literal notranslate"><span class="pre">document</span></code> property. Other applications may have more annotation types, which results in repeated invocations of <code class="docutils literal notranslate"><span class="pre">new_contain()</span></code>, and may define other metadata properties for those types.</p>
-<p>Adding annotations:</p>
+</section>
+<section id="adding-annotations">
+<h5>Adding annotations:<a class="headerlink" href="#adding-annotations" title="Permalink to this heading"></a></h5>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_run_nlp_tool</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">,</span> <span class="n">new_view</span><span class="p">,</span> <span class="n">full_doc_id</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the NLP tool over the document and add annotations to the view, using the</span>
 <span class="sd">    full document identifier (which may include a view identifier) for the document</span>
@@ -256,6 +261,7 @@ Also refer to <a class="reference external" href="https://sdk.clams.ai/appmetada
 </pre></div>
 </div>
 <p>First, with <code class="docutils literal notranslate"><span class="pre">text_value</span></code> we get the text from the text document, either from its <code class="docutils literal notranslate"><span class="pre">location</span></code> property or from its <code class="docutils literal notranslate"><span class="pre">text</span></code> property. Second, we apply the tokenizer to the text. And third, we loop over the token offsets in the tokenizer result and create annotations of type <code class="docutils literal notranslate"><span class="pre">Uri.TOKEN</span></code> with an identifier that is automatically generated by the SDK. All that is needed for adding an annotation is the <code class="docutils literal notranslate"><span class="pre">new_annotation()</span></code> method on the view object and the <code class="docutils literal notranslate"><span class="pre">add_property()</span></code> method on the annotation object.</p>
+</section>
 </section>
 </section>
 </section>
