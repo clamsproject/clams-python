@@ -43,7 +43,7 @@ docs: VERSION $(generatedcode)
 	rm -rf docs
 	mkdir -p docs
 	python3 clams/appmetadata/__init__.py > documentation/appmetadata.jsonschema
-	sphinx-build -b html documentation/ docs
+	sphinx-build -a -b html documentation/ docs
 	mv documentation/appmetadata.jsonschema docs/
 	touch docs/.nojekyll
 	echo 'sdk.clams.ai' > docs/CNAME

@@ -6,7 +6,7 @@ from flask_restful import Resource, Api
 from mmif import Mmif
 
 from clams.app import ClamsApp
-from clams.appmetadata import primitives
+from clams.appmetadata import real_valued_primitives
 
 
 class Restifier(object):
@@ -160,10 +160,10 @@ class ParameterCaster(object):
 
     :param param_spec: A specification of a data types of parameters
     """
-    def __init__(self, param_spec: Dict[str, Tuple[primitives, bool]]):
+    def __init__(self, param_spec: Dict[str, Tuple[real_valued_primitives, bool]]):
         self.param_spec = param_spec
 
-    def cast(self, args: Dict[str, List[str]]) -> Dict[str, Union[primitives, List[primitives]]]:
+    def cast(self, args: Dict[str, List[str]]) -> Dict[str, Union[real_valued_primitives, List[real_valued_primitives]]]:
         """
         Given parameter specification, tries to cast values of args to specified Python data types.
         Note that this caster deals with query strings, thus all keys and values in the input args are plain strings. 
@@ -194,7 +194,10 @@ class ParameterCaster(object):
                         else: 
                             casted[k] = v
             else:
-                casted[k] = vs  
+                if len(vs) > 1:
+                    casted[k] = vs
+                else:
+                    casted[k] = vs[0]
                     
         return casted
 

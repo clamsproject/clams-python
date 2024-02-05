@@ -9,9 +9,10 @@
 1. a flask-based wrapper to run a Python CLAMS app as an HTTP web app
 1. cookie-cutter shell command that sets up everything and starts a new CLAMS app project
 
-### Start now from [Getting Started](introduction.html)!
+### Start now from [Getting Started](https://clamsproject.github.io/clams-python/introduction.html)!
 
 ## For more ...
-For user manuals and Python API documentation, take a look at [Python modules](https://clams.ai/clams-python/modules.html).
-
-For MMIF-specific Python API documentation, take a look at the [mmif-python website](https://clams.ai/mmif-python).
+* [Version history and patch notes](https://github.com/clamsproject/clams-python/blob/main/CHANGELOG.md)
+* [CLAMS Python API documentation](https://clamsproject.github.io/clams-python/modules.html)
+* [MMIF-specific Python API documentation](https://clamsproject.github.io/mmif-python)
+* [Public CLAMS App Directory](https://clamsproject.github.io/apps)
