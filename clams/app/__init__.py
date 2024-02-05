@@ -137,7 +137,6 @@ class ClamsApp(ABC):
         
         #. Create a new view (or views) by calling :meth:`~mmif.serialize.mmif.Mmif.new_view` on the input mmif object.
         #. Call :meth:`~clams.app.ClamsApp.sign_view` with the input runtime parameters for the record.
-        #. Call :meth:`~clams.app.ClamsApp.get_configuration` to get an "upgraded" runtime parameters with default values.
         #. Call :meth:`~mmif.serialize.view.View.new_contain` on the new view object with any annotation properties specified by the configuration.
         #. Process the data and create :class:`~mmif.serialize.annotation.Annotation` objects and add them to the new view. 
         #. While doing so, get help from :class:`~mmif.vocabulary.document_types.DocumentTypes`, :class:`~mmif.vocabulary.annotation_types.AnnotationTypes` classes to generate ``@type`` strings.
@@ -177,7 +176,7 @@ class ClamsApp(ABC):
     def get_configuration(self, **runtime_params):
         warnings.warn("ClamsApp.get_configuration() is deprecated. "
                       "If you are using this method in `_annotate()` method,"
-                      "it is no longer needed since `clams-python==1.0.10`.", 
+                      "it is no longer needed since `clams-python>1.0.9`.", 
                       DeprecationWarning, stacklevel=2)
         return self._refine_params(**runtime_params)
 

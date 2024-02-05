@@ -240,14 +240,14 @@ class TestClamsApp(unittest.TestCase):
         with self.app.open_document_location(mmif.documents['i1'], Image.open) as f:
             self.assertEqual(f.size, (200, 71))
             
-    def test_get_configuration(self):
+    def test_refine_parameters(self):
         self.app.metadata.parameters = []
         self.app.metadata.add_parameter('param1', 'first_param', 'string')
         self.app.metadata.add_parameter('param2', 'second_param', 'string', default='second_default')
         self.app.metadata.add_parameter('param3', 'third_param', 'boolean', default='f')
         self.app.metadata.add_parameter('param4', 'fourth_param', 'integer', default='1', choices="1 2 3".split())
         self.app.metadata.add_parameter('param5', 'fifth_param', 'number', default='0.5')
-        conf = self.app.get_configuration(param1='okay', non_parameter='should be ignored')
+        conf = self.app._refine_params(param1='okay', non_parameter='should be ignored')
         conf.pop(clams.ClamsApp._RAW_PARAMS_KEY, None)
         self.assertEqual(len(conf), 5)  # 1 from `param1`, 4 from default value
         self.assertFalse('non_parameter' in conf)
@@ -258,10 +258,10 @@ class TestClamsApp(unittest.TestCase):
         self.assertEqual(type(conf['param5']), float)
         with self.assertRaises(ValueError):
             # because param1 doesn't have a default value and thus a required param
-            self.app.get_configuration(param2='okay')
+            self.app._refine_params(param2='okay')
         with self.assertRaisesRegexp(ValueError, r'.+must be one of.+'):
             # because param4 can't be 4, note that param1 is "required" 
-            self.app.get_configuration(param1='p1', param4=4)
+            self.app._refine_params(param1='p1', param4=4)
             
     def test_error_handling(self):
         params = {'raise_error': True, 'pretty': True}
@@ -383,7 +383,9 @@ class TestParameterCaster(unittest.TestCase):
             'number_param': ["1.11"], 
             'int_param': [str(sys.maxsize)], 
             'bool_param': ['true'],
-            'str_multi_param': ['value1', 'value2']
+            'str_multi_param': ['value1', 'value2'],
+            'undefined_param_single': ['undefined_value1'],
+            'undefined_param_multi': ['undefined_value1', 'undefined_value2'],
         }
         self.assertTrue(all(map(lambda x: isinstance(x, str), itertools.chain.from_iterable(params.values()))))
         casted = caster.cast(params)
@@ -393,6 +395,10 @@ class TestParameterCaster(unittest.TestCase):
         self.assertTrue(isinstance(casted['int_param'], int))
         self.assertTrue(casted['bool_param'])
         self.assertEqual(set(casted['str_multi_param']), set(params['str_multi_param']))
+        self.assertTrue('undefined_param_single' in casted)
+        self.assertTrue('undefined_param_multi' in casted)
+        self.assertFalse(isinstance(casted['undefined_param_single'], list))
+        self.assertTrue(isinstance(casted['undefined_param_multi'], list))
         unknown_param_key = 'unknown'
         unknown_param_val = 'dunno'
         params[unknown_param_key] = [unknown_param_val]

@@ -194,7 +194,10 @@ class ParameterCaster(object):
                         else: 
                             casted[k] = v
             else:
-                casted[k] = vs  
+                if len(vs) > 1:
+                    casted[k] = vs
+                else:
+                    casted[k] = vs[0]
                     
         return casted
 

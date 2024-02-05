@@ -113,13 +113,15 @@ def _appmetadata(self):
 > Also refer to [CLAMS App Metadata](https://sdk.clams.ai/appmetadata.html) for more details regarding what fields need to be specified.
 
 #### `_annotate()`
-The `_annotate()` method should accept a MMIF file as its parameter and always returns a `MMIF` object with an additional `view` containing annotation results. This is where the bulk of your logic will go. For a text processing app, it is mostly concerned with finding text documents, calling the code that runs over the text, creating new views and inserting the results.
+The `_annotate()` method should accept a MMIF file/string/object as its first parameter and always returns a `MMIF` object with an additional `view` containing annotation results. This is where the bulk of your logic will go. For a text processing app, it is mostly concerned with finding text documents, calling the code that runs over the text, creating new views and inserting the results. 
+
+In addition to the input MMIF, this method can accept any number of keyword arguments, which are the parameters set by the user/caller. Note that when this method is called inside the `annotate()` public method in the `ClamsApp` class (which is the usual case when running as a CLAMS app), the keyword arguments are automatically "refined" before being passed here. The refinement includes 
+
+1. inserting "default" values for parameters that are not set by the user
+2. checking that the values are of the correct type and value, based on the parameter specification in the app metadata
 
 ```python
 def _annotate(self, mmif, **kwargs):
-    # before everything, this will populate the argument dict with the default values
-    # and while doing so, it will also do some validation of the argument values
-    configs = self.get_configuration(kwargs)
     # then, access the parameters: here to just print
     # them and to willy-nilly throw an error if the caller wants that
     for arg, val in configs.items():
@@ -146,7 +148,7 @@ The method  `_run_nlp_tool()` is responsible for running the NLP tool and adding
 
 One thing about `_annotate()` as it is defined above is that it will most likely be the same for each NLP application, all the application specific details are in the code that creates new views and the code that adds annotations.
 
-Creating a new view:
+##### Creating a new view:
 
 ```python
 def _new_view(self, docid=None, runtime_config):
@@ -163,7 +165,7 @@ def _new_view(self, docid=None, runtime_config):
 
 This is the simplest NLP view possible since there is only one annotation type and it has no metadata properties beyond the `document` property. Other applications may have more annotation types, which results in repeated invocations of `new_contain()`, and may define other metadata properties for those types.
 
-Adding annotations:
+##### Adding annotations:
 
 ```python
 def _run_nlp_tool(self, doc, new_view, full_doc_id):
