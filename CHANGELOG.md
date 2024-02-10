@@ -1,4 +1,12 @@
 
+## releasing 1.1.2 (2024-02-10)
+### Overview
+This release updates to the latest MMIF and `mmif-python`
+
+### Additions
+* Now based on `mmif-python` 1.0.9 and MMIF 1.0.1
+
+
 ## releasing 1.1.1 (2024-02-05)
 ### Overview
 This release contains minor fixes in code and updates in documentations regarding changes in runtime parameter in the previous 1.1.0 release.
