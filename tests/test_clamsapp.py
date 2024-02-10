@@ -247,7 +247,12 @@ class TestClamsApp(unittest.TestCase):
         self.app.metadata.add_parameter('param3', 'third_param', 'boolean', default='f')
         self.app.metadata.add_parameter('param4', 'fourth_param', 'integer', default='1', choices="1 2 3".split())
         self.app.metadata.add_parameter('param5', 'fifth_param', 'number', default='0.5')
-        conf = self.app._refine_params(param1='okay', non_parameter='should be ignored')
+        dummy_params = {'param1': 'okay', 'non_parameter': 'should be ignored'}
+        conf = self.app._refine_params(**dummy_params)
+        # should not refine what's already refined
+        double_refine = self.app._refine_params(**conf)
+        self.assertTrue(clams.ClamsApp._RAW_PARAMS_KEY in double_refine)
+        self.assertEqual(double_refine, conf)
         conf.pop(clams.ClamsApp._RAW_PARAMS_KEY, None)
         self.assertEqual(len(conf), 5)  # 1 from `param1`, 4 from default value
         self.assertFalse('non_parameter' in conf)
