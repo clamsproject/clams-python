@@ -194,8 +194,8 @@ class ClamsApp(ABC):
         # TODO (krim @ 8/2/23): once all devs understood this change, make runtime_conf a required argument
         if runtime_conf is None:
             warnings.warn("`runtime_conf` argument for ClamsApp.sign_view() will "
-                          "no longer be optional in the future. Please just pass "
-                          "`runtime_params` from _annotate() method.",
+                          "no longer be optional in the future. Please pass `runtime_params` "
+                          "from _annotate() method.",
                           FutureWarning, stacklevel=2)
         view.metadata.app = self.metadata.identifier
         if runtime_conf is not None:
@@ -204,8 +204,6 @@ class ClamsApp(ABC):
             else:
                 conf = runtime_conf
             view.metadata.add_parameters(**{k: str(v) for k, v in conf.items()})
-            # TODO (krim @ 8/2/23): add "refined" parameters as well 
-            #  once https://github.com/clamsproject/mmif/issues/208 is resolved
         
     def set_error_view(self, mmif: Union[str, dict, Mmif], runtime_conf: Optional[dict] = None) -> Mmif:
         """

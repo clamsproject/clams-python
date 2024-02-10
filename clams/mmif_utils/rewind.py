@@ -6,44 +6,27 @@ from pathlib import Path as P
 import mmif
 
 
-def is_valid_choice(choice):
-    try:
-        ichoice = int(choice)
-        if 0 <= ichoice:
-            return ichoice
-        else:
-            raise ValueError(f"\nInvalid argument for -n. Please enter a positive integer.")
-    except ValueError:
-        raise argparse.ArgumentTypeError(f"\nInvalid argument for -n. Please enter a positive integer.")
-
-def user_choice(mmif_obj:mmif.Mmif) -> int:
+def prompt_user(mmif_obj: mmif.Mmif) -> int:
     """
     Function to ask user to choose the rewind range.
-
-    :param mmif_obj: mmif object
-    :return: int option number
     """
 
     ## Give a user options (#, "app", "timestamp") - time order
     n = len(mmif_obj.views)
     i = 0  # option number
+    aname = ""
+    a = 0
     # header
-    print("\n" + "{:<4} {:<30} {:<100}".format("num", "timestamp", "app"))
-    for view in mmif_obj.views:
-        option = "{:<4} {:<30} {:<100}".format(n-i, str(view.metadata.timestamp), str(view.metadata.app))
-        print(option)
+    print("\n" + "{:<8} {:<8} {:<30} {:<100}".format("view-num", "app-num", "timestamp", "app"))
+    for view in reversed(mmif_obj.views):
+        if view.metadata.app != aname:
+            aname = view.metadata.app
+            a += 1
         i += 1
+        print("{:<8} {:<8} {:<30} {:<100}".format(i, a, str(view.metadata.timestamp), str(view.metadata.app)))
 
     ## User input
-    while True:
-        choice = int(input("\nEnter the number to delete from that point by rewinding: "))
-        try:
-            if 0 <= choice <= n:
-                return choice
-            else:
-                print(f"\nInvalid choice. Please enter an integer in the range [0, {n}].")
-        except ValueError:
-            print("\nInvalid input. Please enter a valid number.")
+    return int(input("\nEnter the number to delete from that point by rewinding: "))
 
 
 def rewind_mmif(mmif_obj: mmif.Mmif, choice: int, choice_is_viewnum: bool = True) -> mmif.Mmif:
@@ -92,24 +75,32 @@ def describe_argparser():
 
 
 def prep_argparser(**kwargs):
-    parser = argparse.ArgumentParser(description=describe_argparser()[1], formatter_class=argparse.RawDescriptionHelpFormatter, **kwargs)
-    parser.add_argument("mmif_file", nargs=1, help="Path to the input MMIF file, or '-' to read from stdin.")
-    parser.add_argument("-o", '--output', default=None, metavar="PATH", help="Path to the rewound MMIF output file. When not given, the rewound MMIF is printed to stdout.")
-    parser.add_argument("-p", '--pretty', action='store_true', help="Pretty-print rewound MMIF. True by default")
-    parser.add_argument("-n", '--number', default="0", type=is_valid_choice, help="Number of views to rewind (default: interactive mode)")
-    parser.add_argument("-m", '--mode', choices=['app', 'view'], default='view', help="Number of views to rewind (default: interactive mode)")
+    parser = argparse.ArgumentParser(description=describe_argparser()[1], 
+                                     formatter_class=argparse.RawDescriptionHelpFormatter, **kwargs)
+    parser.add_argument("mmif_file", 
+                        help="Path to the input MMIF file, or '-' to read from stdin.")
+    parser.add_argument("-o", '--output', default=None, metavar="PATH", 
+                        help="Path to the rewound MMIF output file. When not given, the rewound is printed to stdout.")
+    parser.add_argument("-p", '--pretty', action='store_true', 
+                        help="Pretty-print rewound MMIF")
+    parser.add_argument("-n", '--number', default="0", type=int,
+                        help="Number of views or apps to rewind, must be a positive integer. "
+                             "If 0, the user will be prompted to choose. (default: 0)")
+    parser.add_argument("-m", '--mode', choices=['app', 'view'], default='view', 
+                        help="Choose to rewind by number of views or number of producer apps. (default: view)")
     return parser
 
 
 def main(args):
-    mmif_obj = mmif.Mmif(sys.stdin) if args.mmif_file[0] == '-' else mmif.Mmif(open(args.mmif_file[0]).read())
+    mmif_obj = mmif.Mmif(str(sys.stdin)) if args.mmif_file[0] == '-' else mmif.Mmif(open(args.mmif_file).read())
 
-    if args.number == 0: # If user doesn't know how many views to rewind, give them choices.
-        choice = user_choice(mmif_obj)
+    if args.number == 0:  # If user doesn't know how many views to rewind, give them choices.
+        choice = prompt_user(mmif_obj)
     else:
         choice = args.number
+    if not isinstance(choice, int) or choice <= 0:
+        raise ValueError(f"Only can rewind by a positive number of views. Got {choice}.")
 
-    
     if args.output:
         # Check if the same file name exist in the path and avoid overwriting.
         output_fp = P(args.output)
@@ -132,4 +123,3 @@ if __name__ == "__main__":
     parser = prep_argparser()
     args = parser.parse_args()
     main(args)
-
