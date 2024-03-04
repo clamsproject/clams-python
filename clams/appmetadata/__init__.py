@@ -62,7 +62,14 @@ class _BaseModel(pydantic.BaseModel):
 
 class Output(_BaseModel):
     """
-    Defines a data model that describes output specification of a CLAMS app
+    Data model that describes output specification of a CLAMS app. 
+    
+    CLAMS apps are expected to have at least one output type, and each type must
+    be defined by a ``@type`` URI string. If the type has specific properties and values, 
+    they can be described in the (optional) ``properties`` field. Finally, a human-readable 
+    verbose description can be provided in the (optional) ``description`` field for users.
+    
+    Developers should take diligent care to include all output types and their properties in the app metadata. 
     """
     at_type: pydantic.AnyHttpUrl = pydantic.Field(
         ..., 
@@ -88,7 +95,14 @@ class Output(_BaseModel):
                 
 class Input(Output):
     """
-    Defines a data model that describes input specification of a CLAMS app
+    Data model that describes input specification of a CLAMS app. 
+    
+    CLAMS apps are expected to have at least one output type, and each type must
+    be defined by a ``@type`` URI string. If the type has specific properties and values, 
+    they can be described in the (optional) ``properties`` field. Finally, a human-readable 
+    verbose description can be provided in the (optional) ``description`` field for users.
+    
+    Developers should take diligent care to include all output types and their properties in the app metadata. 
     """
     required: bool = pydantic.Field(
         None, 
@@ -153,7 +167,7 @@ class RuntimeParameter(_BaseModel):
         
 class AppMetadata(pydantic.BaseModel):
     """
-    Defines a data model that describes a CLAMS app. 
+    Data model that describes a CLAMS app. 
     
     Can be initialized by simply passing all required key-value pairs. 
     
