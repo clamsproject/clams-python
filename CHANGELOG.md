@@ -1,4 +1,16 @@
 
+## releasing 1.1.3 (2024-03-04)
+##### IMPORTANT! If you're creating this PR for a release candidate that is to be merged into the main branch, make sure use title format `releasing <ver_num>`, where `ver_num` can be any versioning format (e.g. `x.y.z`, `vN`, etc)
+
+### Overview
+This is a minor release to catch up new version of MMIF and `mmif-python`. 
+
+### Changes
+* updated to latest mmif-python (and MMIF 1.0.2)
+* small updates in API documentation regarding I/O spec in app metadata
+
+
+
 ## releasing 1.1.2 (2024-02-10)
 ### Overview
 This release updates to the latest MMIF and `mmif-python`
