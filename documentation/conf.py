@@ -27,6 +27,7 @@ project = proj_root_dir.name
 copyright = f'{datetime.date.today().year}, Brandeis LLC'
 author = 'Brandeis LLC'
 version = open(proj_root_dir / 'VERSION').read().strip()
+root_doc = 'index'
 
 
 # -- General configuration ---------------------------------------------------
@@ -84,7 +85,7 @@ def linkcode_resolve(domain, info):
     if not info['module']:
         return None
     filename = info['module'].replace('.', '/')
-    return f"https://github.com/clamsproject/clams-python/tree/master/{filename}/__init__.py"
+    return f"https://github.com/clamsproject/clams-python/tree/main/{filename}/__init__.py"
 
 
 def update_target_spec():
