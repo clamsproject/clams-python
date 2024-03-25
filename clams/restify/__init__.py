@@ -154,6 +154,8 @@ class ClamsHTTPApi(Resource):
 
 
 class ParameterCaster(object):
+    KV_DELIMITER = ':'
+    
     """
     A helper class to convert parameters passed by HTTP query strings to
     proper python data types.
@@ -189,8 +191,13 @@ class ParameterCaster(object):
                             v = self.int_param(v)
                         elif type_ == str:
                             v = self.str_param(v)
+                        elif type_ == dict:
+                            v = self.kv_param(v)
                         if multivalued:
-                            casted.setdefault(k, []).append(v)
+                            if type_ == dict:
+                                casted.setdefault(k, {}).update(v)
+                            else:
+                                casted.setdefault(k, []).append(v)
                         else: 
                             casted[k] = v
             else:
@@ -228,3 +235,10 @@ class ParameterCaster(object):
         Helper function to convert string values to string type.
         """
         return value
+    
+    @staticmethod
+    def kv_param(value):
+        """
+        Helper function to convert string values to key-value pair type.
+        """
+        return dict([value.split(ParameterCaster.KV_DELIMITER, 1)])

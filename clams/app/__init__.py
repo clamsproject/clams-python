@@ -42,7 +42,7 @@ class ClamsApp(ABC):
         self.metadata: AppMetadata = self._load_appmetadata()
         super().__init__()
         # data type specification for common parameters
-        python_type = {"boolean": bool, "number": float, "integer": int, "string": str}
+        python_type = {"boolean": bool, "number": float, "integer": int, "string": str, "map": dict}
 
         self.metadata_param_spec = {}
         self.annotate_param_spec = {}
