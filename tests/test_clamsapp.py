@@ -226,8 +226,6 @@ class TestClamsApp(unittest.TestCase):
         self.app._annotate = MagicMock(return_value=m)
         with self.assertRaises(jsonschema.ValidationError):
             self.app.annotate(self.in_mmif)
-        
-        
 
     def test_open_document_location(self):
         mmif = ExampleInputMMIF.get_rawmmif()
@@ -378,7 +376,8 @@ class TestParameterCaster(unittest.TestCase):
                            'number_param': (float, False),
                            'int_param': (int, False),
                            'bool_param': (bool, False), 
-                           'str_multi_param': (str, True)
+                           'str_multi_param': (str, True),
+                           'map_param': (dict, True),
                            }
         
     def test_cast(self):
@@ -391,6 +390,7 @@ class TestParameterCaster(unittest.TestCase):
             'str_multi_param': ['value1', 'value2'],
             'undefined_param_single': ['undefined_value1'],
             'undefined_param_multi': ['undefined_value1', 'undefined_value2'],
+            'map_param': ['key1:val1', 'key2:val2', 'key3:val3', 'key1:val4']
         }
         self.assertTrue(all(map(lambda x: isinstance(x, str), itertools.chain.from_iterable(params.values()))))
         casted = caster.cast(params)
@@ -404,6 +404,11 @@ class TestParameterCaster(unittest.TestCase):
         self.assertTrue('undefined_param_multi' in casted)
         self.assertFalse(isinstance(casted['undefined_param_single'], list))
         self.assertTrue(isinstance(casted['undefined_param_multi'], list))
+        self.assertEqual(3, len(casted['map_param']))
+        self.assertTrue(all(map(lambda x: isinstance(x, str), casted['map_param'].values())))
+        self.assertTrue('val4', len(casted['map_param']['key1']))
+        self.assertTrue('val2', len(casted['map_param']['key2']))
+        self.assertTrue('val3', len(casted['map_param']['key3']))
         unknown_param_key = 'unknown'
         unknown_param_val = 'dunno'
         params[unknown_param_key] = [unknown_param_val]
