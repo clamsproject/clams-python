@@ -226,8 +226,6 @@ class TestClamsApp(unittest.TestCase):
         self.app._annotate = MagicMock(return_value=m)
         with self.assertRaises(jsonschema.ValidationError):
             self.app.annotate(self.in_mmif)
-        
-        
 
     def test_open_document_location(self):
         mmif = ExampleInputMMIF.get_rawmmif()

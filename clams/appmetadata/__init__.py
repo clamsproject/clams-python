@@ -1,7 +1,7 @@
 import os
+import shutil
 import subprocess
 import sys
-import shutil
 from pathlib import Path
 from typing import Union, Dict, List, Optional, Literal
 
@@ -139,19 +139,26 @@ class RuntimeParameter(_BaseModel):
     type: param_value_types = pydantic.Field(
         ...,
         description=f"Type of the parameter value the app expects. Must be one of {param_value_types_values}. When "
-                    "type is `map`, `multivalued=true` is automatically forced. Note that, when the type is `map`, "
-                    "the parameter value (still a single string from the users' perspective) must be formatted as a "
-                    "`KEY:VALUE` pair, namely a colon-separated string. To pass multiple key-value pairs, users need "
-                    "to pass the parameter multiple times (remember `type=map` implies `multivalued=true`) with pairs "
-                    "in the colon-separated format. If a developers wants to do more text processing on the passed "
-                    "value to accept more complex data structures (e.g., map from a string to a list of strings) any "
-                    "additional form requirements should be precisely described in the `description` field." 
+                    "type is ``map``, ``multivalued=true`` is automatically forced. \n\n"
+                    "Notes for developers: \n\n"
+                    "When the type is ``map``, the parameter value (still a single string from the users' perspective) "
+                    "must be formatted as a ``KEY:VALUE`` pair, namely a colon-separated string. To pass multiple "
+                    "key-value pairs, users need to pass the parameter multiple times (remember ``type=map`` implies "
+                    "``multivalued=true``) with pairs in the colon-separated format. \n\n"
+                    "Also, the `VALUE` part of the user input is always expected and handled as a string. If a "
+                    "developers wants to do more text processing on the passed value to accept more complex data types "
+                    "or structures (e.g., map from a string to a list of strings), it is up to the developer. However, "
+                    "any additional form requirements should be precisely described in the ``description`` field for "
+                    "users. \n\n"
+                    "Finally, the same format is expected for the default value, if any. For example, if the default "
+                    "desired dictionary is ``{'key1': 'value1', 'key2': 'value2'}``, the default value (used when "
+                    "initializing a parameter) should be ``['key1:value1','key2:value2']``\n."
     ) 
     choices: List[real_valued_primitives] = pydantic.Field(
         None, 
         description="(optional) List of string values that can be accepted."
     )
-    default: real_valued_primitives = pydantic.Field(
+    default: Union[real_valued_primitives, List[real_valued_primitives], Dict[str, str]] = pydantic.Field(
         None, 
         description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting "
                     "a default value makes a parameter `optional`."

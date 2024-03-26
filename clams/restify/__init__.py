@@ -1,4 +1,4 @@
-from typing import Dict, Union, Any, Tuple, List
+from typing import Dict, Union, Tuple, List
 
 import jsonschema
 from flask import Flask, request, Response
@@ -165,7 +165,8 @@ class ParameterCaster(object):
     def __init__(self, param_spec: Dict[str, Tuple[real_valued_primitives, bool]]):
         self.param_spec = param_spec
 
-    def cast(self, args: Dict[str, List[str]]) -> Dict[str, Union[real_valued_primitives, List[real_valued_primitives]]]:
+    def cast(self, args: Dict[str, List[str]]) \
+            -> Dict[str, Union[real_valued_primitives, List[real_valued_primitives], Dict[str, str]]]:
         """
         Given parameter specification, tries to cast values of args to specified Python data types.
         Note that this caster deals with query strings, thus all keys and values in the input args are plain strings. 
@@ -175,26 +176,34 @@ class ParameterCaster(object):
         Thus, when a key is not found in the parameter specifications, it should just pass it as a vanilla string.
 
         :param args: k-v pairs
-        :return: A new dictionary of type-casted args
+        :return: A new dictionary of type-casted args, of which keys are always strings (parameter name), 
+                 and values are either 
+                 1) a single value of a specified type (multivalued=False)
+                 2) a list of values of a specified type (multivalued=True) (all duplicates in the input are kept)
+                 3) a nested string-string dictionary (type=map ⊨ multivalued=True)
+                 With the third case, developers can further process the nested values into a more complex data types or
+                 structures, but that is not in the scope of this Caster class. 
         """
         casted = {}
         for k, vs in args.items():
+            assert isinstance(vs, list), f"Expected a list of values for key {k}, but got {vs} of type {type(vs)}"
+            assert all(isinstance(v, str) for v in vs), f"Expected a list of strings for key {k}, but got {vs} of types {[type(v) for v in vs]}"
             if k in self.param_spec:
                 for v in vs:
-                    type_, multivalued = self.param_spec[k]
+                    valuetype, multivalued = self.param_spec[k]
                     if multivalued or k not in casted:  # effectively only keeps the first value for non-multi params
-                        if type_ == bool:
+                        if valuetype == bool:
                             v = self.bool_param(v)
-                        elif type_ == float:
+                        elif valuetype == float:
                             v = self.float_param(v)
-                        elif type_ == int:
+                        elif valuetype == int:
                             v = self.int_param(v)
-                        elif type_ == str:
+                        elif valuetype == str:
                             v = self.str_param(v)
-                        elif type_ == dict:
+                        elif valuetype == dict:
                             v = self.kv_param(v)
                         if multivalued:
-                            if type_ == dict:
+                            if valuetype == dict:
                                 casted.setdefault(k, {}).update(v)
                             else:
                                 casted.setdefault(k, []).append(v)
@@ -205,39 +214,38 @@ class ParameterCaster(object):
                     casted[k] = vs
                 else:
                     casted[k] = vs[0]
-                    
-        return casted
+        return casted  # pytype: disable=bad-return-type
 
     @staticmethod
-    def bool_param(value):
+    def bool_param(value) -> bool:
         """
         Helper function to convert string values to bool type.
         """
         return False if value in (False, 0, 'False', 'false', '0') else True
 
     @staticmethod
-    def float_param(value):
+    def float_param(value) -> float:
         """
         Helper function to convert string values to float type.
         """
         return float(value)
 
     @staticmethod
-    def int_param(value):
+    def int_param(value) -> int:
         """
         Helper function to convert string values to int type.
         """
         return int(value)
 
     @staticmethod
-    def str_param(value):
+    def str_param(value) -> str:
         """
         Helper function to convert string values to string type.
         """
         return value
     
     @staticmethod
-    def kv_param(value):
+    def kv_param(value) -> Dict[str, str]:
         """
         Helper function to convert string values to key-value pair type.
         """
