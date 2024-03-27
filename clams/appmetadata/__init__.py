@@ -77,6 +77,14 @@ class Output(_BaseModel):
         alias="@type", 
         description="The type of the object. Must be a IRI string."
     )
+    description: str = pydantic.Field(
+        ...,
+        description="A verbose, human-readable description of the type. This is intended to be used for documentation "
+                    "purpose for a particular use case of this annotation type and is not expected to be consumed by "
+                    "software. This description should work as a guideline for users to understand the output type, "
+                    "and also can be used as a expansion specification for the type definition beyond the base "
+                    "vocabulary."
+    )
     properties: Dict[str, real_valued_primitives] = pydantic.Field(
         {}, 
         description="(optional) Specification for type properties, if any. ``\"*\"`` indicates any value."
@@ -92,6 +100,12 @@ class Output(_BaseModel):
         title = 'CLAMS Output Specification'
         extra = 'forbid'
         allow_population_by_field_name = True
+    
+    def add_description(self, description: str):
+        """
+        Add description string to the type specification.
+        """
+        self.description = description
 
                 
 class Input(Output):
@@ -321,13 +335,14 @@ class AppMetadata(pydantic.BaseModel):
                     return True
         return False
 
-    def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = True, **properties):
+    def add_input(self, at_type: Union[str, vocabulary.ThingTypesBase], required: bool = True, **properties) -> Input:
         """
         Helper method to add an element to the ``input`` list. 
         
         :param at_type: ``@type`` of the input object
         :param required: whether this type is mandatory or optional 
         :param properties: additional property specifications
+        :return: the newly added Input object
         """
         new = Input(at_type=at_type, required=required)
         if len(properties) > 0:
@@ -340,6 +355,7 @@ class AppMetadata(pydantic.BaseModel):
                 # TODO (krim @ 5/12/21): automatically add *optional* input types to parameter
                 # see https://github.com/clamsproject/clams-python/issues/29 for discussion
                 pass
+        return new
 
     def add_input_oneof(self, *inputs: Union[str, Input, vocabulary.ThingTypesBase]):
         newinputs = []
@@ -362,12 +378,13 @@ class AppMetadata(pydantic.BaseModel):
                     newinputs.append(i)
             self.input.append(newinputs)
 
-    def add_output(self, at_type: Union[str, vocabulary.ThingTypesBase], **properties):
+    def add_output(self, at_type: Union[str, vocabulary.ThingTypesBase], **properties) -> Output:
         """
         Helper method to add an element to the ``output`` list. 
         
         :param at_type: ``@type`` of the input object
         :param properties: additional property specifications
+        :return: the newly added Output object
         """
         new = Output(at_type=at_type)
         if len(properties) > 0:
@@ -376,6 +393,7 @@ class AppMetadata(pydantic.BaseModel):
             self.output.append(new)
         else:
             raise ValueError(f"Cannot add a duplicate output '{new}'.")
+        return new
 
     def add_parameter(self, name: str, description: str, type: param_value_types,
                       choices: Optional[List[real_valued_primitives]] = None,
