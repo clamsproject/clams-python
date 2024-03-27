@@ -69,7 +69,8 @@ class Output(_BaseModel):
     they can be described in the (optional) ``properties`` field. Finally, a human-readable 
     verbose description can be provided in the (optional) ``description`` field for users.
     
-    Developers should take diligent care to include all output types and their properties in the app metadata. 
+    Developers should take diligent care to include all output types and their properties in the app metadata. To 
+    specify the property values, developers can use an actual value (for full match) or ``'*'`` (for any value).
     """
     at_type: pydantic.AnyHttpUrl = pydantic.Field(
         ..., 
@@ -78,7 +79,7 @@ class Output(_BaseModel):
     )
     properties: Dict[str, real_valued_primitives] = pydantic.Field(
         {}, 
-        description="(optional) Specification for type properties, if any."
+        description="(optional) Specification for type properties, if any. ``\"*\"`` indicates any value."
     )
     
     @pydantic.validator('at_type', pre=True)
