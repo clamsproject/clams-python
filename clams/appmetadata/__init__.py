@@ -158,10 +158,13 @@ class RuntimeParameter(_BaseModel):
         None, 
         description="(optional) List of string values that can be accepted."
     )
-    default: Union[real_valued_primitives, List[real_valued_primitives], Dict[str, str]] = pydantic.Field(
+    default: Union[real_valued_primitives, List[real_valued_primitives]] = pydantic.Field(
         None, 
-        description="(optional) Default value for the parameter. Only valid for optional parameters. Namely, setting "
-                    "a default value makes a parameter `optional`."
+        description="(optional) Default value for the parameter.\n\n"
+                    "Notes for developers: \n\n"
+                    "Setting a default value makes a parameter `optional`. \n\n"
+                    "When ``multivalued=True``, the default value should be a list of values. \n\n"
+                    "When ``type=map``, the default value should be a list of colon-separated strings. \n\n"
     )
     multivalued: bool = pydantic.Field(
         ..., 
@@ -178,6 +181,9 @@ class RuntimeParameter(_BaseModel):
                 self.multivalued = True
         if self.multivalued is None:
             self.multivalued = False
+        if self.multivalued:
+            if not isinstance(self.default, list):
+                self.default = [self.default]
             
     class Config:
         title = 'CLAMS App Runtime Parameter'
@@ -383,8 +389,8 @@ class AppMetadata(pydantic.BaseModel):
         """
         Helper method to add an element to the ``parameters`` list. 
         """
-        # casting default values (when the value is not nothing) makes sure 
-        # the values are correctly casted by the pydantic
+        # casting default values (when the value is not nothing) to str 
+        # will make sure the values are correctly handled by the pydantic
         # see https://docs.pydantic.dev/1.10/usage/types/#unions
         # e.g. casting 0.1 using the `primitives` dict will result in  0 (int)
         # while casting "0.1" using the `primitives` dict will result in  0.1 (float)
