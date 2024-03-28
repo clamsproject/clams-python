@@ -123,7 +123,7 @@ class TestClamsApp(unittest.TestCase):
         self.assertTrue('properties' not in elem)
         self.assertTrue(elem['required'])
         
-        # test add_X methods
+    def test_metadata_inputoutput(self):
         self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='text')
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['output']), 2)
@@ -132,11 +132,22 @@ class TestClamsApp(unittest.TestCase):
             self.app.metadata.add_input(at_type=DocumentTypes.TextDocument)
         with self.assertRaises(ValueError):
             self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='text')
-        # but this should 
-        self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='face')
+        # but this should, even when there's `BoundingBox` already because the boxType prop value is different
+        face_bb_out = self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='face')
+        # with an optional "comment"
+        face_bb_out.description = 'face bounding box'
+        # then should be able to set the description of the existing output
+        text_bb_out = next(o for o in self.app.metadata.output if o.properties.get('boxType') == 'text')
+        text_bb_out.description = 'text bounding box'
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['input']), 2)
-        self.assertTrue('properties' not in metadata['input'][0])
+        for i in metadata['input']:
+            self.assertTrue('properties' not in i)
+            self.assertTrue('description' not in i)
+        for o in metadata['output']:
+            if o['@type'] == AnnotationTypes.BoundingBox:
+                self.assertTrue('properties' in o)
+                self.assertTrue('description' in o)
         # adding input with properties
         self.app.metadata.add_input(at_type=AnnotationTypes.TimeFrame, frameType='speech')
         metadata = json.loads(self.app.appmetadata())
@@ -151,6 +162,8 @@ class TestClamsApp(unittest.TestCase):
         j = Input(at_type=AnnotationTypes.VideoObject)
         with self.assertRaises(ValueError):
             self.app.metadata.add_input_oneof(i, j)
+    
+    def test_metadata_runtimeparams(self):
         # now parameters
         # using a custom class
         # this should conflict with existing parameter

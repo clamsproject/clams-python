@@ -77,8 +77,8 @@ class Output(_BaseModel):
         alias="@type", 
         description="The type of the object. Must be a IRI string."
     )
-    description: str = pydantic.Field(
-        ...,
+    description: Optional[str] = pydantic.Field(
+        None,
         description="A verbose, human-readable description of the type. This is intended to be used for documentation "
                     "purpose for a particular use case of this annotation type and is not expected to be consumed by "
                     "software. This description should work as a guideline for users to understand the output type, "
