@@ -165,18 +165,39 @@ class TestClamsApp(unittest.TestCase):
     
     def test_metadata_runtimeparams(self):
         # now parameters
+        num_params = 1  # starts with `raise_error` in metadata.py
         # using a custom class
         # this should conflict with existing parameter
         with self.assertRaises(ValueError):
             self.app.metadata.add_parameter(
                 name='raise_error', description='force raise a ValueError', 
                 type='boolean', default='false')
-        # using python dict
+            num_params += 0
+            
+        # some random multiple choice parameters
         self.app.metadata.add_parameter(
-            name='multiple_choice', description='meaningless multiple choice option',
+            name='single_choice', description='meaningless choice for a single value',
+            type='integer', choices=[1, 2, 3, 4, 5], default='3', multivalued=False)
+        num_params += 1
+
+        self.app.metadata.add_parameter(
+            name='multiple_choice', description='meaningless choice for any number of values',
             type='integer', choices=[1, 2, 3, 4, 5], default=3, multivalued=True)
+        num_params += 1
+        
         metadata = json.loads(self.app.appmetadata())
-        self.assertEqual(len(metadata['parameters']), 2 + len(self.app.universal_parameters))
+        self.assertEqual(len(metadata['parameters']), num_params + len(self.app.universal_parameters))
+
+        for p in metadata['parameters']:
+            # default value must match the data type
+            if p['name'] == 'single_choice':
+                self.assertFalse(p['multivalued'])
+                self.assertTrue(isinstance(p['default'], int))
+            # default for multivalued para must be a list 
+            if p['name'] == 'multiple_choice':
+                self.assertTrue(p['multivalued'])
+                self.assertTrue(isinstance(p['default'], list))
+                self.assertEqual(len(p['default']), 1)
         # now more additional metadata
         self.app.metadata.add_more('one', 'more')
         self.assertEqual(self.app.metadata.more['one'], 'more')
