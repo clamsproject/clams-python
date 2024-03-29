@@ -13,8 +13,8 @@ from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver
 
 import clams.app
 import clams.restify
-from clams.appmetadata import AppMetadata, Input
-from clams.restify import ParameterCaster
+from clams.app import ParameterCaster
+from clams.appmetadata import AppMetadata, Input, RuntimeParameter
 
 
 class ExampleInputMMIF(object):
@@ -207,7 +207,7 @@ class TestClamsApp(unittest.TestCase):
             self.app.metadata.add_more('one', '')
         
         # finally for an eye exam
-        print(self.app.appmetadata(pretty=True))
+        print(self.app.appmetadata(pretty=['true']))
 
     @pytest.mark.skip('legacy type version check')
     def test__check_mmif_compatibility(self):
@@ -239,7 +239,7 @@ class TestClamsApp(unittest.TestCase):
         for v in out_mmif.views:
             if v.metadata.app == self.app.metadata.identifier:
                 self.assertEqual(len(v.metadata.parameters), 0)  # no params were passed when `annotate()` was called
-        out_mmif = self.app.annotate(self.in_mmif, pretty=False)
+        out_mmif = self.app.annotate(self.in_mmif, pretty=[str(False)])
         out_mmif = Mmif(out_mmif)
         for v in out_mmif.views:
             if v.metadata.app == self.app.metadata.identifier:
@@ -279,7 +279,7 @@ class TestClamsApp(unittest.TestCase):
         self.app.metadata.add_parameter('param3', 'third_param', 'boolean', default='f')
         self.app.metadata.add_parameter('param4', 'fourth_param', 'integer', default='1', choices="1 2 3".split())
         self.app.metadata.add_parameter('param5', 'fifth_param', 'number', default='0.5')
-        dummy_params = {'param1': 'okay', 'non_parameter': 'should be ignored'}
+        dummy_params = {'param1': ['okay'], 'non_parameter': ['should be ignored']}
         conf = self.app._refine_params(**dummy_params)
         # should not refine what's already refined
         double_refine = self.app._refine_params(**conf)
@@ -295,19 +295,19 @@ class TestClamsApp(unittest.TestCase):
         self.assertEqual(type(conf['param5']), float)
         with self.assertRaises(ValueError):
             # because param1 doesn't have a default value and thus a required param
-            self.app._refine_params(param2='okay')
+            self.app._refine_params(param2=['okay'])
         with self.assertRaisesRegexp(ValueError, r'.+must be one of.+'):
             # because param4 can't be 4, note that param1 is "required" 
-            self.app._refine_params(param1='p1', param4=4)
+            self.app._refine_params(param1=['p1'], param4=['4'])
             
     def test_error_handling(self):
-        params = {'raise_error': True, 'pretty': True}
+        params = {'raise_error': 'true', 'pretty': 'true'}
         in_mmif = Mmif(self.in_mmif)
         try: 
             out_mmif = self.app.annotate(in_mmif, **params)
         except Exception as e:
-            out_mmif_from_str = self.app.set_error_view(self.in_mmif, params)
-            out_mmif_from_mmif = self.app.set_error_view(in_mmif, params)
+            out_mmif_from_str = self.app.set_error_view(self.in_mmif, **params)
+            out_mmif_from_mmif = self.app.set_error_view(in_mmif, **params)
             self.assertEqual(out_mmif_from_mmif.views, out_mmif_from_str.views)
             out_mmif = out_mmif_from_str
         self.assertIsNotNone(out_mmif)
@@ -406,16 +406,19 @@ class TestRestifier(unittest.TestCase):
 class TestParameterCaster(unittest.TestCase):
     
     def setUp(self) -> None:
-        self.param_spec = {'str_param': (str, False), 
-                           'number_param': (float, False),
-                           'int_param': (int, False),
-                           'bool_param': (bool, False), 
-                           'str_multi_param': (str, True),
-                           'map_param': (dict, True),
-                           }
-        
+        self.params = []
+        specs = {'str_param': ('string', False),
+                 'number_param': ('number', False),
+                 'int_param': ('integer', False),
+                 'bool_param': ('boolean', False), 
+                 'str_multi_param': ('string', True),
+                 'map_param': ('map', True),
+                 }
+        for name, (t, mv) in specs.items():
+            self.params.append(RuntimeParameter(**{'name': name, 'type': t, 'multivalued': mv, 'description': ""}))
+
     def test_cast(self):
-        caster = ParameterCaster(self.param_spec)
+        caster = ParameterCaster(self.params)
         params = {
             'str_param': ["a_string"], 
             'number_param': ["1.11"], 
