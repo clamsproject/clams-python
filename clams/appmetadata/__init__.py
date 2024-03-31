@@ -38,9 +38,12 @@ def generate_app_version(cwd=None):
     gitcmd = shutil.which('git') 
     gitdir = (Path(sys.modules["__main__"].__file__).parent.resolve() if cwd is None else Path(cwd)) / '.git'
     if gitcmd is not None and gitdir.exists():
-        proc = subprocess.run([gitcmd, '--git-dir', str(gitdir), 'describe', '--tags', '--always'], 
-                              capture_output=True, check=True)
-        return proc.stdout.decode('utf8').strip()
+        try:
+            proc = subprocess.run([gitcmd, '--git-dir', str(gitdir), 'describe', '--tags', '--always'], 
+                                  capture_output=True, check=True)
+            return proc.stdout.decode('utf8').strip()
+        except subprocess.CalledProcessError:
+            return unresolved_app_version_num
     elif app_version_envvar_key in os.environ:
         return os.environ[app_version_envvar_key]
     else:
