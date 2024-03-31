@@ -196,9 +196,8 @@ class RuntimeParameter(_BaseModel):
                 self.multivalued = True
         if self.multivalued is None:
             self.multivalued = False
-        if self.multivalued:
-            if not isinstance(self.default, list):
-                self.default = [self.default]
+        if self.multivalued and self.default is not None and not isinstance(self.default, list):
+            self.default = [self.default]
             
     class Config:
         title = 'CLAMS App Runtime Parameter'
@@ -404,7 +403,7 @@ class AppMetadata(pydantic.BaseModel):
     def add_parameter(self, name: str, description: str, type: param_value_types,
                       choices: Optional[List[real_valued_primitives]] = None,
                       multivalued: bool = False,
-                      default: real_valued_primitives = None):
+                      default: Union[real_valued_primitives, List[real_valued_primitives]] = None):
         """
         Helper method to add an element to the ``parameters`` list. 
         """
@@ -413,8 +412,17 @@ class AppMetadata(pydantic.BaseModel):
         # see https://docs.pydantic.dev/1.10/usage/types/#unions
         # e.g. casting 0.1 using the `primitives` dict will result in  0 (int)
         # while casting "0.1" using the `primitives` dict will result in  0.1 (float)
-        new_param = RuntimeParameter(name=name, description=description, type=type,
-                                     choices=choices, default=str(default) if default else default, multivalued=multivalued)
+        if type == 'map' and multivalued is False:
+            multivalued = True
+        if default is not None:
+            if isinstance(default, list):
+                default = [str(d) for d in default]
+            else:
+                default = str(default)
+            
+        new_param = RuntimeParameter(
+            name=name, description=description, type=type, choices=choices, multivalued=multivalued,
+            default=default)
         if new_param.name not in [param.name for param in self.parameters]:
             self.parameters.append(new_param)
         else:

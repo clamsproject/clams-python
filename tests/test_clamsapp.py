@@ -274,11 +274,22 @@ class TestClamsApp(unittest.TestCase):
             
     def test_refine_parameters(self):
         self.app.metadata.parameters = []
-        self.app.metadata.add_parameter('param1', 'first_param', 'string')
-        self.app.metadata.add_parameter('param2', 'second_param', 'string', default='second_default')
-        self.app.metadata.add_parameter('param3', 'third_param', 'boolean', default='f')
-        self.app.metadata.add_parameter('param4', 'fourth_param', 'integer', default='1', choices="1 2 3".split())
-        self.app.metadata.add_parameter('param5', 'fifth_param', 'number', default='0.5')
+        self.app.metadata.add_parameter('param1', type='string',
+                                        description='string -def +req')
+        self.app.metadata.add_parameter('param2', type='string', default='second_default',
+                                        description='stirng +def')
+        self.app.metadata.add_parameter('param3', type='boolean', default='f',
+                                        description='bool +def')
+        self.app.metadata.add_parameter('param4', type='integer', default=1, choices="1 2 3".split(),
+                                        description='int +def +choices')
+        self.app.metadata.add_parameter('param5', type='number', default=0.5,
+                                        description='float +def')
+        self.app.metadata.add_parameter('param6', type='number', multivalued=True, default=[0.5],
+                                        description='float +def +mv')
+        self.app.metadata.add_parameter('param7', type='number', default=[], multivalued=True,
+                                        description='float +def +empty +mv')
+        with self.assertRaises(ValueError):
+            self.app._refine_params(**{})  # param1 is required, but not passed
         dummy_params = {'param1': ['okay'], 'non_parameter': ['should be ignored']}
         conf = self.app._refine_params(**dummy_params)
         # should not refine what's already refined
@@ -286,17 +297,20 @@ class TestClamsApp(unittest.TestCase):
         self.assertTrue(clams.ClamsApp._RAW_PARAMS_KEY in double_refine)
         self.assertEqual(double_refine, conf)
         conf.pop(clams.ClamsApp._RAW_PARAMS_KEY, None)
-        self.assertEqual(len(conf), 5)  # 1 from `param1`, 4 from default value
+        self.assertEqual(len(conf), 7)  # 1 from `param1`, 6 from default value
         self.assertFalse('non_parameter' in conf)
         self.assertEqual(type(conf['param1']), str)
         self.assertEqual(type(conf['param2']), str)
         self.assertEqual(type(conf['param3']), bool)
         self.assertEqual(type(conf['param4']), int)
         self.assertEqual(type(conf['param5']), float)
+        self.assertEqual(type(conf['param6']), list)
+        self.assertEqual(type(conf['param7']), list)
+        self.assertEqual(len(conf['param7']), 0)
         with self.assertRaises(ValueError):
             # because param1 doesn't have a default value and thus a required param
             self.app._refine_params(param2=['okay'])
-        with self.assertRaisesRegexp(ValueError, r'.+must be one of.+'):
+        with self.assertRaisesRegex(ValueError, r'.+must be one of.+'):
             # because param4 can't be 4, note that param1 is "required" 
             self.app._refine_params(param1=['p1'], param4=['4'])
             
