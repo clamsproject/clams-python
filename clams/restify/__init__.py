@@ -1,12 +1,9 @@
-from typing import Dict, Union, Any, Tuple, List
-
 import jsonschema
 from flask import Flask, request, Response
 from flask_restful import Resource, Api
 from mmif import Mmif
 
 from clams.app import ClamsApp
-from clams.appmetadata import real_valued_primitives
 
 
 class Restifier(object):
@@ -107,8 +104,6 @@ class ClamsHTTPApi(Resource):
     def __init__(self, cla_instance: ClamsApp):
         super().__init__()
         self.cla = cla_instance
-        self.metadata_param_caster = ParameterCaster(self.cla.metadata_param_spec)  # pytype: disable=wrong-arg-types
-        self.annotate_param_caster = ParameterCaster(self.cla.annotate_param_spec)  # pytype: disable=wrong-arg-types
 
     @staticmethod
     def json_to_response(json_str: str, status=200) -> Response:
@@ -129,7 +124,7 @@ class ClamsHTTPApi(Resource):
 
         :return: Returns app metadata in a HTTP response.
         """
-        return self.json_to_response(self.cla.appmetadata(**self.metadata_param_caster.cast(request.args)))
+        return self.json_to_response(self.cla.appmetadata(**request.args))
 
     def post(self) -> Response:
         """
@@ -138,93 +133,16 @@ class ClamsHTTPApi(Resource):
 
         :return: Returns MMIF output from a ClamsApp in a HTTP response.
         """
-        raw_data = request.get_data()
+        raw_data = request.get_data().decode('utf-8')
         # this will catch duplicate arguments with different values into a list under the key
-        raw_params = request.args.to_dict(False)
+        raw_params = request.args.to_dict(flat=False)
         try:
             _ = Mmif(raw_data)
         except jsonschema.exceptions.ValidationError as e:
             return Response(response="Invalid input data. See below for validation error.\n\n" + str(e), status=500, mimetype='text/plain')
         try:
-            return self.json_to_response(self.cla.annotate(raw_data, **self.annotate_param_caster.cast(raw_params)))
-        except Exception as e:
-            return self.json_to_response(self.cla.record_error(raw_data, self.annotate_param_caster.cast(raw_params)).serialize(pretty=True), status=500)
+            return self.json_to_response(self.cla.annotate(raw_data, **raw_params))
+        except Exception:
+            return self.json_to_response(self.cla.record_error(raw_data, **raw_params).serialize(pretty=True), status=500)
 
     put = post
-
-
-class ParameterCaster(object):
-    """
-    A helper class to convert parameters passed by HTTP query strings to
-    proper python data types.
-
-    :param param_spec: A specification of a data types of parameters
-    """
-    def __init__(self, param_spec: Dict[str, Tuple[real_valued_primitives, bool]]):
-        self.param_spec = param_spec
-
-    def cast(self, args: Dict[str, List[str]]) -> Dict[str, Union[real_valued_primitives, List[real_valued_primitives]]]:
-        """
-        Given parameter specification, tries to cast values of args to specified Python data types.
-        Note that this caster deals with query strings, thus all keys and values in the input args are plain strings. 
-        Also note that the caster does not handle "unexpected" parameters came as an input. 
-        Handling (raising an exception or issuing a warning upon receiving) an unexpected runtime parameter 
-        must be done within the app itself.
-        Thus, when a key is not found in the parameter specifications, it should just pass it as a vanilla string.
-
-        :param args: k-v pairs
-        :return: A new dictionary of type-casted args
-        """
-        casted = {}
-        for k, vs in args.items():
-            if k in self.param_spec:
-                for v in vs:
-                    type_, multivalued = self.param_spec[k]
-                    if multivalued or k not in casted:  # effectively only keeps the first value for non-multi params
-                        if type_ == bool:
-                            v = self.bool_param(v)
-                        elif type_ == float:
-                            v = self.float_param(v)
-                        elif type_ == int:
-                            v = self.int_param(v)
-                        elif type_ == str:
-                            v = self.str_param(v)
-                        if multivalued:
-                            casted.setdefault(k, []).append(v)
-                        else: 
-                            casted[k] = v
-            else:
-                if len(vs) > 1:
-                    casted[k] = vs
-                else:
-                    casted[k] = vs[0]
-                    
-        return casted
-
-    @staticmethod
-    def bool_param(value):
-        """
-        Helper function to convert string values to bool type.
-        """
-        return False if value in (False, 0, 'False', 'false', '0') else True
-
-    @staticmethod
-    def float_param(value):
-        """
-        Helper function to convert string values to float type.
-        """
-        return float(value)
-
-    @staticmethod
-    def int_param(value):
-        """
-        Helper function to convert string values to int type.
-        """
-        return int(value)
-
-    @staticmethod
-    def str_param(value):
-        """
-        Helper function to convert string values to string type.
-        """
-        return value

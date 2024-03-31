@@ -9,10 +9,10 @@ from urllib import parse as urlparser
 
 __all__ = ['ClamsApp']
 
-from typing import Union, Any, Optional
+from typing import Union, Any, Optional, Dict, List, Iterable
 
 from mmif import Mmif, Document, DocumentTypes, View
-from clams.appmetadata import AppMetadata
+from clams.appmetadata import AppMetadata, RuntimeParameter, real_valued_primitives
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -29,10 +29,10 @@ class ClamsApp(ABC):
     # A set of "universal runtime parameters that can be used for both GET and POST anytime".
     # The behavioral changes based on these parameters must be implemented on the SDK level. 
     universal_parameters = [
-        {
+        RuntimeParameter(**{
             'name': 'pretty', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
             'description': 'The JSON body of the HTTP response will be re-formatted with 2-space indentation',
-        },
+        }),
     ]
     # this key is used to store users' raw input params in the parameter dict 
     # even after "refinement" (i.e., casting to proper data types)
@@ -42,24 +42,22 @@ class ClamsApp(ABC):
         self.metadata: AppMetadata = self._load_appmetadata()
         super().__init__()
         # data type specification for common parameters
-        python_type = {"boolean": bool, "number": float, "integer": int, "string": str}
 
-        self.metadata_param_spec = {}
-        self.annotate_param_spec = {}
         for param in ClamsApp.universal_parameters:
-            self.metadata.add_parameter(**param)
-            self.metadata_param_spec[param['name']] = (python_type[param['type']], param.get('multivalued', False))
-        for param_spec in self.metadata.parameters:
-            self.annotate_param_spec[param_spec.name] = (python_type[param_spec.type], param_spec.multivalued)
+            self.metadata.parameters.append(param)
+        self.metadata_param_caster = ParameterCaster(ClamsApp.universal_parameters)  # pytype: disable=wrong-arg-types
+        self.annotate_param_caster = ParameterCaster(self.metadata.parameters)  # pytype: disable=wrong-arg-types
         self.logger = logging.getLogger(self.metadata.identifier)
         
-    def appmetadata(self, **kwargs) -> str:
+    def appmetadata(self, **kwargs: List[str]) -> str:
         """
         A public method to get metadata for this app as a string.
 
         :return: Serialized JSON string of the metadata
         """
-        pretty = kwargs.pop('pretty') if 'pretty' in kwargs else False
+        # cast only, no refinement
+        casted = self.metadata_param_caster.cast(kwargs)
+        pretty = casted.pop('pretty') if 'pretty' in casted else False
         return self.metadata.jsonify(pretty)
     
     def _load_appmetadata(self) -> AppMetadata:
@@ -98,7 +96,7 @@ class ClamsApp(ABC):
     def _check_mmif_compatibility(target_specver, input_specver):
         return target_specver.split('.')[:2] == input_specver.split('.')[:2]
 
-    def annotate(self, mmif: Union[str, dict, Mmif], **runtime_params) -> str:
+    def annotate(self, mmif: Union[str, dict, Mmif], **runtime_params: List[str]) -> str:
         """
         A public method to invoke the primary app function. It's essentially a
         wrapper around :meth:`~clams.app.ClamsApp._annotate` method where some common operations
@@ -108,21 +106,22 @@ class ClamsApp(ABC):
         :param runtime_params: An arbitrary set of k-v pairs to configure the app at runtime
         :return: Serialized JSON string of the output of the app
         """
-        pretty = runtime_params.get('pretty', False)
         if not isinstance(mmif, Mmif):
             mmif = Mmif(mmif)
         issued_warnings = []
         for key in runtime_params:
-            if key not in self.annotate_param_spec:
+            if key not in self.annotate_param_caster.param_spec:
                 issued_warnings.append(UserWarning(f'An undefined parameter "{key}" (value: "{runtime_params[key]}") is passed'))
-        refined_params = self._refine_params(**runtime_params)
+        # this will do casting + refinement altogether
+        refined = self._refine_params(**runtime_params)
+        pretty = refined.get('pretty', False)
         with warnings.catch_warnings(record=True) as ws:
-            annotated = self._annotate(mmif, **refined_params)
+            annotated = self._annotate(mmif, **refined)
             if ws:
                 issued_warnings.extend(ws)
         if issued_warnings:
             warnings_view = annotated.new_view()
-            self.sign_view(warnings_view, refined_params)
+            self.sign_view(warnings_view, runtime_params)
             warnings_view.metadata.warnings = issued_warnings
         return annotated.serialize(pretty=pretty, sanitize=True)
 
@@ -148,7 +147,7 @@ class ClamsApp(ABC):
         """
         raise NotImplementedError()
     
-    def _refine_params(self, **runtime_params):
+    def _refine_params(self, **runtime_params: List[str]):
         """
         Method to "fill" the parameter dictionary with default values, when a key-value is not specified in the input.
         The input map is not really "filled" as a copy of it is returned with addition of default values. 
@@ -159,19 +158,21 @@ class ClamsApp(ABC):
         if self._RAW_PARAMS_KEY in runtime_params:
             # meaning the dict is already refined, just return it 
             return runtime_params
-        conf = {}
+        refined = {}
+        
+        casted = self.annotate_param_caster.cast(runtime_params)
         for parameter in self.metadata.parameters:
-            if parameter.name in runtime_params:
-                if parameter.choices and runtime_params[parameter.name] not in parameter.choices:
+            if parameter.name in casted:
+                if parameter.choices and casted[parameter.name] not in parameter.choices:
                     raise ValueError(f"Value for parameter \"{parameter.name}\" must be one of {parameter.choices}.")
-                conf[parameter.name] = runtime_params[parameter.name]
+                refined[parameter.name] = casted[parameter.name]
             elif parameter.default is not None:
-                conf[parameter.name] = parameter.default
+                refined[parameter.name] = parameter.default
             else:
                 raise ValueError(f"Cannot find configuration for a required parameter \"{parameter.name}\".")
         # raw input params are hidden under a special key
-        conf[self._RAW_PARAMS_KEY] = runtime_params
-        return conf
+        refined[self._RAW_PARAMS_KEY] = runtime_params
+        return refined
     
     def get_configuration(self, **runtime_params):
         warnings.warn("ClamsApp.get_configuration() is deprecated. "
@@ -197,15 +198,26 @@ class ClamsApp(ABC):
                           "no longer be optional in the future. Please pass `runtime_params` "
                           "from _annotate() method.",
                           FutureWarning, stacklevel=2)
+            return
         view.metadata.app = self.metadata.identifier
-        if runtime_conf is not None:
-            if self._RAW_PARAMS_KEY in runtime_conf:
-                conf = runtime_conf[self._RAW_PARAMS_KEY]
-            else:
-                conf = runtime_conf
-            view.metadata.add_parameters(**{k: str(v) for k, v in conf.items()})
+        if self._RAW_PARAMS_KEY in runtime_conf:
+            for k, v in runtime_conf.items():
+                if k == self._RAW_PARAMS_KEY:
+                    for orik, oriv in v.items():
+                        if orik in self.metadata.parameters and self.metadata.parameters[orik].multivalued:
+                            view.metadata.add_parameter(orik, str(oriv))
+                        else:
+                            view.metadata.add_parameter(orik, oriv[0])
+                view.metadata.add_app_configuration(k, v)
+        else:
+            # meaning the parameters directly from flask or argparser and values are in lists
+            for k, v in runtime_conf.items():
+                if k in self.metadata.parameters and self.metadata.parameters[k].multivalued:
+                    view.metadata.add_parameter(k, str(v))
+                else:
+                    view.metadata.add_parameter(k, v[0])
         
-    def set_error_view(self, mmif: Union[str, dict, Mmif], runtime_conf: Optional[dict] = None) -> Mmif:
+    def set_error_view(self, mmif: Union[str, dict, Mmif], **runtime_conf: List[str]) -> Mmif:
         """
         A method to record an error instead of annotation results in the view
         this app generated. For logging purpose, the runtime parameters used
@@ -282,3 +294,105 @@ class ClamsApp(ABC):
                         document_file.close()
                 else:
                     raise FileNotFoundError(p.path)
+
+
+class ParameterCaster(object):
+    KV_DELIMITER = ':'
+    python_type = {"boolean": bool, "number": float, "integer": int, "string": str, "map": dict}
+
+    """
+    A helper class to convert parameters passed by HTTP query strings to
+    proper python data types.
+
+    :param param_spec: A specification of a data types of parameters
+    """
+    def __init__(self, params: Iterable[RuntimeParameter]):
+        self.param_spec = {}
+        for param in params:
+            self.param_spec[param.name] = (self.python_type[param.type], param.multivalued)
+
+    def cast(self, args: Dict[str, List[str]]) \
+            -> Dict[str, Union[real_valued_primitives, List[real_valued_primitives], Dict[str, str]]]:
+        """
+        Given parameter specification, tries to cast values of args to specified Python data types.
+        Note that this caster deals with query strings, thus all keys and values in the input args are plain strings. 
+        Also note that the caster does not handle "unexpected" parameters came as an input. 
+        Handling (raising an exception or issuing a warning upon receiving) an unexpected runtime parameter 
+        must be done within the app itself.
+        Thus, when a key is not found in the parameter specifications, it should just pass it as a vanilla string.
+
+        :param args: k-v pairs
+        :return: A new dictionary of type-casted args, of which keys are always strings (parameter name), 
+                 and values are either 
+                 1) a single value of a specified type (multivalued=False)
+                 2) a list of values of a specified type (multivalued=True) (all duplicates in the input are kept)
+                 3) a nested string-string dictionary (type=map ⊨ multivalued=True)
+                 With the third case, developers can further process the nested values into a more complex data types or
+                 structures, but that is not in the scope of this Caster class. 
+        """
+        casted = {}
+        for k, vs in args.items():
+            assert isinstance(vs, list), f"Expected a list of values for key {k}, but got {vs} of type {type(vs)}"
+            assert all(isinstance(v, str) for v in vs), f"Expected a list of strings for key {k}, but got {vs} of types {[type(v) for v in vs]}"
+            if k in self.param_spec:
+                for v in vs:
+                    valuetype, multivalued = self.param_spec[k]
+                    if multivalued or k not in casted:  # effectively only keeps the first value for non-multi params
+                        if valuetype == bool:
+                            v = self.bool_param(v)
+                        elif valuetype == float:
+                            v = self.float_param(v)
+                        elif valuetype == int:
+                            v = self.int_param(v)
+                        elif valuetype == str:
+                            v = self.str_param(v)
+                        elif valuetype == dict:
+                            v = self.kv_param(v)
+                        if multivalued:
+                            if valuetype == dict:
+                                casted.setdefault(k, {}).update(v)
+                            else:
+                                casted.setdefault(k, []).append(v)
+                        else: 
+                            casted[k] = v
+            else:
+                if len(vs) > 1:
+                    casted[k] = vs
+                else:
+                    casted[k] = vs[0]
+        return casted  # pytype: disable=bad-return-type
+
+    @staticmethod
+    def bool_param(value) -> bool:
+        """
+        Helper function to convert string values to bool type.
+        """
+        return False if value in (False, 0, 'False', 'false', '0') else True
+
+    @staticmethod
+    def float_param(value) -> float:
+        """
+        Helper function to convert string values to float type.
+        """
+        return float(value)
+
+    @staticmethod
+    def int_param(value) -> int:
+        """
+        Helper function to convert string values to int type.
+        """
+        return int(value)
+
+    @staticmethod
+    def str_param(value) -> str:
+        """
+        Helper function to convert string values to string type.
+        """
+        return value
+    
+    @staticmethod
+    def kv_param(value) -> Dict[str, str]:
+        """
+        Helper function to convert string values to key-value pair type.
+        """
+        return dict([value.split(ParameterCaster.KV_DELIMITER, 1)])

@@ -13,8 +13,8 @@ from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver
 
 import clams.app
 import clams.restify
-from clams.appmetadata import AppMetadata, Input
-from clams.restify import ParameterCaster
+from clams.app import ParameterCaster
+from clams.appmetadata import AppMetadata, Input, RuntimeParameter
 
 
 class ExampleInputMMIF(object):
@@ -123,7 +123,7 @@ class TestClamsApp(unittest.TestCase):
         self.assertTrue('properties' not in elem)
         self.assertTrue(elem['required'])
         
-        # test add_X methods
+    def test_metadata_inputoutput(self):
         self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='text')
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['output']), 2)
@@ -132,11 +132,22 @@ class TestClamsApp(unittest.TestCase):
             self.app.metadata.add_input(at_type=DocumentTypes.TextDocument)
         with self.assertRaises(ValueError):
             self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='text')
-        # but this should 
-        self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='face')
+        # but this should, even when there's `BoundingBox` already because the boxType prop value is different
+        face_bb_out = self.app.metadata.add_output(AnnotationTypes.BoundingBox, boxType='face')
+        # with an optional "comment"
+        face_bb_out.description = 'face bounding box'
+        # then should be able to set the description of the existing output
+        text_bb_out = next(o for o in self.app.metadata.output if o.properties.get('boxType') == 'text')
+        text_bb_out.description = 'text bounding box'
         metadata = json.loads(self.app.appmetadata())
         self.assertEqual(len(metadata['input']), 2)
-        self.assertTrue('properties' not in metadata['input'][0])
+        for i in metadata['input']:
+            self.assertTrue('properties' not in i)
+            self.assertTrue('description' not in i)
+        for o in metadata['output']:
+            if o['@type'] == AnnotationTypes.BoundingBox:
+                self.assertTrue('properties' in o)
+                self.assertTrue('description' in o)
         # adding input with properties
         self.app.metadata.add_input(at_type=AnnotationTypes.TimeFrame, frameType='speech')
         metadata = json.loads(self.app.appmetadata())
@@ -151,19 +162,42 @@ class TestClamsApp(unittest.TestCase):
         j = Input(at_type=AnnotationTypes.VideoObject)
         with self.assertRaises(ValueError):
             self.app.metadata.add_input_oneof(i, j)
+    
+    def test_metadata_runtimeparams(self):
         # now parameters
+        num_params = 1  # starts with `raise_error` in metadata.py
         # using a custom class
         # this should conflict with existing parameter
         with self.assertRaises(ValueError):
             self.app.metadata.add_parameter(
                 name='raise_error', description='force raise a ValueError', 
                 type='boolean', default='false')
-        # using python dict
+            num_params += 0
+            
+        # some random multiple choice parameters
         self.app.metadata.add_parameter(
-            name='multiple_choice', description='meaningless multiple choice option',
+            name='single_choice', description='meaningless choice for a single value',
+            type='integer', choices=[1, 2, 3, 4, 5], default='3', multivalued=False)
+        num_params += 1
+
+        self.app.metadata.add_parameter(
+            name='multiple_choice', description='meaningless choice for any number of values',
             type='integer', choices=[1, 2, 3, 4, 5], default=3, multivalued=True)
+        num_params += 1
+        
         metadata = json.loads(self.app.appmetadata())
-        self.assertEqual(len(metadata['parameters']), 2 + len(self.app.universal_parameters))
+        self.assertEqual(len(metadata['parameters']), num_params + len(self.app.universal_parameters))
+
+        for p in metadata['parameters']:
+            # default value must match the data type
+            if p['name'] == 'single_choice':
+                self.assertFalse(p['multivalued'])
+                self.assertTrue(isinstance(p['default'], int))
+            # default for multivalued para must be a list 
+            if p['name'] == 'multiple_choice':
+                self.assertTrue(p['multivalued'])
+                self.assertTrue(isinstance(p['default'], list))
+                self.assertEqual(len(p['default']), 1)
         # now more additional metadata
         self.app.metadata.add_more('one', 'more')
         self.assertEqual(self.app.metadata.more['one'], 'more')
@@ -173,7 +207,7 @@ class TestClamsApp(unittest.TestCase):
             self.app.metadata.add_more('one', '')
         
         # finally for an eye exam
-        print(self.app.appmetadata(pretty=True))
+        print(self.app.appmetadata(pretty=['true']))
 
     @pytest.mark.skip('legacy type version check')
     def test__check_mmif_compatibility(self):
@@ -205,7 +239,7 @@ class TestClamsApp(unittest.TestCase):
         for v in out_mmif.views:
             if v.metadata.app == self.app.metadata.identifier:
                 self.assertEqual(len(v.metadata.parameters), 0)  # no params were passed when `annotate()` was called
-        out_mmif = self.app.annotate(self.in_mmif, pretty=False)
+        out_mmif = self.app.annotate(self.in_mmif, pretty=[str(False)])
         out_mmif = Mmif(out_mmif)
         for v in out_mmif.views:
             if v.metadata.app == self.app.metadata.identifier:
@@ -226,8 +260,6 @@ class TestClamsApp(unittest.TestCase):
         self.app._annotate = MagicMock(return_value=m)
         with self.assertRaises(jsonschema.ValidationError):
             self.app.annotate(self.in_mmif)
-        
-        
 
     def test_open_document_location(self):
         mmif = ExampleInputMMIF.get_rawmmif()
@@ -242,40 +274,54 @@ class TestClamsApp(unittest.TestCase):
             
     def test_refine_parameters(self):
         self.app.metadata.parameters = []
-        self.app.metadata.add_parameter('param1', 'first_param', 'string')
-        self.app.metadata.add_parameter('param2', 'second_param', 'string', default='second_default')
-        self.app.metadata.add_parameter('param3', 'third_param', 'boolean', default='f')
-        self.app.metadata.add_parameter('param4', 'fourth_param', 'integer', default='1', choices="1 2 3".split())
-        self.app.metadata.add_parameter('param5', 'fifth_param', 'number', default='0.5')
-        dummy_params = {'param1': 'okay', 'non_parameter': 'should be ignored'}
+        self.app.metadata.add_parameter('param1', type='string',
+                                        description='string -def +req')
+        self.app.metadata.add_parameter('param2', type='string', default='second_default',
+                                        description='stirng +def')
+        self.app.metadata.add_parameter('param3', type='boolean', default='f',
+                                        description='bool +def')
+        self.app.metadata.add_parameter('param4', type='integer', default=1, choices="1 2 3".split(),
+                                        description='int +def +choices')
+        self.app.metadata.add_parameter('param5', type='number', default=0.5,
+                                        description='float +def')
+        self.app.metadata.add_parameter('param6', type='number', multivalued=True, default=[0.5],
+                                        description='float +def +mv')
+        self.app.metadata.add_parameter('param7', type='number', default=[], multivalued=True,
+                                        description='float +def +empty +mv')
+        with self.assertRaises(ValueError):
+            self.app._refine_params(**{})  # param1 is required, but not passed
+        dummy_params = {'param1': ['okay'], 'non_parameter': ['should be ignored']}
         conf = self.app._refine_params(**dummy_params)
         # should not refine what's already refined
         double_refine = self.app._refine_params(**conf)
         self.assertTrue(clams.ClamsApp._RAW_PARAMS_KEY in double_refine)
         self.assertEqual(double_refine, conf)
         conf.pop(clams.ClamsApp._RAW_PARAMS_KEY, None)
-        self.assertEqual(len(conf), 5)  # 1 from `param1`, 4 from default value
+        self.assertEqual(len(conf), 7)  # 1 from `param1`, 6 from default value
         self.assertFalse('non_parameter' in conf)
         self.assertEqual(type(conf['param1']), str)
         self.assertEqual(type(conf['param2']), str)
         self.assertEqual(type(conf['param3']), bool)
         self.assertEqual(type(conf['param4']), int)
         self.assertEqual(type(conf['param5']), float)
+        self.assertEqual(type(conf['param6']), list)
+        self.assertEqual(type(conf['param7']), list)
+        self.assertEqual(len(conf['param7']), 0)
         with self.assertRaises(ValueError):
             # because param1 doesn't have a default value and thus a required param
-            self.app._refine_params(param2='okay')
-        with self.assertRaisesRegexp(ValueError, r'.+must be one of.+'):
+            self.app._refine_params(param2=['okay'])
+        with self.assertRaisesRegex(ValueError, r'.+must be one of.+'):
             # because param4 can't be 4, note that param1 is "required" 
-            self.app._refine_params(param1='p1', param4=4)
+            self.app._refine_params(param1=['p1'], param4=['4'])
             
     def test_error_handling(self):
-        params = {'raise_error': True, 'pretty': True}
+        params = {'raise_error': 'true', 'pretty': 'true'}
         in_mmif = Mmif(self.in_mmif)
         try: 
             out_mmif = self.app.annotate(in_mmif, **params)
         except Exception as e:
-            out_mmif_from_str = self.app.set_error_view(self.in_mmif, params)
-            out_mmif_from_mmif = self.app.set_error_view(in_mmif, params)
+            out_mmif_from_str = self.app.set_error_view(self.in_mmif, **params)
+            out_mmif_from_mmif = self.app.set_error_view(in_mmif, **params)
             self.assertEqual(out_mmif_from_mmif.views, out_mmif_from_str.views)
             out_mmif = out_mmif_from_str
         self.assertIsNotNone(out_mmif)
@@ -374,15 +420,19 @@ class TestRestifier(unittest.TestCase):
 class TestParameterCaster(unittest.TestCase):
     
     def setUp(self) -> None:
-        self.param_spec = {'str_param': (str, False), 
-                           'number_param': (float, False),
-                           'int_param': (int, False),
-                           'bool_param': (bool, False), 
-                           'str_multi_param': (str, True)
-                           }
-        
+        self.params = []
+        specs = {'str_param': ('string', False),
+                 'number_param': ('number', False),
+                 'int_param': ('integer', False),
+                 'bool_param': ('boolean', False), 
+                 'str_multi_param': ('string', True),
+                 'map_param': ('map', True),
+                 }
+        for name, (t, mv) in specs.items():
+            self.params.append(RuntimeParameter(**{'name': name, 'type': t, 'multivalued': mv, 'description': ""}))
+
     def test_cast(self):
-        caster = ParameterCaster(self.param_spec)
+        caster = ParameterCaster(self.params)
         params = {
             'str_param': ["a_string"], 
             'number_param': ["1.11"], 
@@ -391,6 +441,7 @@ class TestParameterCaster(unittest.TestCase):
             'str_multi_param': ['value1', 'value2'],
             'undefined_param_single': ['undefined_value1'],
             'undefined_param_multi': ['undefined_value1', 'undefined_value2'],
+            'map_param': ['key1:val1', 'key2:val2', 'key3:val3', 'key1:val4']
         }
         self.assertTrue(all(map(lambda x: isinstance(x, str), itertools.chain.from_iterable(params.values()))))
         casted = caster.cast(params)
@@ -404,6 +455,11 @@ class TestParameterCaster(unittest.TestCase):
         self.assertTrue('undefined_param_multi' in casted)
         self.assertFalse(isinstance(casted['undefined_param_single'], list))
         self.assertTrue(isinstance(casted['undefined_param_multi'], list))
+        self.assertEqual(3, len(casted['map_param']))
+        self.assertTrue(all(map(lambda x: isinstance(x, str), casted['map_param'].values())))
+        self.assertTrue('val4', len(casted['map_param']['key1']))
+        self.assertTrue('val2', len(casted['map_param']['key2']))
+        self.assertTrue('val3', len(casted['map_param']['key3']))
         unknown_param_key = 'unknown'
         unknown_param_val = 'dunno'
         params[unknown_param_key] = [unknown_param_val]
