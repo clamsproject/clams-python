@@ -1,4 +1,12 @@
 
+## releasing 1.1.5 (2024-04-01)
+### Overview
+Hot-fix to fix some compatibility issues in the app develop template 
+
+### Changes
+* reverted some changes from 3ed54b3 due to broken backward compatibility
+
+
 ## releasing 1.1.4 (2024-03-31)
 ### Overview
 This release includes many changes regarding runtime parameters.
