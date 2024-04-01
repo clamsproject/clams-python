@@ -9,10 +9,10 @@ from urllib import parse as urlparser
 
 __all__ = ['ClamsApp']
 
-from typing import Union, Any, Optional, Dict, List, Iterable
+from typing import Union, Any, Optional, Dict, List, Tuple
 
 from mmif import Mmif, Document, DocumentTypes, View
-from clams.appmetadata import AppMetadata, RuntimeParameter, real_valued_primitives
+from clams.appmetadata import AppMetadata, real_valued_primitives, python_type, map_param_kv_delimiter
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -28,12 +28,14 @@ class ClamsApp(ABC):
     """
     # A set of "universal runtime parameters that can be used for both GET and POST anytime".
     # The behavioral changes based on these parameters must be implemented on the SDK level. 
+    # This needs to stay as a list of dicts for compatibility with the metadata.py file (templated).
     universal_parameters = [
-        RuntimeParameter(**{
+        {
             'name': 'pretty', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
             'description': 'The JSON body of the HTTP response will be re-formatted with 2-space indentation',
-        }),
+        },
     ]
+    
     # this key is used to store users' raw input params in the parameter dict 
     # even after "refinement" (i.e., casting to proper data types)
     _RAW_PARAMS_KEY = "#RAW#"
@@ -41,12 +43,19 @@ class ClamsApp(ABC):
     def __init__(self):
         self.metadata: AppMetadata = self._load_appmetadata()
         super().__init__()
-        # data type specification for common parameters
-
+        
+        # data type spec to be used in type caster
+        self.metadata_param_spec = {}
+        self.annotate_param_spec = {}
         for param in ClamsApp.universal_parameters:
-            self.metadata.parameters.append(param)
-        self.metadata_param_caster = ParameterCaster(ClamsApp.universal_parameters)  # pytype: disable=wrong-arg-types
-        self.annotate_param_caster = ParameterCaster(self.metadata.parameters)  # pytype: disable=wrong-arg-types
+            # in addition to building the param spec, add them as regular params, so they are serialized in metadata
+            self.metadata.add_parameter(**param)  
+            self.metadata_param_spec[param['name']] = (param['type'], param.get('multivalued', False))
+        for param_spec in self.metadata.parameters:
+            self.annotate_param_spec[param_spec.name] = (param_spec.type, param_spec.multivalued)
+
+        self.metadata_param_caster = ParameterCaster(self.metadata_param_spec)
+        self.annotate_param_caster = ParameterCaster(self.annotate_param_spec)
         self.logger = logging.getLogger(self.metadata.identifier)
         
     def appmetadata(self, **kwargs: List[str]) -> str:
@@ -110,7 +119,7 @@ class ClamsApp(ABC):
             mmif = Mmif(mmif)
         issued_warnings = []
         for key in runtime_params:
-            if key not in self.annotate_param_caster.param_spec:
+            if key not in self.annotate_param_spec:
                 issued_warnings.append(UserWarning(f'An undefined parameter "{key}" (value: "{runtime_params[key]}") is passed'))
         # this will do casting + refinement altogether
         refined = self._refine_params(**runtime_params)
@@ -297,19 +306,16 @@ class ClamsApp(ABC):
 
 
 class ParameterCaster(object):
-    KV_DELIMITER = ':'
-    python_type = {"boolean": bool, "number": float, "integer": int, "string": str, "map": dict}
 
-    """
-    A helper class to convert parameters passed by HTTP query strings to
-    proper python data types.
+    def __init__(self, param_spec: Dict[str, Tuple[str, bool]]):
+        """
+        A helper class to convert parameters passed by HTTP query strings to
+        proper python data types.
 
-    :param param_spec: A specification of a data types of parameters
-    """
-    def __init__(self, params: Iterable[RuntimeParameter]):
-        self.param_spec = {}
-        for param in params:
-            self.param_spec[param.name] = (self.python_type[param.type], param.multivalued)
+        :param param_spec: A specification of a data types of parameters
+        """
+        self.param_spec = {pname: (python_type[ptype_str], pmultivalued) 
+                           for pname, (ptype_str, pmultivalued) in param_spec.items()}
 
     def cast(self, args: Dict[str, List[str]]) \
             -> Dict[str, Union[real_valued_primitives, List[real_valued_primitives], Dict[str, str]]]:
@@ -395,4 +401,4 @@ class ParameterCaster(object):
         """
         Helper function to convert string values to key-value pair type.
         """
-        return dict([value.split(ParameterCaster.KV_DELIMITER, 1)])
+        return dict([value.split(map_param_kv_delimiter, 1)])
