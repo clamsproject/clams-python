@@ -14,7 +14,7 @@ from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver
 import clams.app
 import clams.restify
 from clams.app import ParameterCaster
-from clams.appmetadata import AppMetadata, Input, RuntimeParameter
+from clams.appmetadata import AppMetadata, Input
 
 
 class ExampleInputMMIF(object):
@@ -420,19 +420,16 @@ class TestRestifier(unittest.TestCase):
 class TestParameterCaster(unittest.TestCase):
     
     def setUp(self) -> None:
-        self.params = []
-        specs = {'str_param': ('string', False),
-                 'number_param': ('number', False),
-                 'int_param': ('integer', False),
-                 'bool_param': ('boolean', False), 
-                 'str_multi_param': ('string', True),
-                 'map_param': ('map', True),
-                 }
-        for name, (t, mv) in specs.items():
-            self.params.append(RuntimeParameter(**{'name': name, 'type': t, 'multivalued': mv, 'description': ""}))
+        self.param_spec = {'str_param': ('string', False),
+                           'number_param': ('number', False),
+                           'int_param': ('integer', False),
+                           'bool_param': ('boolean', False),
+                           'str_multi_param': ('string', True),
+                           'map_param': ('map', True),
+                           }
 
     def test_cast(self):
-        caster = ParameterCaster(self.params)
+        caster = ParameterCaster(self.param_spec)
         params = {
             'str_param': ["a_string"], 
             'number_param': ["1.11"], 
@@ -443,6 +440,7 @@ class TestParameterCaster(unittest.TestCase):
             'undefined_param_multi': ['undefined_value1', 'undefined_value2'],
             'map_param': ['key1:val1', 'key2:val2', 'key3:val3', 'key1:val4']
         }
+        # all "RAW" parameter values are assumed to be strings
         self.assertTrue(all(map(lambda x: isinstance(x, str), itertools.chain.from_iterable(params.values()))))
         casted = caster.cast(params)
         # must push out to the list

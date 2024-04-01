@@ -15,6 +15,11 @@ app_version_envvar_key = 'CLAMS_APP_VERSION'
 real_valued_primitives = Union[int, float, bool, str]
 # these names are taken from the JSON schema data types
 param_value_types = Literal['integer', 'number', 'string', 'boolean', 'map']
+# and the specific delimiter for the map type
+map_param_kv_delimiter = ':'
+
+# dict to map app parameter data types to Python data types
+python_type = {"boolean": bool, "number": float, "integer": int, "string": str, "map": dict}
 
 param_value_types_values = param_value_types.__args__  # pytype: disable=attribute-error
 app_directory_baseurl = "http://apps.clams.ai"
