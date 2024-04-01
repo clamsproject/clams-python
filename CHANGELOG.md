@@ -1,4 +1,18 @@
 
+## releasing 1.1.4 (2024-03-31)
+### Overview
+This release includes many changes regarding runtime parameters.
+
+### Additions
+* updated to latest mmif-python and added support for `views[].metadata.appConfiguration` field added in MMIF 1.0.4 (#166)
+* initial implementation of `map` type parameters to provide (limited) support for complex data types. At the moment, `map` type parameters are expected to be parsed into string-to-string dictionary. See [the metadata jsonscheme for the full documentation](https://github.com/clamsproject/clams-python/blob/0daa2251b38f6c530d33e6902635d1445edf7bc9/clams/appmetadata/__init__.py#L159-L173) (#197)
+* input and output type specifications in app metadata now can carry some additional "comments" from the developer (#200)
+
+### Changes
+* passed values to `multivalued=True` parameters has been interpreted as lists but default values weren't. Now it's fixed. (related to #197 as well, since `type=map` implies `multivalued=True`)
+* input and output type properties can be (under-)specified as wildcards (#194)
+
+
 ## releasing 1.1.3 (2024-03-04)
 ### Overview
 This is a minor release to catch up new version of MMIF and `mmif-python`. 
