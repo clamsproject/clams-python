@@ -1,4 +1,12 @@
 
+## releasing 1.1.6 (2024-04-02)
+### Overview
+Minor release to update the `mmif-python` dependency to the latest.
+
+### Changes
+* now based on `mmif-python==1.0.13` including a hotfix for a wrong field name in MMIF serialization.
+
+
 ## releasing 1.1.5 (2024-04-01)
 ### Overview
 Hot-fix to fix some compatibility issues in the app develop template 
