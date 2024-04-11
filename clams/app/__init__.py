@@ -217,7 +217,8 @@ class ClamsApp(ABC):
                             view.metadata.add_parameter(orik, str(oriv))
                         else:
                             view.metadata.add_parameter(orik, oriv[0])
-                view.metadata.add_app_configuration(k, v)
+                else:
+                    view.metadata.add_app_configuration(k, v)
         else:
             # meaning the parameters directly from flask or argparser and values are in lists
             for k, v in runtime_conf.items():
