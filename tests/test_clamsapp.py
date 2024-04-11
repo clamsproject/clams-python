@@ -228,7 +228,26 @@ class TestClamsApp(unittest.TestCase):
         in_mmif.metadata.mmif = f"http://mmif.clams.ai/{incompat_ver}"
         with pytest.raises(ValueError):
             self.app.annotate(in_mmif)
-        
+
+    def test_sign_view(self):
+        m = Mmif(self.in_mmif)
+        v1 = m.new_view()
+        self.app.sign_view(v1, {})
+        self.assertEqual(v1.metadata.app, self.app.metadata.identifier)
+        self.assertEqual(len(v1.metadata.parameters), 0)
+        v2 = m.new_view()
+        raw_query_string_arguments = {'undefined_param1': ['value1']}  # values are lists as our restifier uses `to_dict(flat=False)`
+        self.app.sign_view(v2, self.app._refine_params(**raw_query_string_arguments))
+        self.assertEqual(v2.metadata.app, self.app.metadata.identifier)
+        self.assertEqual(len(v2.metadata.parameters), 1)
+        self.assertFalse(clams.ClamsApp._RAW_PARAMS_KEY in v2.metadata.appConfiguration)
+        for param in self.app.metadata.parameters:
+            # any parameter with defaults should be recorded
+            if param.default is not None:
+                self.assertTrue(param.name in v2.metadata.appConfiguration)
+            elif param.name not in raw_query_string_arguments:
+                self.assertFalse(param.name in v2.metadata.appConfiguration)
+
     def test_annotate(self):
         # The example app is hard-coded to **always** emit version mismatch warning
         out_mmif = self.app.annotate(self.in_mmif)
