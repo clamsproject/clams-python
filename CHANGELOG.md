@@ -1,4 +1,13 @@
 
+## releasing 1.2.0 (2024-04-11)
+### Overview
+This is a minor release that brings improved portability of `clams source` command but also breaks some backward compatibility. If your app is based on clams-python 1.0.x or 1.1.x, please read the changelog carefully. 
+
+### Changes
+- `clams source` command now work on Windows shell. The paths still, though, have to be POSIX path. We have no plan to support Windows path for `file://` URI in MMIF at the moment. 
+- `ClamsApp.sign_view` method now expect the runtime parameters (dict of string to lists of values) as a second argument. Previously the second argument was optional, which is no more. CLAMS app developers who were calling this method in `_annotate()` method must directly pass down the runtime parameters from `_annotate()` argument.
+
+
 ## releasing 1.1.6 (2024-04-02)
 ### Overview
 Minor release to update the `mmif-python` dependency to the latest.
