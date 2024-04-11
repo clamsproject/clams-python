@@ -3,6 +3,7 @@ import copy
 import io
 import os
 import unittest
+import unittest.mock
 
 from mmif.serialize import Mmif
 from mmif.vocabulary import DocumentTypes, AnnotationTypes
@@ -62,6 +63,10 @@ class TestSource(unittest.TestCase):
         self.docs.append('audio:a/b/c.mp3')
         with self.assertRaises(ValueError):
             self.generate_source_mmif()
+
+    @unittest.mock.patch('os.name', 'nt')
+    def test_on_windows(self):
+        self.test_accept_file_paths()
 
     def test_accept_prefixed_file_paths(self):
         self.prefix = '/a/b'
