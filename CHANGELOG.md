@@ -1,4 +1,177 @@
 
+## releasing 1.2.0 (2024-04-11)
+### Overview
+This is a minor release that brings improved portability of `clams source` command but also breaks some backward compatibility. If your app is based on clams-python 1.0.x or 1.1.x, please read the changelog carefully. 
+
+### Changes
+- `clams source` command now work on Windows shell. The paths still, though, have to be POSIX path. We have no plan to support Windows path for `file://` URI in MMIF at the moment. 
+- `ClamsApp.sign_view` method now expect the runtime parameters (dict of string to lists of values) as a second argument. Previously the second argument was optional, which is no more. CLAMS app developers who were calling this method in `_annotate()` method must directly pass down the runtime parameters from `_annotate()` argument.
+
+
+## releasing 1.1.6 (2024-04-02)
+### Overview
+Minor release to update the `mmif-python` dependency to the latest.
+
+### Changes
+* now based on `mmif-python==1.0.13` including a hotfix for a wrong field name in MMIF serialization.
+
+
+## releasing 1.1.5 (2024-04-01)
+### Overview
+Hot-fix to fix some compatibility issues in the app develop template 
+
+### Changes
+* reverted some changes from 3ed54b3 due to broken backward compatibility
+
+
+## releasing 1.1.4 (2024-03-31)
+### Overview
+This release includes many changes regarding runtime parameters.
+
+### Additions
+* updated to latest mmif-python and added support for `views[].metadata.appConfiguration` field added in MMIF 1.0.4 (#166)
+* initial implementation of `map` type parameters to provide (limited) support for complex data types. At the moment, `map` type parameters are expected to be parsed into string-to-string dictionary. See [the metadata jsonscheme for the full documentation](https://github.com/clamsproject/clams-python/blob/0daa2251b38f6c530d33e6902635d1445edf7bc9/clams/appmetadata/__init__.py#L159-L173) (#197)
+* input and output type specifications in app metadata now can carry some additional "comments" from the developer (#200)
+
+### Changes
+* passed values to `multivalued=True` parameters has been interpreted as lists but default values weren't. Now it's fixed. (related to #197 as well, since `type=map` implies `multivalued=True`)
+* input and output type properties can be (under-)specified as wildcards (#194)
+
+
+## releasing 1.1.3 (2024-03-04)
+### Overview
+This is a minor release to catch up new version of MMIF and `mmif-python`. 
+
+### Changes
+* updated to latest mmif-python (and MMIF 1.0.2)
+* small updates in API documentation regarding I/O spec in app metadata
+
+
+
+## releasing 1.1.2 (2024-02-10)
+### Overview
+This release updates to the latest MMIF and `mmif-python`
+
+### Additions
+* Now based on `mmif-python` 1.0.9 and MMIF 1.0.1
+
+
+## releasing 1.1.1 (2024-02-05)
+### Overview
+This release contains minor fixes in code and updates in documentations regarding changes in runtime parameter in the previous 1.1.0 release.
+
+### Changes
+* fixed broken links in the main repo README
+* fixed outdated information regarding usage of `get_configuration` in various documentation
+* fixed `properties` in I/O specification in AppMetadata are unfairly restricted to `str` values
+
+## releasing 1.1.0 (2024-01-31)
+### Overview
+This is a minor-level release that fixes various bugs and adds safeguards for possible inconsistency in output MMIFs. 
+
+### Additions
+* `sign_view` now use user input parameters "as-is" whenever they are available (https://github.com/clamsproject/clams-python/issues/181)
+* apps will conduct JSON validation right before it responses with MMIF output (https://github.com/clamsproject/clams-python/issues/179)
+* `clams rewind` is now available to _rewind_ MMIF files (https://github.com/clamsproject/clams-python/issues/190)
+``` bash 
+$ clams rewind --help
+usage: clams rewind [-h] [-o PATH] [-p] [-n NUMBER] [-m {app,view}] mmif_file
+
+provides CLI to rewind a MMIF from a CLAMS pipeline.
+
+MMIF rewinder rewinds a MMIF by deleting the last N views.
+N can be specified as a number of views, or a number of producer apps.
+
+positional arguments:
+  mmif_file             Path to the input MMIF file, or '-' to read from stdin.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o PATH, --output PATH
+                        Path to the rewound MMIF output file. When not given, the rewound MMIF is printed to stdout.
+  -p, --pretty          Pretty-print rewound MMIF. True by default
+  -n NUMBER, --number NUMBER
+                        Number of views to rewind (default: interactive mode)
+  -m {app,view}, --mode {app,view}
+                        Number of views to rewind (default: interactive mode)
+```
+    
+
+### Changes
+* pre-built base container images will take less space (https://github.com/clamsproject/clams-python/issues/186)
+* apps running in production mode (over gunicorn) now logs to stdout (https://github.com/clamsproject/clams-python/issues/183)
+* fixed a bug in app metadata generation (https://github.com/clamsproject/clams-python/issues/187) 
+
+
+## releasing 1.0.9 (2023-07-24)
+### Overview
+Minor release to update small issues in the app develop template. 
+
+### Changes
+* `metadata.py` from the template now includes *universal* parameters when printing out the app metadata.
+
+## releasing 1.0.8 (2023-07-24)
+### Overview
+Minor release to update `mmif-python` version 
+
+### Changes
+* updated to `mmif-python==1.0.8`
+* enabled a python logger for clams-apps as `self.logger`
+
+## releasing 1.0.7 (2023-07-20)
+### Overview
+This release includes a bugfix and update to the latest mmif-python 
+
+### Changes
+* now based on `mmif-python==1.0.7`
+* fixed some runtime parameters' default values not correctly casted (#173 )
+
+
+## releasing 1.0.6 (2023-07-19)
+### Overview
+Minor release to update `mmif-python` version 
+
+### Changes
+* updated to `mmif-python==1.0.5`
+
+
+## releasing 1.0.5 (2023-07-19)
+### Overview
+Minor release to update `mmif-python` version 
+
+### Changes
+* updated to `mmif-python==1.0.5`
+
+
+## releasing 1.0.4 (2023-07-19)
+### Overview
+This release include many updates to documentation, and `clams source --scheme` flag. 
+
+### Additions
+* `--scheme` flag is added to `clams source` CLI to generate MMIF with arbitrary URI scheme for document locations (#163, also see https://github.com/clamsproject/mmif-python/pull/223) 
+
+### Changes
+* CLAMS app development documentation is updated with more details, clarification and a up-to-date tutorial (#165)
+* added validation step for parameters with fixed options (#164)  
+
+
+## releasing 1.0.3 (2023-06-14)
+### Overview
+This release include minor bug fixes. 
+
+
+### Changes
+* fixed #154
+* fixed #155
+
+
+## releasing 1.0.2 (2023-06-02)
+### Overview
+This release is a minor patch; see below. 
+
+### Changes
+* fixed a filename bug that prevented some files from being copied to a newly generate app template. 
+
 ## releasing 1.0.1 (2023-05-26)
 ### Overview
 This release is about updating to `mmif-python==1.0.1`, which is based on MMIF 1.0.0. 
