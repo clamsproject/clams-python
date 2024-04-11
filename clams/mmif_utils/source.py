@@ -1,9 +1,9 @@
 import argparse
 import itertools
 import json
+import pathlib
 import sys
 import textwrap
-from os import path
 from typing import Union, Generator, List, Optional, Iterable
 from urllib.parse import urlparse
 
@@ -171,24 +171,18 @@ class WorkflowSource:
             yield self.produce()
 
 
-def generate_source_mmif_from_file(documents, prefix=None, **ignored):
-    from string import Template
+def generate_source_mmif_from_file(documents, prefix=None, scheme='file', **ignored):
     at_types = {
         'video': DocumentTypes.VideoDocument,
         'audio': DocumentTypes.AudioDocument,
         'text': DocumentTypes.TextDocument,
         'image': DocumentTypes.ImageDocument
     }
-    template = Template('''{
-          "@type": "${at_type}",
-          "properties": {
-            "id": "${aid}",
-            "mime": "${mime}",
-            "location": "${location}" }
-        }''')
     pl = WorkflowSource()
-    if prefix and not path.isabs(prefix):
-        raise ValueError(f"prefix must be an absolute path; given \"{prefix}\".")
+    if prefix:
+        prefix = pathlib.PurePosixPath(prefix)
+        if not prefix.is_absolute():
+            raise ValueError(f"prefix must be an absolute path; given \"{prefix}\".")
     for doc_id, arg in enumerate(documents, start=1):
         arg = arg.strip()
         if len(arg) < 1:
@@ -200,57 +194,20 @@ def generate_source_mmif_from_file(documents, prefix=None, **ignored):
             raise ValueError(
                 f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source'
             )
-        if prefix and path.isabs(location):
-            raise ValueError(f"when prefix is used, file location must not be an absolute path; given \"{location}\".")
-        elif not prefix and not path.isabs(location):
-            raise ValueError(f'file location must be an absolute path, or --prefix must be used; given \"{location}\".')
-        elif prefix and not path.isabs(location):
-            location = path.join(prefix, location)
-        doc = template.substitute(
-            at_type=str(at_types[mime.split('/', maxsplit=1)[0]]),
-            aid=f'd{doc_id}',
-            mime=mime,
-            location=location
-        )
-        pl.add_document(doc)
-    return pl.produce().serialize(pretty=True)
-
-
-def generate_source_mmif_from_customscheme(documents, scheme, **ignored):
-    from string import Template
-    at_types = {
-        'video': DocumentTypes.VideoDocument,
-        'audio': DocumentTypes.AudioDocument,
-        'text': DocumentTypes.TextDocument,
-        'image': DocumentTypes.ImageDocument
-    }
-    template = Template('''{
-          "@type": "${at_type}",
-          "properties": {
-            "id": "${aid}",
-            "mime": "${mime}",
-            "location": "${location}" }
-        }''')
-    pl = WorkflowSource()
-    for doc_id, arg in enumerate(documents, start=1):
-        arg = arg.strip()
-        if len(arg) < 1:
-            continue
-        result = arg.split(':', maxsplit=1)
-        if len(result) == 2 and result[0].split('/', maxsplit=1)[0] in at_types:
-            mime, location = result
-        else:
-            raise ValueError(
-                f'Invalid MIME types, or no MIME type and/or path provided, in argument {doc_id-1} to source'
-            )
-        if urlparse(location).scheme == '':
-            location = scheme + '://' + location
-        doc = template.substitute(
-            at_type=str(at_types[mime.split('/', maxsplit=1)[0]]),
-            aid=f'd{doc_id}',
-            mime=mime,
-            location=location
-        )
+        location_uri = urlparse(location, scheme=scheme)
+        if location_uri.scheme == 'file':
+            location = pathlib.PurePosixPath(location_uri.path)
+            if prefix and location.is_absolute():
+                raise ValueError(f"when prefix is used, file location must not be an absolute path; given \"{location}\".")
+            elif not prefix and not location.is_absolute():
+                raise ValueError(f'file location must be an absolute path, or --prefix must be used; given \"{location}\".')
+            elif prefix and not location.is_absolute():
+                location = prefix / location
+        doc = Document()
+        doc.at_type = at_types[mime.split('/', maxsplit=1)[0]]
+        doc.properties.location = f"{location_uri.scheme}://{location}"
+        doc.properties.id = f'd{doc_id}'
+        doc.properties.mime = mime
         pl.add_document(doc)
     return pl.produce().serialize(pretty=True)
 
@@ -274,19 +231,22 @@ def prep_argparser(**kwargs):
         default=None,
         action='store',
         nargs='+',
-        help="This list of documents should be colon-joined pairs of document types and file paths. A document type "
-             "can be one of ``audio``, ``video``, ``text``, ``image``, or a MIME type string (such as video/mp4). The "
-             "output will be a MMIF file containing a document for each of those file paths, with the appropriate "
-             "``@type`` and MIME type (if given), printed to the standard output. "
+        help='This list of documents MUST be colon-delimited pairs of document types and file locations. A document '
+             'type can be one of `audio`, `video`, `text`, `image`, or a MIME type string (such as video/mp4). The '
+             'file locations MUST be valid URI strings (e.g. `file:///path/to/file.mp4`, or URI scheme part can be '
+             'omitted, when `--scheme` flag is used). Note that when `file://` scheme is used (default), locations '
+             'MUST BE POSIX forms (Windows forms are not supported). The output will be a MMIF file containing a '
+             'document for each of those file paths, with the appropriate ``@type`` and MIME type (if given).'
     )
     parser.add_argument(
         '-p', '--prefix',
         default=None,
         metavar='PATH',
         nargs='?',
-        help='An absolute path to use as prefix for file paths (ONLY WORKS with `file` scheme, ignored otherwise). If '
-             'prefix is set, document file paths MUST be relative. Useful when creating source MMIF files from a '
-             'system that\'s different from the system that actually runs the workflow (e.g. in a container).'
+        help='An absolute path to use as prefix for file paths (ONLY WORKS with the default `file://` scheme, ignored '
+             'otherwise. MUST BE a POSIX form, Windows form is not supported). If prefix is set, document file paths '
+             'MUST be relative. Useful when creating source MMIF files from a system that\'s different from the '
+             'environment that actually runs the workflow (e.g. in a container).'
     )
     parser.add_argument(
         '-o', '--output',
@@ -300,7 +260,7 @@ def prep_argparser(**kwargs):
         default='file',
         action='store',
         nargs='?',
-        help='A scheme to associate with the document location URI. When not given, the default scheme is `file`.'
+        help='A scheme to associate with the document location URI. When not given, the default scheme is `file://`.'
     )
     return parser
 
@@ -310,10 +270,7 @@ def main(args):
         out_f = open(args.output, 'w')
     else:
         out_f = sys.stdout
-    if args.scheme == 'file':
-        mmif = generate_source_mmif_from_file(**vars(args))
-    else:
-        mmif = generate_source_mmif_from_customscheme(**vars(args))
+    mmif = generate_source_mmif_from_file(windows_path=False, **vars(args))
     out_f.write(mmif)
     return mmif
 
