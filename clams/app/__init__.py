@@ -190,7 +190,7 @@ class ClamsApp(ABC):
                       DeprecationWarning, stacklevel=2)
         return self._refine_params(**runtime_params)
 
-    def sign_view(self, view: View, runtime_conf: Optional[dict] = None) -> None:
+    def sign_view(self, view: View, runtime_conf: dict) -> None:
         """
         A method to "sign" a new view that this app creates at the beginning of annotation.
         Signing will populate the view metadata with information and configuration of this app.
@@ -201,13 +201,6 @@ class ClamsApp(ABC):
         :param view: a view to sign
         :param runtime_conf: runtime configuration of the app as k-v pairs
         """
-        # TODO (krim @ 8/2/23): once all devs understood this change, make runtime_conf a required argument
-        if runtime_conf is None:
-            warnings.warn("`runtime_conf` argument for ClamsApp.sign_view() will "
-                          "no longer be optional in the future. Please pass `runtime_params` "
-                          "from _annotate() method.",
-                          FutureWarning, stacklevel=2)
-            return
         view.metadata.app = self.metadata.identifier
         if self._RAW_PARAMS_KEY in runtime_conf:
             for k, v in runtime_conf.items():
@@ -217,7 +210,8 @@ class ClamsApp(ABC):
                             view.metadata.add_parameter(orik, str(oriv))
                         else:
                             view.metadata.add_parameter(orik, oriv[0])
-                view.metadata.add_app_configuration(k, v)
+                else:
+                    view.metadata.add_app_configuration(k, v)
         else:
             # meaning the parameters directly from flask or argparser and values are in lists
             for k, v in runtime_conf.items():
