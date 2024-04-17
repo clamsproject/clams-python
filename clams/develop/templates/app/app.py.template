@@ -36,7 +36,7 @@ class $APP_CLASS_NAME(ClamsApp):
         # When using the ``metadata.py`` leave this do-nothing "pass" method here. 
         pass
 
-    def _annotate(self, mmif: Union[str, dict, Mmif], **parameters) -> Mmif:
+    def _annotate(self, mmif: Mmif, **parameters) -> Mmif:
         # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._annotate
         raise NotImplementedError
 
