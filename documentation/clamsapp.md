@@ -73,7 +73,7 @@ The HTTP inside the container will be listening to 5000 by default. Usually any 
 
 > **Note**
 > Another note for users of recent Macs with Apple Silicon (M1, M2, etc) CPU: you might see the following error message when you run the container image.
-> ```bash
+> ```
 > The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
 > ```
 > This is because the image you are trying to run is built for Intel/AMC CPUs. To force the container to run on an emulation layer, you can add `--platform linux/amd64` option to the `docker run` command.

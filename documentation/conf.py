@@ -97,7 +97,7 @@ def update_target_spec():
     with open(target_vers_csv) as in_f, open(f'{target_vers_csv}.new', 'w') as out_f:
         lines = in_f.readlines()
         if not lines[1].startswith(f"`{version}"):
-            lines.insert(1, f"`{version} <https://pypi.org/project/clams-python/{version}/>`_,`{mmifver} <https://pypi.org/project/mmif-python/{mmifver}/>`_,`{specver} <https://mmif.clams.ai/{specver}/>`_\n")
+            lines.insert(1, f"`{version} <https://pypi.org/project/clams-python/{version}/>`__,`{mmifver} <https://pypi.org/project/mmif-python/{mmifver}/>`__,`{specver} <https://mmif.clams.ai/{specver}/>`__\n")
         for line in lines:
             out_f.write(line)
         shutil.move(out_f.name, in_f.name)
