@@ -122,7 +122,9 @@ class ClamsApp(ABC):
             if key not in self.annotate_param_spec:
                 issued_warnings.append(UserWarning(f'An undefined parameter "{key}" (value: "{runtime_params[key]}") is passed'))
         # this will do casting + refinement altogether
+        self.logger.debug(f"User parameters: {runtime_params}")
         refined = self._refine_params(**runtime_params)
+        self.logger.debug(f"Refined parameters: {refined}")
         pretty = refined.get('pretty', False)
         with warnings.catch_warnings(record=True) as ws:
             annotated = self._annotate(mmif, **refined)
@@ -202,11 +204,12 @@ class ClamsApp(ABC):
         :param runtime_conf: runtime configuration of the app as k-v pairs
         """
         view.metadata.app = self.metadata.identifier
+        params_map = {p.name: p for p in self.metadata.parameters}
         if self._RAW_PARAMS_KEY in runtime_conf:
             for k, v in runtime_conf.items():
                 if k == self._RAW_PARAMS_KEY:
                     for orik, oriv in v.items():
-                        if orik in self.metadata.parameters and self.metadata.parameters[orik].multivalued:
+                        if orik in params_map and params_map[orik].multivalued:
                             view.metadata.add_parameter(orik, str(oriv))
                         else:
                             view.metadata.add_parameter(orik, oriv[0])
@@ -215,7 +218,7 @@ class ClamsApp(ABC):
         else:
             # meaning the parameters directly from flask or argparser and values are in lists
             for k, v in runtime_conf.items():
-                if k in self.metadata.parameters and self.metadata.parameters[k].multivalued:
+                if k in params_map and params_map[k].multivalued:
                     view.metadata.add_parameter(k, str(v))
                 else:
                     view.metadata.add_parameter(k, v[0])
