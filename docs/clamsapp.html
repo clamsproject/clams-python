@@ -35,7 +35,7 @@
             clams-python
           </a>
               <div class="version">
-                1.2.0
+                1.2.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -151,7 +151,7 @@ If you are using a Mac, on recent versions of macOS, port 5000 is used by Airpla
 For more information on <em>safe</em> port numbers, see <a class="reference external" href="https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml">IANA Port Number Registry</a> or <a class="reference external" href="https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers">Wikipedia</a>.</p>
 <p><strong>Note</strong>
 Another note for users of recent Macs with Apple Silicon (M1, M2, etc) CPU: you might see the following error message when you run the container image.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>The requested image&#39;s platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">requested</span> <span class="n">image</span><span class="s1">&#39;s platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested</span>
 </pre></div>
 </div>
 <p>This is because the image you are trying to run is built for Intel/AMC CPUs. To force the container to run on an emulation layer, you can add <code class="docutils literal notranslate"><span class="pre">--platform</span> <span class="pre">linux/amd64</span></code> option to the <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">run</span></code> command.</p>

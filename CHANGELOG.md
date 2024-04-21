@@ -1,4 +1,15 @@
 
+## releasing 1.2.1 (2024-04-21)
+### Overview
+This release includes documentation updates and bug fixes
+
+### Additions
+* lots of details were added to app metadata documentation for app developers (https://github.com/clamsproject/clams-python/issues/201)
+
+### Changes
+* fixed a bug where raw user input parameters with `multivalued=True` were not fully recorded in the output MMIF view metadata (https://github.com/clamsproject/clams-python/issues/214)
+
+
 ## releasing 1.2.0 (2024-04-11)
 ### Overview
 This is a minor release that brings improved portability of `clams source` command but also breaks some backward compatibility. If your app is based on clams-python 1.0.x or 1.1.x, please read the changelog carefully. 
