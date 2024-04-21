@@ -13,7 +13,6 @@ The app.py script does several things:
 
 import argparse
 import logging
-from typing import Union
 
 # Imports needed for Clams and MMIF.
 # Non-NLP Clams applications will require AnnotationTypes
