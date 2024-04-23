@@ -39,6 +39,11 @@ class $APP_CLASS_NAME(ClamsApp):
         # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._annotate
         raise NotImplementedError
 
+def get_app():
+    # singleton constructor for app
+    # return $APP_CLASS_NAME(init, from, global, params)
+    raise NotImplementedError
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
