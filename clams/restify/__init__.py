@@ -124,7 +124,9 @@ class ClamsHTTPApi(Resource):
 
         :return: Returns app metadata in a HTTP response.
         """
-        return self.json_to_response(self.cla.appmetadata(**request.args))
+        # this will catch duplicate arguments with different values into a list under the key
+        raw_params = request.args.to_dict(flat=False)
+        return self.json_to_response(self.cla.appmetadata(**raw_params))
 
     def post(self) -> Response:
         """
