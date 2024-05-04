@@ -178,7 +178,14 @@ class ClamsApp(ABC):
                     raise ValueError(f"Value for parameter \"{parameter.name}\" must be one of {parameter.choices}.")
                 refined[parameter.name] = casted[parameter.name]
             elif parameter.default is not None:
-                refined[parameter.name] = parameter.default
+                # have to cast the default values as well, since 
+                # 1. `map` type default values are not actually expected as a map (dict)
+                # 2. developers can use data type not matching the spec
+                if isinstance(parameter.default, list):
+                    casted_default = self.annotate_param_caster.cast({parameter.name: list(map(str, parameter.default))})
+                else:
+                    casted_default = self.annotate_param_caster.cast({parameter.name: [str(parameter.default)]})
+                refined[parameter.name] = casted_default
             else:
                 raise ValueError(f"Cannot find configuration for a required parameter \"{parameter.name}\".")
         # raw input params are hidden under a special key
