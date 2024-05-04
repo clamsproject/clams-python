@@ -162,7 +162,8 @@ class RuntimeParameter(_BaseModel):
     type: param_value_types = pydantic.Field(
         ...,
         description=f"Type of the parameter value the app expects. Must be one of {param_value_types_values}. When "
-                    "type is ``map``, ``multivalued=true`` is automatically forced. \n\n"
+                    "type is ``map``, ``multivalued=true`` is forced, and when ``boolean``, ``multivalued=false`` is "
+                    "forced. \n\n"
                     "Notes for developers: \n\n"
                     "When the type is ``map``, the parameter value (still a single string from the users' perspective) "
                     "must be formatted as a ``KEY:VALUE`` pair, namely a colon-separated string. To pass multiple "
@@ -186,7 +187,7 @@ class RuntimeParameter(_BaseModel):
         description="(optional) Default value for the parameter.\n\n"
                     "Notes for developers: \n\n"
                     "Setting a default value makes a parameter `optional`. \n\n"
-                    "When ``multivalued=True``, the default value should be a list of values. \n\n"
+                    "When ``multivalued=true``, the default value should be a list of values. \n\n"
                     "When ``type=map``, the default value should be a list of colon-separated strings. \n\n"
     )
     multivalued: bool = pydantic.Field(
@@ -420,8 +421,10 @@ class AppMetadata(pydantic.BaseModel):
         # see https://docs.pydantic.dev/1.10/usage/types/#unions
         # e.g. casting 0.1 using the `primitives` dict will result in  0 (int)
         # while casting "0.1" using the `primitives` dict will result in  0.1 (float)
-        if type == 'map' and multivalued is False:
+        if type == 'map':
             multivalued = True
+        if type == 'boolean':
+            multivalued = False
         if default is not None:
             if isinstance(default, list):
                 default = [str(d) for d in default]
