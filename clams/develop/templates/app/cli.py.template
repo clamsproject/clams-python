@@ -1,90 +1,69 @@
 #!/usr/bin/env python3
 """
-The purpose of this file is to define 
-a thin CLI interface for your app
+The purpose of this file is to define a thin CLI interface for your app
 
 DO NOT CHANGE the name of the file
 """
 
-
-# Imports
 import argparse
-import json
-import sys 
+import sys
 
-from typing import Dict, Union
-
-from app import ClamsApp, AppMetadata, get_app
+import app
 from mmif import Mmif
-# Dict to convert parameter types to python types
-type_map = {
-    "integer": int,
-    "number": float,
-    "string": str,
-    "boolean": bool,
-    "map": dict,
-}
-# ============================================================|
-def parse_metadata(app_metadata: AppMetadata) -> Dict[str, Union[str, float, int, bool, dict]]:
-    """Separate argparser for runtime parameters,
+from clams import AppMetadata
 
-    uses parameters accessible via `metadata.py` to
-    construct the argparse arguments, parses them,
-    and converts them to a dictionary of values before returning
+
+def metadata_to_argparser(app_metadata: AppMetadata) -> argparse.ArgumentParser:
+    """
+    Automatically generate an argparse.ArgumentParser from parameters specified in the app metadata (metadata.py).
     """
 
-    # helper function for argparse 'nargs' field
-    def _get_nargs(param):
-        if param.multivalued:
-            return "?" if param.type == "boolean" else "+"
-        return 1
-
-    parser = argparse.ArgumentParser(add_help=False,
-        description="Command-Line Interface for CLAMS app"
-    )
-
-    # keep track of dict-type values in parameters for later parsing
-    maps = set()
+    parser = argparse.ArgumentParser(description="CLI for CLAMS app")
 
     # parse cli args from app parameters
-    for parameter in app_metadata["parameters"]:
-        if type_map[parameter.type] == dict:
-            maps.add(parameter.name)
-        parser.add_argument(
+    for parameter in app_metadata.parameters:
+        a = parser.add_argument(
             f"--{parameter.name}",
             help=parameter.description,
-            nargs=_get_nargs(parameter),
-            type=type_map[parameter.type],
-            choices=parameter.choices,
-            default=parameter.default,
+            nargs=1,
             action="store",
-        )
+            type=str)
+        if parameter.choices is not None:
+            a.choices = parameter.choices
+        if parameter.default is not None:
+            a.help += f" (default: {parameter.default})"
+            # then we don't have to add default values to the arg_parser
+            # since that's handled by the app._refined_params() method.
+        if parameter.multivalued:
+            a.nargs = '+'
+        if parameter.type == "boolean":
+            a.nargs = '?'
+            a.action = "store_true"
+    parser.add_argument('IN_MMIF_FILE', nargs='?', type=argparse.FileType('r'),
+                        # will check if stdin is a keyboard, and return None if it is
+                        default=None if sys.stdin.isatty() else sys.stdin)
+    parser.add_argument('OUT_MMIF_FILE', nargs='?', type=argparse.FileType('w'), default=sys.stdout)
+    return parser
 
-    # namespace -> dictionary
-    app_args = vars(parser.parse_args())
-
-    # convert dict-type arg strings into k/v pairs
-    for arg, val in app_args.items():
-        if arg in maps:
-            app_args[arg] = {k: v for k, v in [pair.split(":") for pair in val]}
-
-    return app_args
-
-
-def main():
-    # CLI pipeline: `stdin` -> app._annotate -> `stdout`
-    input = sys.stdin
-
-    # Load data from stdin 
-    in_data = Mmif("".join([line.rstrip("\n") for line in input]))
-
-    # Load app from `app.py` constructor and get runtime params
-    clamsapp: ClamsApp = get_app()
-    app_metadata = dict(json.loads(clamsapp.appmetadata()))
-    runtime_parameters = parse_metadata(app_metadata=app_metadata)
-
-    # Write _annotate output (mmif) to stdout
-    print(clamsapp._annotate(in_data, **runtime_parameters), file=sys.stdout)
 
 if __name__ == "__main__":
-    main()
+    clamsapp = app.get_app()
+    arg_parser = metadata_to_argparser(app_metadata=clamsapp.metadata)
+    args = arg_parser.parse_args()
+    if args.IN_MMIF_FILE:
+        in_data = Mmif(args.IN_MMIF_FILE.read())
+        # since flask webapp interface will pass parameters as "unflattened" dict to handle multivalued parameters
+        # (https://werkzeug.palletsprojects.com/en/latest/datastructures/#werkzeug.datastructures.MultiDict.to_dict)
+        # we need to convert arg_parsers results into a similar structure, which is the dict values are wrapped in lists
+        params = {}
+        for pname, pvalue in vars(args).items():
+            if pvalue is None or pname in ['IN_MMIF_FILE', 'OUT_MMIF_FILE']:
+                continue
+            elif isinstance(pvalue, list):
+                params[pname] = pvalue
+            else:
+                params[pname] = [pvalue]
+        args.OUT_MMIF_FILE.write(clamsapp.annotate(in_data, **params))
+    else:
+        arg_parser.print_help()
+        sys.exit(1)
