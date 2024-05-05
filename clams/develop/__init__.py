@@ -57,8 +57,7 @@ class CookieCutter(object):
                     'APP_IDENTIFIER': '-'.join(self.name_tokens)
                 }
                 if update_level > 0:
-                    # self.reheat_app(src_dir, dst_dir, app_vars)
-                    pass
+                    self.reheat_app(src_dir, dst_dir, app_vars, reheat_level=update_level)
                 else:
                     if dst_dir.exists():
                         raise FileExistsError(f"  {dst_dir} already exists. Did you mean `--update`? ")
@@ -79,7 +78,31 @@ class CookieCutter(object):
                 out_f.write(compiled)
         print(f"App skeleton code is copied to {self.rawname}")
         print(f"  Checkout {self.rawname}/README.md for the next steps!")
-                
+
+    def reheat_app(self, src_dir, dst_dir, templating_vars, reheat_level=1):
+        essentials = ['app.py', 'metadata.py', 'cli.py', 'Containerfile', 'requirements.txt']
+        for template in src_dir.glob("**/*.template"):
+            dirname = template.relative_to(src_dir).parent
+            basename = template.with_suffix('').name
+            if basename not in essentials:
+                # if non-essential, just skip when updating
+                continue
+            elif not (dst_dir / dirname / basename).exists():
+                # this file is new in the cookicutter 
+                out_fpath = dst_dir / dirname / basename
+            else:
+                # when the target file already exists, we need to do diff & patch 
+                out_fpath = f'{(dst_dir / dirname / basename)}{update_tmp_suffix}'
+                # TODO (krim @ 5/5/24): add update level 2 and 3 code here
+                print(f'    {dst_dir / dirname / basename} already exists, generating a tmp file: {out_fpath}')
+            with open(template, 'r') as in_f, open(out_fpath, 'w') as out_f:
+                tmpl_to_compile = Template(in_f.read())
+                compiled = tmpl_to_compile.safe_substitute(templating_vars)
+                out_f.write(compiled)
+            
+        print(f"App skeleton code is updated in {self.rawname}")
+        print(f"  Checkout {self.rawname}/README.md for the next steps!")
+
     def bake_gha(self, src_dir, dst_dir):
         self.simple_recursive_copy_minus_template_suffix(src_dir, dst_dir)
         print(f"GitHub Actions workflow files are copied to {self.rawname}/.github")
