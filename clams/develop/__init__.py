@@ -87,19 +87,28 @@ class CookieCutter(object):
             if basename not in essentials:
                 # if non-essential, just skip when updating
                 continue
-            elif not (dst_dir / dirname / basename).exists():
-                # this file is new in the cookicutter 
-                out_fpath = dst_dir / dirname / basename
+            in_f = open(template, 'r')
+            tmpl_to_compile = Template(in_f.read())
+            compiled = tmpl_to_compile.safe_substitute(templating_vars)
+            in_f.close()
+            ori_fpath = dst_dir / dirname / basename
+            if not ori_fpath.exists():
+                # this file is new in this version of cookiecutter 
+                with open(ori_fpath, 'w') as out_f:
+                    out_f.write(compiled)
             else:
-                # when the target file already exists, we need to do diff & patch 
-                out_fpath = f'{(dst_dir / dirname / basename)}{update_tmp_suffix}'
-                # TODO (krim @ 5/5/24): add update level 2 and 3 code here
-                print(f'    {dst_dir / dirname / basename} already exists, generating a tmp file: {out_fpath}')
-            with open(template, 'r') as in_f, open(out_fpath, 'w') as out_f:
-                tmpl_to_compile = Template(in_f.read())
-                compiled = tmpl_to_compile.safe_substitute(templating_vars)
-                out_f.write(compiled)
-            
+                ori_f = open(ori_fpath, 'r')
+                ori_content = ori_f.read()
+                if ori_content != compiled:
+                    # when the target file already exists, we need to do diff & patch 
+                    # TODO (krim @ 5/5/24): add update level 2 and 3 code here
+                    out_fpath = f'{ori_fpath}{update_tmp_suffix}'
+                    print(f'    {dst_dir / dirname / basename} already exists, generating a tmp file: {out_fpath}')
+                    with open(out_fpath, 'w') as out_f:
+                        out_f.write(compiled)
+                else:
+                    print(f'    {dst_dir / dirname / basename} already exists, but the content is unchanged from the '
+                          f'template, skipping re-generating')
         print(f"App skeleton code is updated in {self.rawname}")
         print(f"  Checkout {self.rawname}/README.md for the next steps!")
 
