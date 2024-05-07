@@ -143,6 +143,7 @@ class ClamsHTTPApi(Resource):
         try:
             return self.json_to_response(self.cla.annotate(raw_data, **raw_params))
         except Exception:
+            self.cla.logger.exception("Error in annotation")
             return self.json_to_response(self.cla.record_error(raw_data, **raw_params).serialize(pretty=True), status=500)
 
     put = post
