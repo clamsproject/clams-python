@@ -18,7 +18,9 @@ def metadata_to_argparser(app_metadata: AppMetadata) -> argparse.ArgumentParser:
     Automatically generate an argparse.ArgumentParser from parameters specified in the app metadata (metadata.py).
     """
 
-    parser = argparse.ArgumentParser(description="CLI for CLAMS app")
+    parser = argparse.ArgumentParser(
+        description=f"{app_metadata.name}: {app_metadata.description} (visit {app_metadata.url} for more info)",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
 
     # parse cli args from app parameters
     for parameter in app_metadata.parameters:
@@ -40,14 +42,14 @@ def metadata_to_argparser(app_metadata: AppMetadata) -> argparse.ArgumentParser:
             a.nargs = '?'
             a.action = "store_true"
     parser.add_argument('IN_MMIF_FILE', nargs='?', type=argparse.FileType('r'),
-                        help='input file path, STDIN if `-` or not provided. NOTE: When running this cli.py in a '
-                             'containerized environment, make sure the container is run with `-i` flag to keep stdin '
+                        help='input MMIF file path, or STDIN if `-` or not provided. NOTE: When running this cli.py in '
+                             'a containerized environment, make sure the container is run with `-i` flag to keep stdin '
                              'open.',
                         # will check if stdin is a keyboard, and return None if it is
                         default=None if sys.stdin.isatty() else sys.stdin)
     parser.add_argument('OUT_MMIF_FILE', nargs='?', type=argparse.FileType('w'), 
-                        help='output file path, STDOUT if `-` or not provided. NOTE: When this is set to STDOUT, any '
-                             'print statements in the app code will be redirected to stderr.',
+                        help='output MMIF file path, or STDOUT if `-` or not provided. NOTE: When this is set to '
+                             'STDOUT, any print statements in the app code will be redirected to stderr.',
                         default=sys.stdout)
     return parser
 
