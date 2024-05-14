@@ -1,4 +1,13 @@
 
+## releasing 1.2.2 (2024-05-14)
+### Overview
+This is minor patch with bug fix for parameter handling
+
+### Changes
+* fixed bug when passing default values for a `multivalued=True` parameter, values are not properly set (#219)
+* updated to the latest `mmif-python` (1.0.14)
+
+
 ## releasing 1.2.1 (2024-04-21)
 ### Overview
 This release includes documentation updates and bug fixes
