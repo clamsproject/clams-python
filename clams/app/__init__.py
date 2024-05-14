@@ -185,7 +185,7 @@ class ClamsApp(ABC):
                     casted_default = self.annotate_param_caster.cast({parameter.name: list(map(str, parameter.default))})
                 else:
                     casted_default = self.annotate_param_caster.cast({parameter.name: [str(parameter.default)]})
-                refined[parameter.name] = casted_default
+                refined.update(casted_default)
             else:
                 raise ValueError(f"Cannot find configuration for a required parameter \"{parameter.name}\".")
         # raw input params are hidden under a special key
@@ -345,8 +345,8 @@ class ParameterCaster(object):
             assert isinstance(vs, list), f"Expected a list of values for key {k}, but got {vs} of type {type(vs)}"
             assert all(isinstance(v, str) for v in vs), f"Expected a list of strings for key {k}, but got {vs} of types {[type(v) for v in vs]}"
             if k in self.param_spec:
+                valuetype, multivalued = self.param_spec[k]
                 for v in vs:
-                    valuetype, multivalued = self.param_spec[k]
                     if multivalued or k not in casted:  # effectively only keeps the first value for non-multi params
                         if valuetype == bool:
                             v = self.bool_param(v)
@@ -365,11 +365,22 @@ class ParameterCaster(object):
                                 casted.setdefault(k, []).append(v)
                         else: 
                             casted[k] = v
+                # when an empty value is passed (usually as a default value)
+                # just add an empty list or dict as a placeholder
+                # explicit check for `len == 0` is required to prevent 
+                # empty values are set for params that don't have default values
+                if multivalued and len(vs) == 0:
+                    if valuetype == dict:
+                        casted.setdefault(k, {})
+                    else:
+                        casted.setdefault(k, [])
             else:
-                if len(vs) > 1:
-                    casted[k] = vs
-                else:
+                # if the parameter is not defined in the spec, there's no easy way to figure out 
+                # the user's intention whether it should be a list (multivalued) or a single value.
+                if len(vs) == 1:
                     casted[k] = vs[0]
+                else:
+                    casted[k] = vs
         return casted  # pytype: disable=bad-return-type
 
     @staticmethod

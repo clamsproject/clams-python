@@ -321,6 +321,10 @@ class TestClamsApp(unittest.TestCase):
                                         description='float +def +mv')
         self.app.metadata.add_parameter('param7', type='number', default=[], multivalued=True,
                                         description='float +def +empty +mv')
+        # need to manually rebuild caster object, because the metadata has updated after the app is initialized
+        for param_spec in self.app.metadata.parameters:
+            self.app.annotate_param_spec[param_spec.name] = (param_spec.type, param_spec.multivalued)
+        self.app.annotate_param_caster = ParameterCaster(self.app.annotate_param_spec)
         with self.assertRaises(ValueError):
             self.app._refine_params(**{})  # param1 is required, but not passed
         dummy_params = {'param1': ['okay'], 'non_parameter': ['should be ignored']}
@@ -389,7 +393,7 @@ class TestRestifier(unittest.TestCase):
     def test_can_put_as_json(self):
         put = self.app.put('/', data=ExampleInputMMIF.get_mmif(), headers={"Content-Type": "Application/json"})
         self.assertIsNotNone(put)
-        self.assertEqual(put.status_code, 200)
+        self.assertEqual(200, put.status_code)
         self.assertIsNotNone(Mmif(put.get_data(as_text=True)))
 
     def test_can_pass_params(self):
