@@ -21,17 +21,30 @@ However, there could be other non-Python software/library that are required by t
 CLAMS Apps available on the CLAMS App Directory. Currently, all CLAMS Apps are open-source projects and are distributed as
 
 1. source code downloadable from code repository
-2. pre-built container image 
+1. pre-built container image 
 
 Please visit [the app-directory](https://apps.clams.ai) to see which apps are available and where you can download them.
  
 In most cases, you can "install" a CLAMS App by either
 
-1. downloading source code from the app code repository and manually building a container image
-2. downloading pre-built container image directly
+1. downloading pre-built container image directly (quick-and-easy way)
+1. downloading source code from the app code repository and manually building a container image (more flexible way if you want to modify the app, or have to build for a specific HW)
+
+#### Download prebuilt image
+
+This is the quickest (and recommended) way to get started with a CLAMS App.
+CLAMS apps in the App Directory come with public prebuilt container images, available in a container registry.
+
+``` bash 
+docker pull <prebulit_image_name>
+```
+
+The image name can be found on the App Directory entry of the app.
 
 #### Build an image from source code
 
+Alternatively, you can build a container image from the source code. 
+This is useful when you want to modify the app itself, or when you want to change the image building process to adjust to your hardware environment (e.g., specific compute engine), or additional software dependencies (e.g. [MMIF plugins](https://clams.ai/mmif-python/latest/plugins.html)).
 To download the source code, you can either use `git clone` command or download a zip file from the source code repository. 
 The source code repository address can be found on the App Directory entry of the app.
 
@@ -43,17 +56,7 @@ From the locally downloaded project directory, run the following in your termina
 $ docker build . -f Containerfile -t <IMAGE_NAME_YOU_PICK>
 ```
 
-#### Download prebuilt image
-
-Alternatively, the app maybe already be available on a container registry.
-
-``` bash 
-$ docker pull <PREBULIT_IMAGE_NAME>
-```
-
-The image name can be found on the App Directory entry of the app.
-
-### Using CLAMS App
+### Running CLAMS App
 
 CLAMS Apps are primarily designed to run as an HTTP server, but some apps written based on `clams-python` SDK additionally provide CLI equivalent to the HTTP requests. 
 In this session, we will first cover the usage of CLAMS apps as an HTTP server, and then cover the (optional) CLI.
@@ -67,7 +70,11 @@ $ docker run -v /path/to/data/directory:/data -p <PORT>:5000 <IMAGE_NAME>
 ```
 
 where `/path/to/data/directory` is the local location of your media files or MMIF objects and `PORT` is the *host* port number you want your container to be listening to. 
-The HTTP inside the container will be listening to 5000 by default. Usually any number above 1024 is fine for the host port number, and you can use the same 5000 number for the host port number.
+The HTTP inside the container will be listening to 5000 by default, so the second part of the `-p` argument is always `5000`.
+Usually any number above 1024 is fine for the host port number, and you can use the same 5000 number for the host port number.
+
+The mount point for the data directory inside the container can be any path, and we used `/data` just as an example. 
+However, it is very important to understand that the file location in the input MMIF file must be a valid and available path inside the container (see below for more details).
 
 > **Note**
 > If you are using a Mac, on recent versions of macOS, port 5000 is used by Airplay Receiver by default. So you may need to use a different port number, or turn off the Airplay Receiver in the System Preferences to release 5000.
@@ -79,6 +86,21 @@ The HTTP inside the container will be listening to 5000 by default. Usually any 
 > The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
 > ```
 > This is because the image you are trying to run is built for Intel/AMD x64 CPUs. To force the container to run on an emulation layer, you can add `--platform linux/amd64` option to the `docker run` command.
+
+Additionally, you can mount a directory to `/cache/` inside the container to persist the cache data between container runs.
+This is particularly handy when the app you are using downloads a fairly large pretrained model file on the first run, and you want to keep it for the next run.
+
+Unlike the data directory, the cache directory is not required to be mounted, but if you want to persist the cache data, you can mount a local directory to `/cache/` inside the container (fixed path).
+
+```bash
+docker run -v /path/to/data/directory:/data -v /path/to/cache/directory:/cache -p <port>:5000 <image_name>
+```
+
+> **Note**
+> One might be tempted bind-mount their entire local cache directory (usually `~/.cache` in Linux systems) to re-use locally downloaded model files, across different apps.
+> However, doing so will expose all the cached data, not just model files, to the container. 
+> This can include sensitive information such as browser cache, authentication tokens, etc, hence will pose a great security risk.
+> It is recommended to create a separate directory to use as a cache directory for CLAMS containers. 
 
 
 ### Invoking the app server
@@ -130,8 +152,12 @@ You will get
 
 If an app requires just `Document` inputs (see `input` section of the app metadata), an empty MMIF with required media file locations will suffice. 
 The location has to be a URL or an absolute path, and it is important to ensure that it exists.
+Especially when running the app in a container, and the document location is specified as a file system path, the file must be available inside the container.
+In the above, we bind-mounted `/path/to/data/directory` (host) to `/data` (container). 
+That is why we used `/data/audio/some-audio-file.mp3` as the location when generating this MMIF input.
+So in this example, the file `/path/to/data/directory/audio/some-audio-file.mp3` must exist on the host side, so that inside the container, it can be accessed as `/data/audio/some-audio-file.mp3`.
 
-However, some apps only works with input MMIF that already contains some annotations of specific types. To run such apps, you need to run different apps in a sequence. 
+Some apps only works with input MMIF that already contains some annotations of specific types. To run such apps, you need to run different apps in a sequence. 
 
 (TODO: added CLAMS workflow documentation link here.)
 

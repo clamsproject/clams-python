@@ -236,8 +236,8 @@ class TestClamsApp(unittest.TestCase):
         self.assertEqual(v1.metadata.app, self.app.metadata.identifier)
         self.assertEqual(len(v1.metadata.parameters), 0)
         v2 = m.new_view()
-        raw_query_string_arguments = {'undefined_param1': ['value1']}  # values are lists as our restifier uses `to_dict(flat=False)`
-        self.app.sign_view(v2, self.app._refine_params(**raw_query_string_arguments))
+        args2 = {'undefined_param1': ['value1']}  # values are lists as our restifier uses `to_dict(flat=False)`
+        self.app.sign_view(v2, self.app._refine_params(**args2))
         self.assertEqual(v2.metadata.app, self.app.metadata.identifier)
         self.assertEqual(len(v2.metadata.parameters), 1)
         self.assertFalse(clams.ClamsApp._RAW_PARAMS_KEY in v2.metadata.appConfiguration)
@@ -245,8 +245,22 @@ class TestClamsApp(unittest.TestCase):
             # any parameter with defaults should be recorded
             if param.default is not None:
                 self.assertTrue(param.name in v2.metadata.appConfiguration)
-            elif param.name not in raw_query_string_arguments:
+            elif param.name not in args2:
                 self.assertFalse(param.name in v2.metadata.appConfiguration)
+        v3 = m.new_view()
+        self.app.metadata.add_parameter('multivalued_param', 'dummy parameter with multivalues', type='string', multivalued=True, default=[])
+        args3 = {'undefined_param1': ['value1']} 
+        self.app.sign_view(v3, self.app._refine_params(**args3))
+        self.assertEqual(len(v3.metadata.parameters), 1)
+        self.assertEqual(len(v3.metadata.appConfiguration), 3)  # universal (pretty) + `raise_error` in metadata.py + `multivalued_param`
+        self.assertEqual(v3.metadata.appConfiguration['multivalued_param'], [])
+        v4 = m.new_view()
+        multiple_values = ['value1', 'value2']
+        args4 = {'multivalued_param': multiple_values}
+        self.app.sign_view(v4, self.app._refine_params(**args4))
+        self.assertEqual(len(v4.metadata.parameters), 1)
+        self.assertEqual(len(v4.metadata.appConfiguration), 3)
+        self.assertEqual(len(v4.metadata.parameters['multivalued_param']), len(str(multiple_values)))
 
     def test_annotate(self):
         # The example app is hard-coded to **always** emit version mismatch warning
@@ -307,6 +321,10 @@ class TestClamsApp(unittest.TestCase):
                                         description='float +def +mv')
         self.app.metadata.add_parameter('param7', type='number', default=[], multivalued=True,
                                         description='float +def +empty +mv')
+        # need to manually rebuild caster object, because the metadata has updated after the app is initialized
+        for param_spec in self.app.metadata.parameters:
+            self.app.annotate_param_spec[param_spec.name] = (param_spec.type, param_spec.multivalued)
+        self.app.annotate_param_caster = ParameterCaster(self.app.annotate_param_spec)
         with self.assertRaises(ValueError):
             self.app._refine_params(**{})  # param1 is required, but not passed
         dummy_params = {'param1': ['okay'], 'non_parameter': ['should be ignored']}
@@ -375,7 +393,7 @@ class TestRestifier(unittest.TestCase):
     def test_can_put_as_json(self):
         put = self.app.put('/', data=ExampleInputMMIF.get_mmif(), headers={"Content-Type": "Application/json"})
         self.assertIsNotNone(put)
-        self.assertEqual(put.status_code, 200)
+        self.assertEqual(200, put.status_code)
         self.assertIsNotNone(Mmif(put.get_data(as_text=True)))
 
     def test_can_pass_params(self):
