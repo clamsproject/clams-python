@@ -39,6 +39,16 @@ class $APP_CLASS_NAME(ClamsApp):
         # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._annotate
         raise NotImplementedError
 
+def get_app():
+    """
+    This function effectively creates an instance of the app class, without any arguments passed in, meaning, any 
+    external information such as initial app configuration should be set without using function arguments. The easiest
+    way to do this is to set global variables before calling this. 
+    """
+    # for example: 
+    # return $APP_CLASS_NAME(create, from, global, params)
+    raise NotImplementedError
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -50,7 +60,9 @@ if __name__ == "__main__":
     parsed_args = parser.parse_args()
 
     # create the app instance
-    app = $APP_CLASS_NAME()
+    # if get_app() call requires any "configurations", they should be set now as global variables
+    # and referenced in the get_app() function. NOTE THAT you should not change the signature of get_app()
+    app = get_app()
 
     http_app = Restifier(app, port=int(parsed_args.port))
     # for running the application in production mode
