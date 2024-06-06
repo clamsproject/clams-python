@@ -1,6 +1,14 @@
-FROM python:3.8-slim-buster
+FROM python:3.8-slim-bookworm
 LABEL org.opencontainers.image.description="clams-python image is a base image for CLAMS apps"
 
 ARG clams_version
+# https://github.com/openai/whisper/blob/ba3f3cd54b0e5b8ce1ab3de13e32122d0d5f98ab/whisper/__init__.py#L130
+ENV XDG_CACHE_HOME='/cache'  
+# https://huggingface.co/docs/huggingface_hub/main/en/package_reference/environment_variables#hfhome
+ENV HF_HOME="/cache/huggingface"
+# https://pytorch.org/docs/stable/hub.html#where-are-my-downloaded-models-saved
+ENV TORCH_HOME="/cache/torch"
+
+RUN mkdir /cache && rm -rf /root/.cache && ln -s /cache /root/.cache
 RUN apt-get update && apt-get install -y pkg-config 
 RUN pip install --no-cache-dir clams-python==$clams_version
