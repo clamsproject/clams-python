@@ -37,7 +37,7 @@
             clams-python
           </a>
               <div class="version">
-                1.2.2
+                1.2.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -769,7 +769,7 @@ or their falsy counterpart, instead of <code class="docutils literal notranslate
 </td>
 <td colspan="5"><p><em>Type</em></p></td>
 </tr>
-<tr class="row-even"><td colspan="5"><p>Type of the parameter value the app expects. Must be one of (‘integer’, ‘number’, ‘string’, ‘boolean’, ‘map’). When type is <code class="docutils literal notranslate"><span class="pre">map</span></code>, <code class="docutils literal notranslate"><span class="pre">multivalued=true</span></code> is automatically forced.</p>
+<tr class="row-even"><td colspan="5"><p>Type of the parameter value the app expects. Must be one of (‘integer’, ‘number’, ‘string’, ‘boolean’, ‘map’). When type is <code class="docutils literal notranslate"><span class="pre">map</span></code>, <code class="docutils literal notranslate"><span class="pre">multivalued=true</span></code> is forced, and when <code class="docutils literal notranslate"><span class="pre">boolean</span></code>, <code class="docutils literal notranslate"><span class="pre">multivalued=false</span></code> is forced.</p>
 <p>Notes for developers:</p>
 <p>When the type is <code class="docutils literal notranslate"><span class="pre">map</span></code>, the parameter value (still a single string from the users’ perspective) must be formatted as a <code class="docutils literal notranslate"><span class="pre">KEY:VALUE</span></code> pair, namely a colon-separated string. To pass multiple key-value pairs, users need to pass the parameter multiple times (remember <code class="docutils literal notranslate"><span class="pre">type=map</span></code> implies <code class="docutils literal notranslate"><span class="pre">multivalued=true</span></code>) with pairs in the colon-separated format.</p>
 <p>Also, the <cite>VALUE</cite> part of the user input is always expected and handled as a string. If a developers wants to do more text processing on the passed value to accept more complex data types or structures (e.g., map from a string to a list of strings), it is up to the developer. However, any additional form requirements should be precisely described in the <code class="docutils literal notranslate"><span class="pre">description</span></code> field for users.</p>
@@ -817,7 +817,7 @@ or their falsy counterpart, instead of <code class="docutils literal notranslate
 <tr class="row-odd"><td colspan="5"><p>(optional) Default value for the parameter.</p>
 <p>Notes for developers:</p>
 <p>Setting a default value makes a parameter <cite>optional</cite>.</p>
-<p>When <code class="docutils literal notranslate"><span class="pre">multivalued=True</span></code>, the default value should be a list of values.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">multivalued=true</span></code>, the default value should be a list of values.</p>
 <p>When <code class="docutils literal notranslate"><span class="pre">type=map</span></code>, the default value should be a list of colon-separated strings.</p>
 </td>
 </tr>

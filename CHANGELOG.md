@@ -1,4 +1,20 @@
 
+## releasing 1.2.3 (2024-06-07)
+### Overview
+This version includes significant change to app development template, with some other changes
+
+### Additions
+- `clams develop` cookie cutter now includes `cli.py` that enables secondary entry point to the app (https://github.com/clamsproject/clams-python/issues/198). 
+
+### Changes
+- `clams develop` command now has `--update` flag to help "reheating" an existing app directory with latest template
+- minor bug fix related to interpreting boolean runtime parameter values
+- base container images now based on debian 12
+- base container image and containerfile in app template now hardcode XDG_CACHE_DIR to `/cache` for consistent cache bind-mount (https://github.com/clamsproject/clams-python/issues/221)
+- base opencv container image now use opencv 4.10 
+- updated to `mmif-python` 1.0.15
+
+
 ## releasing 1.2.2 (2024-05-14)
 ### Overview
 This is minor patch with bug fix for parameter handling
