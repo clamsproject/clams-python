@@ -20,6 +20,6 @@ jobs:
             owner: 'clamsproject',
             repo: 'apps',
             event_type: 'appdir-update',
-            client_payload: ${{ toJSON(github.event) }}
+            client_payload: {}
           })
           console.log(result);
