@@ -20,6 +20,16 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S")
 
 
+falsy_values = [
+    'False', 
+    'false', 
+    'F',
+    'f',
+    '0',
+    0, 
+    False
+]
+
 class ClamsApp(ABC):
     """
     An abstract class to define API's for ClamsApps. A CLAMS app should inherit
@@ -388,7 +398,7 @@ class ParameterCaster(object):
         """
         Helper function to convert string values to bool type.
         """
-        return False if value in (False, 0, 'False', 'false', '0') else True
+        return False if value in falsy_values else True
 
     @staticmethod
     def float_param(value) -> float:
