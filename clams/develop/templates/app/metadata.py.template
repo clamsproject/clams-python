@@ -1,5 +1,5 @@
 """
-The purpose of this file is to define the metadata of the app with minimal imports. 
+The purpose of this file is to define the metadata of the app with minimal imports.
 
 DO NOT CHANGE the name of the file
 """
@@ -10,12 +10,12 @@ from clams.app import ClamsApp
 from clams.appmetadata import AppMetadata
 
 
-# DO NOT CHANGE the function name 
+# DO NOT CHANGE the function name
 def appmetadata() -> AppMetadata:
     """
     Function to set app-metadata values and return it as an ``AppMetadata`` obj.
     Read these documentations before changing the code below
-    - https://sdk.clams.ai/appmetadata.html metadata specification. 
+    - https://sdk.clams.ai/appmetadata.html metadata specification.
     - https://sdk.clams.ai/autodoc/clams.appmetadata.html python API
     
     :return: AppMetadata object holding all necessary information.
@@ -26,7 +26,7 @@ def appmetadata() -> AppMetadata:
         name="$APP_NAME",
         description="",  # briefly describe what the purpose and features of the app
         app_license="",  # short name for a software license like MIT, Apache2, GPL, etc.
-        identifier="$APP_IDENTIFIER",  # should be a single string without whitespaces. If you don't intent to publish this app to the CLAMS app-directory, please use a full IRI format. 
+        identifier="$APP_IDENTIFIER",  # should be a single string without whitespaces. If you don't intent to publish this app to the CLAMS app-directory, please use a full IRI format.
         url="https://fakegithub.com/some/repository",  # a website where the source code and full documentation of the app is hosted
         # (if you are on the CLAMS team, this MUST be "https://github.com/clamsproject/app-$APP_IDENTIFIER"
         # (see ``.github/README.md`` file in this directory for the reason)

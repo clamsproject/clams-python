@@ -57,7 +57,7 @@ def metadata_to_argparser(app_metadata: AppMetadata) -> argparse.ArgumentParser:
                              'open.',
                         # will check if stdin is a keyboard, and return None if it is
                         default=None if sys.stdin.isatty() else sys.stdin)
-    parser.add_argument('OUT_MMIF_FILE', nargs='?', type=argparse.FileType('w'), 
+    parser.add_argument('OUT_MMIF_FILE', nargs='?', type=argparse.FileType('w'),
                         help='output MMIF file path, or STDOUT if `-` or not provided. NOTE: When this is set to '
                              'STDOUT, any print statements in the app code will be redirected to stderr.',
                         default=sys.stdout)
