@@ -1,4 +1,15 @@
 
+## releasing 1.2.4 (2024-06-14)
+### Overview
+Patches bug in `clams develop` command and updated in documentation and `mmif-python` version 
+
+
+### Changes
+* fixed `clams develop` command not working to start a new app from scratch
+* updated `mmif-python` version to 1.0.16
+* updated app development documentation
+
+
 ## releasing 1.2.3 (2024-06-07)
 ### Overview
 This version includes significant change to app development template, with some other changes
