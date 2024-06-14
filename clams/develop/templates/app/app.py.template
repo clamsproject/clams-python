@@ -6,7 +6,7 @@ app.py Template
 The app.py script does several things:
 - import the necessary code
 - create a subclass of ClamsApp that defines the metadata and provides a method to run the wrapped NLP tool
-- provide a way to run the code as a RESTful Flask service 
+- provide a way to run the code as a RESTful Flask service
 
 
 """
@@ -31,8 +31,8 @@ class $APP_CLASS_NAME(ClamsApp):
 
     def _appmetadata(self):
         # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata
-        # Also check out ``metadata.py`` in this directory. 
-        # When using the ``metadata.py`` leave this do-nothing "pass" method here. 
+        # Also check out ``metadata.py`` in this directory.
+        # When using the ``metadata.py`` leave this do-nothing "pass" method here.
         pass
 
     def _annotate(self, mmif: Mmif, **parameters) -> Mmif:
@@ -41,14 +41,14 @@ class $APP_CLASS_NAME(ClamsApp):
 
 def get_app():
     """
-    This function effectively creates an instance of the app class, without any arguments passed in, meaning, any 
+    This function effectively creates an instance of the app class, without any arguments passed in, meaning, any
     external information such as initial app configuration should be set without using function arguments. The easiest
-    way to do this is to set global variables before calling this. 
+    way to do this is to set global variables before calling this.
     """
-    # for example: 
+    # for example:
     # return $APP_CLASS_NAME(create, from, global, params)
     raise NotImplementedError
-    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

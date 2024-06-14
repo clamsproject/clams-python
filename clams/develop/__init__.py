@@ -171,6 +171,7 @@ def prep_argparser(**kwargs):
     parser.add_argument(
         '-u', '--update',
         action='count',
+        default=0,  #  > Note, the default will be None unless explicitly set to 0. (https://docs.python.org/3/library/argparse.html#action)
         help=f'Set update level by passing this flag multiple times. This is EXPERIMENTAL, and developers MUST NOT'
              f'rely on the update results, and should conduct manual checks afterward. LEVEL 0: does not update and '
              f'raise an error when existing directory found. LEVEL 1: generate non-existing files and generate '
