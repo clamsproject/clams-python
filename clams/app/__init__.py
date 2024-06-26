@@ -142,7 +142,7 @@ class ClamsApp(ABC):
                 issued_warnings.extend(ws)
         if issued_warnings:
             warnings_view = annotated.new_view()
-            self.sign_view(warnings_view, runtime_params)
+            self.sign_view(warnings_view, refined)
             warnings_view.metadata.warnings = issued_warnings
         return annotated.serialize(pretty=pretty, sanitize=True)
 
@@ -260,7 +260,7 @@ class ClamsApp(ABC):
                 break
         if error_view is None:
             error_view = mmif.new_view()
-            self.sign_view(error_view, runtime_conf)
+            self.sign_view(error_view, self._refine_params(**runtime_conf))
         exc_info = sys.exc_info()
         error_view.set_error(f'{exc_info[0]}: {exc_info[1]}',
                              '\t\n'.join(traceback.format_tb(exc_info[2])))
