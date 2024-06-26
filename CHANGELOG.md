@@ -1,4 +1,12 @@
 
+## releasing 1.2.5 (2024-06-26)
+### Overview
+Patch release to fix an error in app cookie cutter, also updated to the latest MMIF and mmif-python. 
+
+### Changes
+- updated `mmif-python` to 1.0.17
+- fixed `Containerfile` from the app cookie cutter wasn't building an image due to an error
+
 ## releasing 1.2.4 (2024-06-14)
 ### Overview
 Patches bug in `clams develop` command and updated in documentation and `mmif-python` version 
