@@ -10,6 +10,7 @@ from typing import Union
 import jsonschema
 import pytest
 from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver__
+from mmif.serialize.mmif import ViewsList
 
 import clams.app
 import clams.restify
@@ -352,14 +353,16 @@ class TestClamsApp(unittest.TestCase):
             self.app._refine_params(param1=['p1'], param4=['4'])
             
     def test_error_handling(self):
-        params = {'raise_error': 'true', 'pretty': 'true'}
+        params = {'raise_error': ['true'], 'pretty': ['true']}
         in_mmif = Mmif(self.in_mmif)
         try: 
             out_mmif = self.app.annotate(in_mmif, **params)
         except Exception as e:
             out_mmif_from_str = self.app.set_error_view(self.in_mmif, **params)
             out_mmif_from_mmif = self.app.set_error_view(in_mmif, **params)
-            self.assertEqual(out_mmif_from_mmif.views, out_mmif_from_str.views)
+            self.assertEqual(
+                out_mmif_from_mmif.views.get_last(),
+                out_mmif_from_str.views.get_last())
             out_mmif = out_mmif_from_str
         self.assertIsNotNone(out_mmif)
         last_view: View = next(reversed(out_mmif.views))
