@@ -41,5 +41,5 @@ RUN make -j$(nproc) && make install && ldconfig
 WORKDIR /
 RUN rm -rf ${OPENCV_PATH} ${OPENCV_EXTRA_PATH}
 RUN pip uninstall opencv-python
-RUN pip install --no-cache-dir opencv-python~=${OPENCV_VERSION}
+RUN pip install --no-cache-dir opencv-python-headless~=${OPENCV_VERSION}
 RUN apt-get remove -y g++ cmake make wget unzip libavcodec-dev libavformat-dev libavutil-dev libswscale-dev && apt-get autoremove -y

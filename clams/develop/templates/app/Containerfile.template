@@ -25,7 +25,7 @@ ENV HF_HOME="/cache/huggingface"
 # https://pytorch.org/docs/stable/hub.html#where-are-my-downloaded-models-saved
 ENV TORCH_HOME="/cache/torch"
 
-RUN mkdir /cache ; rm -rf /root/.cache && ln -s /cache /root/.cache
+RUN mkdir /cache ; rm -rf /root/.cache ; ln -s /cache /root/.cache
 ################################################################################
 
 ################################################################################
