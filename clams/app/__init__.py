@@ -5,6 +5,7 @@ import sys
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from datetime import datetime
 from urllib import parse as urlparser
 
 __all__ = ['ClamsApp']
@@ -43,6 +44,14 @@ class ClamsApp(ABC):
         {
             'name': 'pretty', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
             'description': 'The JSON body of the HTTP response will be re-formatted with 2-space indentation',
+        },
+        {
+            'name': 'runningTime', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
+            'description': 'The running time of the app will be recorded in the view metadata',
+        },
+        {
+            'name': 'hwFetch', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
+            'description': 'The hardware information (architecture, GPU and vRAM) will be recorded in the view metadata',
         },
     ]
     
@@ -136,6 +145,7 @@ class ClamsApp(ABC):
         refined = self._refine_params(**runtime_params)
         self.logger.debug(f"Refined parameters: {refined}")
         pretty = refined.get('pretty', False)
+        t = datetime.now()
         with warnings.catch_warnings(record=True) as ws:
             annotated = self._annotate(mmif, **refined)
             if ws:
@@ -144,6 +154,26 @@ class ClamsApp(ABC):
             warnings_view = annotated.new_view()
             self.sign_view(warnings_view, refined)
             warnings_view.metadata.warnings = issued_warnings
+        td = datetime.now() - t
+        runningTime = refined.get('runningTime', False)
+        hwFetch = refined.get('hwFetch', False)
+        runtime_recs = {}
+        if runningTime:
+            runtime_recs['runningTime'] = str(td)
+        if hwFetch:
+            import platform, shutil, subprocess
+            runtime_recs['architecture'] = platform.machine()
+            # runtime_recs['processor'] = platform.processor()  # this only works on Windows
+            runtime_recs['cuda'] = []
+            if shutil.which('nvidia-smi'):
+                for gpu in subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader'], 
+                                          stdout=subprocess.PIPE).stdout.decode('utf-8').strip().split('\n'):
+                    name, mem = gpu.split(', ')
+                    runtime_recs['cuda'].append(f'{name} ({mem})')
+        if len(runtime_recs) > 0:
+            for annotated_view in annotated.views:
+                if annotated_view.metadata.app == self.metadata.identifier:
+                    annotated_view.metadata.set_additional_property('runtime', runtime_recs)
         return annotated.serialize(pretty=pretty, sanitize=True)
 
     @abstractmethod
