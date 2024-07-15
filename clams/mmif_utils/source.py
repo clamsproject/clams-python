@@ -206,7 +206,7 @@ def generate_source_mmif_from_file(documents, prefix=None, scheme='file', **igno
         location = str(location)
         doc = Document()
         doc.at_type = at_types[mime.split('/', maxsplit=1)[0]]
-        doc.properties.location = f"{location_uri.scheme}://{location}"
+        doc.properties.location = f"{location_uri.scheme}://{location if not location.startswith(location_uri.scheme) else location[len(location_uri.scheme)+3:]}"
         doc.properties.id = f'd{doc_id}'
         doc.properties.mime = mime
         pl.add_document(doc)
