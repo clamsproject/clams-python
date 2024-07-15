@@ -1,4 +1,16 @@
 
+## releasing 1.2.6 (2024-07-15)
+### Overview
+Patch release to update mmif SDK version, and minor improvements
+
+### Additions
+- `clams source --help` will display formatting guidelines for docloc plugins, if provided by the plugin developer (https://github.com/clamsproject/clams-python/issues/235)
+
+### Changes
+- now based on `mmif-python` 1.0.18
+- bug fix "raw" runtime parameters weren't properly recorded when an app fails to refine the parameters (https://github.com/clamsproject/clams-python/issues/232) 
+
+
 ## releasing 1.2.5 (2024-06-26)
 ### Overview
 Patch release to fix an error in app cookie cutter, also updated to the latest MMIF and mmif-python. 
