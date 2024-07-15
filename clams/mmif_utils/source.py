@@ -203,6 +203,7 @@ def generate_source_mmif_from_file(documents, prefix=None, scheme='file', **igno
                 raise ValueError(f'file location must be an absolute path, or --prefix must be used; given \"{location}\".')
             elif prefix and not location.is_absolute():
                 location = prefix / location
+        location = str(location)
         doc = Document()
         doc.at_type = at_types[mime.split('/', maxsplit=1)[0]]
         doc.properties.location = f"{location_uri.scheme}://{location}"
@@ -225,7 +226,14 @@ def describe_argparser():
 
 
 def prep_argparser(**kwargs):
-    parser = argparse.ArgumentParser(description=describe_argparser()[1], formatter_class=argparse.RawDescriptionHelpFormatter, **kwargs)
+    import pkgutil
+    import re
+    import importlib
+    discovered_docloc_plugins = {
+        name[len('mmif_docloc_'):]: importlib.import_module(name) for _, name, _ in pkgutil.iter_modules() if
+        re.match(r'mmif[-_]docloc[-_]', name)
+    }
+    parser = argparse.ArgumentParser(description=describe_argparser()[1], formatter_class=argparse.RawTextHelpFormatter, **kwargs)
     parser.add_argument(
         'documents',
         default=None,
@@ -255,12 +263,17 @@ def prep_argparser(**kwargs):
         nargs='?',
         help='A name of a file to capture a generated MMIF json. When not given, MMIF is printed to stdout.'
     )
+    scheme_help = 'A scheme to associate with the document location URI. When not given, the default scheme is `file://`.'
+    if len(discovered_docloc_plugins) > 0:
+        plugin_help = [f'"{scheme_name}" ({scheme_plugin.help() if "help" in dir(scheme_plugin) else "help msg not provided by developer"})' 
+                       for scheme_name, scheme_plugin in discovered_docloc_plugins.items()]
+        scheme_help += ' (AVAILABLE ADDITIONAL SCHEMES)  ' + ', '.join(plugin_help)
     parser.add_argument(
         '-s', '--scheme',
         default='file',
         action='store',
         nargs='?',
-        help='A scheme to associate with the document location URI. When not given, the default scheme is `file://`.'
+        help=scheme_help
     )
     return parser
 
