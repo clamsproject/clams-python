@@ -91,7 +91,7 @@ input specification can be as simple as the following:
       # and more app metadata fields, 
     }
     
-In the above example, the developer is declaring the app is expecting ``Token``annotation objects, with a ``posTagSet`` 
+In the above example, the developer is declaring the app is expecting ``Token`` annotation objects, with a ``posTagSet`` 
 property of which value is the URL of the Penn Treebank POS tag set, *verbatim*, in the input MMIF, and all other 
 existing annotation types in the input MMIF will be ignored during processing. There are some *grammar* of how this 
 ``input`` list can be written. 
