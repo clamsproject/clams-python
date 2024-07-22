@@ -158,8 +158,6 @@ class ClamsApp(ABC):
         runningTime = refined.get('runningTime', False)
         hwFetch = refined.get('hwFetch', False)
         runtime_recs = {}
-        if runningTime:
-            runtime_recs['runningTime'] = str(td)
         if hwFetch:
             import platform, shutil, subprocess
             runtime_recs['architecture'] = platform.machine()
@@ -170,10 +168,13 @@ class ClamsApp(ABC):
                                           stdout=subprocess.PIPE).stdout.decode('utf-8').strip().split('\n'):
                     name, mem = gpu.split(', ')
                     runtime_recs['cuda'].append(f'{name} ({mem})')
-        if len(runtime_recs) > 0:
-            for annotated_view in annotated.views:
-                if annotated_view.metadata.app == self.metadata.identifier:
-                    annotated_view.metadata.set_additional_property('runtime', runtime_recs)
+        for annotated_view in annotated.views:
+            if annotated_view.metadata.app == self.metadata.identifier:
+                if runningTime:
+                    annotated_view.metadata.set_additional_property('appRunningTime', str(td))
+                if len(runtime_recs) > 0:
+                    annotated_view.metadata.set_additional_property('appRunningHardware', runtime_recs)
+                    
         return annotated.serialize(pretty=pretty, sanitize=True)
 
     @abstractmethod
