@@ -253,14 +253,14 @@ class TestClamsApp(unittest.TestCase):
         args3 = {'undefined_param1': ['value1']} 
         self.app.sign_view(v3, self.app._refine_params(**args3))
         self.assertEqual(len(v3.metadata.parameters), 1)
-        self.assertEqual(len(v3.metadata.appConfiguration), 3)  # universal (pretty) + `raise_error` in metadata.py + `multivalued_param`
+        self.assertEqual(len(v3.metadata.appConfiguration), 5)  # universal (pretty, runningtime, hwfetch) + `raise_error` in metadata.py + `multivalued_param`
         self.assertEqual(v3.metadata.appConfiguration['multivalued_param'], [])
         v4 = m.new_view()
         multiple_values = ['value1', 'value2']
         args4 = {'multivalued_param': multiple_values}
         self.app.sign_view(v4, self.app._refine_params(**args4))
         self.assertEqual(len(v4.metadata.parameters), 1)
-        self.assertEqual(len(v4.metadata.appConfiguration), 3)
+        self.assertEqual(len(v4.metadata.appConfiguration), 5)
         self.assertEqual(len(v4.metadata.parameters['multivalued_param']), len(str(multiple_values)))
 
     def test_annotate(self):
