@@ -1,4 +1,16 @@
 
+## releasing 1.3.0 (2024-07-22)
+### Overview
+This version added two universal runtime parameters that make some aspects of the runtime environment are recorded in the views' metadata. 
+
+
+### Additions
+- `hwFetch` universal parameter will record CPU architecture and CUDA devices in `view.metadata.appRunningHardware` 
+- `runningTime` universal parameter will record app's running time in `view.metadata.appRunningTime`
+- See https://github.com/clamsproject/clams-python/issues/236 for rationale behind 
+
+
+
 ## releasing 1.2.6 (2024-07-15)
 ### Overview
 Patch release to update mmif SDK version, and minor improvements
