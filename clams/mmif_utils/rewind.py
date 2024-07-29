@@ -1,7 +1,9 @@
+"""
+This module provides a CLI to rewind a MMIF from a CLAMS pipeline.
+"""
 import argparse
 import sys
 import textwrap
-from pathlib import Path as P
 
 import mmif
 

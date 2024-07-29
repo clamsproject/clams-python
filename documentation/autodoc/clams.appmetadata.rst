@@ -1,8 +1,7 @@
 clams.appmetadata package
 =========================
 
-Module contents
----------------
+Package providing classes for representing metadata of CLAMS apps.
 
 .. autoclass:: clams.appmetadata.AppMetadata
    :members:

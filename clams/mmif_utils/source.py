@@ -1,3 +1,6 @@
+"""
+This module provides a class for creating a "source" MMIF JSON object.
+"""
 import argparse
 import itertools
 import json
