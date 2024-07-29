@@ -21,7 +21,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="prev" title="clams.source package" href="clams.source.html" /> 
+    <link rel="next" title="clams.restify package" href="clams.restify.html" />
+    <link rel="prev" title="clams.app package" href="clams.app.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -36,7 +37,7 @@
             clams-python
           </a>
               <div class="version">
-                1.3.0
+                1.3.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -59,19 +60,45 @@
 <p class="caption" role="heading"><span class="caption-text">API documentation:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../modules.html">clams package</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="clams.restify.html">clams.restify package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="clams.app.html">clams.app package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="clams.source.html">clams.source package</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">clams.appmetadata package</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#module-contents">Module contents</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.AppMetadata"><code class="docutils literal notranslate"><span class="pre">AppMetadata</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Input"><code class="docutils literal notranslate"><span class="pre">Input</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Output"><code class="docutils literal notranslate"><span class="pre">Output</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.RuntimeParameter"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#clams.appmetadata.AppMetadata"><code class="docutils literal notranslate"><span class="pre">AppMetadata</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.AppMetadata.add_input"><code class="docutils literal notranslate"><span class="pre">AppMetadata.add_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.AppMetadata.add_more"><code class="docutils literal notranslate"><span class="pre">AppMetadata.add_more()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.AppMetadata.add_output"><code class="docutils literal notranslate"><span class="pre">AppMetadata.add_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.AppMetadata.add_parameter"><code class="docutils literal notranslate"><span class="pre">AppMetadata.add_parameter()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#clams.appmetadata.Input"><code class="docutils literal notranslate"><span class="pre">Input</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Input.add_description"><code class="docutils literal notranslate"><span class="pre">Input.add_description()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Input.construct"><code class="docutils literal notranslate"><span class="pre">Input.construct()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Input.copy"><code class="docutils literal notranslate"><span class="pre">Input.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Input.dict"><code class="docutils literal notranslate"><span class="pre">Input.dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Input.json"><code class="docutils literal notranslate"><span class="pre">Input.json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Input.update_forward_refs"><code class="docutils literal notranslate"><span class="pre">Input.update_forward_refs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#clams.appmetadata.Output"><code class="docutils literal notranslate"><span class="pre">Output</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Output.add_description"><code class="docutils literal notranslate"><span class="pre">Output.add_description()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Output.construct"><code class="docutils literal notranslate"><span class="pre">Output.construct()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Output.copy"><code class="docutils literal notranslate"><span class="pre">Output.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Output.dict"><code class="docutils literal notranslate"><span class="pre">Output.dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Output.json"><code class="docutils literal notranslate"><span class="pre">Output.json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.Output.update_forward_refs"><code class="docutils literal notranslate"><span class="pre">Output.update_forward_refs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#clams.appmetadata.RuntimeParameter"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.RuntimeParameter.construct"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.construct()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.RuntimeParameter.copy"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.RuntimeParameter.dict"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.RuntimeParameter.json"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.appmetadata.RuntimeParameter.update_forward_refs"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.update_forward_refs()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="clams.restify.html">clams.restify package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clams.mmif_utils.html">clams.mmif_utils package</a></li>
 </ul>
 </li>
 </ul>
@@ -102,8 +129,7 @@
              
   <section id="clams-appmetadata-package">
 <h1>clams.appmetadata package<a class="headerlink" href="#clams-appmetadata-package" title="Permalink to this heading"></a></h1>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<p>Package providing classes for representing metadata of CLAMS apps.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="clams.appmetadata.AppMetadata">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">clams.appmetadata.</span></span><span class="sig-name descname"><span class="pre">AppMetadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">app_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mmif_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analyzer_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">app_license</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">analyzer_license</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">identifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AnyHttpUrl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AnyHttpUrl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.12)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#clams.appmetadata.Input" title="clams.appmetadata.Input"><span class="pre">Input</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.12)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#clams.appmetadata.Input" title="clams.appmetadata.Input"><span class="pre">Input</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.12)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#clams.appmetadata.Output" title="clams.appmetadata.Output"><span class="pre">Output</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.12)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#clams.appmetadata.RuntimeParameter" title="clams.appmetadata.RuntimeParameter"><span class="pre">RuntimeParameter</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dependencies</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.12)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">more</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.12)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/main/clams/appmetadata/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.appmetadata.AppMetadata" title="Permalink to this definition"></a></dt>
@@ -351,13 +377,13 @@ the new model: you should trust this data</p></li>
 </dd></dl>
 
 </section>
-</section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="clams.source.html" class="btn btn-neutral float-left" title="clams.source package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="clams.app.html" class="btn btn-neutral float-left" title="clams.app package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="clams.restify.html" class="btn btn-neutral float-right" title="clams.restify package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

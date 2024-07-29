@@ -1,4 +1,12 @@
 
+## releasing 1.3.1 (2024-07-29)
+### Overview
+This patch includes update to the latest `mmif-python` which contains a hot fix for a critical bug. 
+
+### Changes
+- based on `mmif-python==1.0.19`
+
+
 ## releasing 1.3.0 (2024-07-22)
 ### Overview
 This version added two universal runtime parameters that make some aspects of the runtime environment are recorded in the views' metadata. 

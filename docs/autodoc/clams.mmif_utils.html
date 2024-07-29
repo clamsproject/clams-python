@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>clams.mmif_utils package &mdash; clams-python  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=b3ba4146"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="clams.restify package" href="clams.restify.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            clams-python
+          </a>
+              <div class="version">
+                1.3.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../input-output.html">I/O Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../runtime-params.html">Runtime Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../appmetadata.html">CLAMS App Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../appdirectory.html">CLAMS App Directory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html"><code class="docutils literal notranslate"><span class="pre">clams</span></code> shell command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial: Wrapping an NLP Application</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../modules.html">clams package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="clams.app.html">clams.app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clams.appmetadata.html">clams.appmetadata package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clams.restify.html">clams.restify package</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">clams.mmif_utils package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-clams.mmif_utils.rewind"><code class="docutils literal notranslate"><span class="pre">rewind</span></code> module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#clams.mmif_utils.rewind.describe_argparser"><code class="docutils literal notranslate"><span class="pre">describe_argparser()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.mmif_utils.rewind.prompt_user"><code class="docutils literal notranslate"><span class="pre">prompt_user()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#clams.mmif_utils.rewind.rewind_mmif"><code class="docutils literal notranslate"><span class="pre">rewind_mmif()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-clams.mmif_utils.source"><code class="docutils literal notranslate"><span class="pre">source</span></code> module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#clams.mmif_utils.source.WorkflowSource"><code class="docutils literal notranslate"><span class="pre">WorkflowSource</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">clams-python</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../modules.html">clams package</a></li>
+      <li class="breadcrumb-item active">clams.mmif_utils package</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="clams-mmif-utils-package">
+<h1>clams.mmif_utils package<a class="headerlink" href="#clams-mmif-utils-package" title="Permalink to this heading"></a></h1>
+<p>Package providing utility functions for working with MMIF data.</p>
+<section id="module-clams.mmif_utils.rewind">
+<span id="rewind-module"></span><h2><code class="docutils literal notranslate"><span class="pre">rewind</span></code> module<a class="headerlink" href="#module-clams.mmif_utils.rewind" title="Permalink to this heading"></a></h2>
+<p>This module provides a CLI to rewind a MMIF from a CLAMS pipeline.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="clams.mmif_utils.rewind.describe_argparser">
+<span class="sig-prename descclassname"><span class="pre">clams.mmif_utils.rewind.</span></span><span class="sig-name descname"><span class="pre">describe_argparser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/main/clams/mmif_utils/rewind/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.mmif_utils.rewind.describe_argparser" title="Permalink to this definition"></a></dt>
+<dd><p>returns two strings: one-line description of the argparser, and addition material, 
+which will be shown in <cite>clams –help</cite> and <cite>clams &lt;subcmd&gt; –help</cite>, respectively.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="clams.mmif_utils.rewind.prompt_user">
+<span class="sig-prename descclassname"><span class="pre">clams.mmif_utils.rewind.</span></span><span class="sig-name descname"><span class="pre">prompt_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mmif_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://clams.ai/mmif-python/1.0.19/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v1.0.19)"><span class="pre">Mmif</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/main/clams/mmif_utils/rewind/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.mmif_utils.rewind.prompt_user" title="Permalink to this definition"></a></dt>
+<dd><p>Function to ask user to choose the rewind range.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="clams.mmif_utils.rewind.rewind_mmif">
+<span class="sig-prename descclassname"><span class="pre">clams.mmif_utils.rewind.</span></span><span class="sig-name descname"><span class="pre">rewind_mmif</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mmif_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://clams.ai/mmif-python/1.0.19/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v1.0.19)"><span class="pre">Mmif</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">choice</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">choice_is_viewnum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://clams.ai/mmif-python/1.0.19/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v1.0.19)"><span class="pre">Mmif</span></a></span></span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/main/clams/mmif_utils/rewind/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.mmif_utils.rewind.rewind_mmif" title="Permalink to this definition"></a></dt>
+<dd><p>Rewind MMIF by deleting the last N views. 
+The number of views to rewind is given as a number of “views”, or number of “producer apps”. 
+By default, the number argument is interpreted as the number of “views”. 
+Note that when the same app is repeatedly run in a CLAMS pipeline and produces multiple views in a row,
+rewinding in “app” mode will rewind all those views at once.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mmif_obj</strong> – mmif object</p></li>
+<li><p><strong>choice</strong> – number of views to rewind</p></li>
+<li><p><strong>choice_is_viewnum</strong> – if True, choice is the number of views to rewind. If False, choice is the number of producer apps to rewind.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>rewound mmif object</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-clams.mmif_utils.source">
+<span id="source-module"></span><h2><code class="docutils literal notranslate"><span class="pre">source</span></code> module<a class="headerlink" href="#module-clams.mmif_utils.source" title="Permalink to this heading"></a></h2>
+<p>This module provides a class for creating a “source” MMIF JSON object.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="clams.mmif_utils.source.WorkflowSource">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">clams.mmif_utils.source.</span></span><span class="sig-name descname"><span class="pre">WorkflowSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common_documents_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.12)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><span class="pre">dict</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">common_metadata_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/main/clams/mmif_utils/source/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.mmif_utils.source.WorkflowSource" title="Permalink to this definition"></a></dt>
+<dd><p>A WorkflowSource object is used at the beginning of a
+CLAMS workflow to populate a new MMIF file with media.</p>
+<p>The same WorkflowSource object can be used repeatedly
+to generate multiple MMIF objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>common_documents_json</strong> – JSON doc_lists for any documents that should be common
+to all MMIF objects produced by this workflow.</p></li>
+<li><p><strong>common_metadata_json</strong> – JSON doc_lists for metadata that should be common to
+all MMIF objects produced by this workflow.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="clams.mmif_utils.source.WorkflowSource.add_document">
+<span class="sig-name descname"><span class="pre">add_document</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">document</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://clams.ai/mmif-python/1.0.19/autodoc/mmif.serialize.html#mmif.serialize.annotation.Document" title="(in mmif-python v1.0.19)"><span class="pre">Document</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/main/clams/mmif_utils/source/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.mmif_utils.source.WorkflowSource.add_document" title="Permalink to this definition"></a></dt>
+<dd><p>Adds a document to the working source MMIF.</p>
+<p>When you’re done, fetch the source MMIF with produce().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>document</strong> – the medium to add, as a JSON dict
+or string or as a MMIF Medium object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="clams.mmif_utils.source.WorkflowSource.change_metadata">
+<span class="sig-name descname"><span class="pre">change_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/main/clams/mmif_utils/source/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.mmif_utils.source.WorkflowSource.change_metadata" title="Permalink to this definition"></a></dt>
+<dd><p>Adds or changes a metadata entry in the working source MMIF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – the desired key of the metadata property</p></li>
+<li><p><strong>value</strong> – the desired value of the metadata property</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="clams.mmif_utils.source.WorkflowSource.from_data">
+<span class="sig-name descname"><span class="pre">from_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_lists</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.12)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.12)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://clams.ai/mmif-python/1.0.19/autodoc/mmif.serialize.html#mmif.serialize.annotation.Document" title="(in mmif-python v1.0.19)"><span class="pre">Document</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata_objs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.12)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">MmifMetadata</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Generator" title="(in Python v3.12)"><span class="pre">Generator</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://clams.ai/mmif-python/1.0.19/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v1.0.19)"><span class="pre">Mmif</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/main/clams/mmif_utils/source/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.mmif_utils.source.WorkflowSource.from_data" title="Permalink to this definition"></a></dt>
+<dd><p>Provided with an iterable of document lists and an
+optional iterable of metadata objects, generates
+MMIF objects produced from that data.</p>
+<p><code class="docutils literal notranslate"><span class="pre">doc_lists</span></code> and <code class="docutils literal notranslate"><span class="pre">metadata_objs</span></code> should be matched pairwise,
+so that if they are zipped together, each pair defines
+a single MMIF object from this workflow source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>doc_lists</strong> – an iterable of document lists to generate MMIF from</p></li>
+<li><p><strong>metadata_objs</strong> – an iterable of metadata objects paired with the document lists</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a generator of produced MMIF files from the data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="clams.mmif_utils.source.WorkflowSource.prime">
+<span class="sig-name descname"><span class="pre">prime</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/main/clams/mmif_utils/source/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.mmif_utils.source.WorkflowSource.prime" title="Permalink to this definition"></a></dt>
+<dd><p>Primes the WorkflowSource with a fresh MMIF object.</p>
+<p>Call this method if you want to reset the WorkflowSource
+without producing a MMIF object with produce().</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="clams.mmif_utils.source.WorkflowSource.produce">
+<span class="sig-name descname"><span class="pre">produce</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://clams.ai/mmif-python/1.0.19/autodoc/mmif.serialize.html#mmif.serialize.mmif.Mmif" title="(in mmif-python v1.0.19)"><span class="pre">Mmif</span></a></span></span><a class="reference external" href="https://github.com/clamsproject/clams-python/tree/main/clams/mmif_utils/source/__init__.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clams.mmif_utils.source.WorkflowSource.produce" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the source MMIF and resets the WorkflowSource.</p>
+<p>Call this method once you have added all the documents
+for your Workflow.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the current MMIF object that has been prepared</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="clams.restify.html" class="btn btn-neutral float-left" title="clams.restify package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Brandeis LLC.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

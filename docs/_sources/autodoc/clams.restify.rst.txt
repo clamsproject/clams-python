@@ -1,8 +1,7 @@
 clams.restify package
 =====================
 
-Module contents
----------------
+Package providing wrapper class for running a CLAMS app as a HTTP app.
 
 .. automodule:: clams.restify
    :members:
