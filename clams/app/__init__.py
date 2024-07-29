@@ -31,6 +31,7 @@ falsy_values = [
     False
 ]
 
+
 class ClamsApp(ABC):
     """
     An abstract class to define API's for ClamsApps. A CLAMS app should inherit
