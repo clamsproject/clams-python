@@ -97,5 +97,8 @@ distclean:
 	@rm -rf dist $(artifact) build/bdist*
 clean: distclean
 	@rm -rf VERSION VERSION.dev $(testcaches) $(buildcaches) $(generatedcode)
+	@rm -rf docs
+	@rm -rf .*cache
+	@rm -rf .hypothesis tests/.hypothesis
 cleandocs: 
 	@git checkout -- docs && git clean -fx docs
