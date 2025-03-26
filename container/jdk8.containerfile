@@ -5,3 +5,4 @@ LABEL org.opencontainers.image.description="clams-python-jdk8 image is shipped w
 ENV JAVA_HOME=/opt/java/openjdk
 COPY --from=eclipse-temurin:8 $JAVA_HOME $JAVA_HOME
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
+

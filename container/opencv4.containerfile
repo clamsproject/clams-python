@@ -1,6 +1,6 @@
 ARG clams_version
-FROM ghcr.io/clamsproject/clams-python-ffmpeg:$clams_version
-LABEL org.opencontainers.image.description="clams-python-opencv image is shipped with clams-python, ffmpeg, and opencv4 with their python bindings"
+FROM ghcr.io/clamsproject/clams-python--ffmpeg:$clams_version
+LABEL org.opencontainers.image.description="clams-python-opencv4 image is shipped with clams-python and opencv4 (ffmpeg backend)"
 
 ARG OPENCV_VERSION=4.10.0
 ARG OPENCV_PATH=/opt/opencv-${OPENCV_VERSION}
@@ -43,3 +43,4 @@ RUN rm -rf ${OPENCV_PATH} ${OPENCV_EXTRA_PATH}
 RUN pip uninstall opencv-python
 RUN pip install --no-cache-dir opencv-python-headless~=${OPENCV_VERSION}
 RUN apt-get remove -y g++ cmake make wget unzip libavcodec-dev libavformat-dev libavutil-dev libswscale-dev && apt-get autoremove -y
+
