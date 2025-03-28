@@ -23,7 +23,7 @@ testcaches = .hypothesis .pytest_cache .pytype coverage.xml htmlcov .coverage
 
 all: version test build
 
-develop: devversion package
+develop: devversion package test
 	python3 setup.py develop --uninstall
 	python3 setup.py develop
 

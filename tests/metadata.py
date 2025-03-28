@@ -15,6 +15,5 @@ def appmetadata() -> AppMetadata:
     )
     metadata.add_input(DocumentTypes.TextDocument)
     metadata.add_input_oneof(DocumentTypes.AudioDocument, str(DocumentTypes.VideoDocument))
-    metadata.add_parameter(name='raise_error', description='force raise a ValueError',
-                               type='boolean', default='false')
+    metadata.add_parameter(name='raise_error', description='force raise a ValueError', type='boolean', default='false')
     return metadata

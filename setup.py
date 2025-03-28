@@ -66,7 +66,7 @@ setuptools.setup(
         'clams': ['develop/templates/**/*', 'develop/templates/**/.*']
     },
     install_requires=requires,
-    python_requires='>=3.8',
+    python_requires='>=3.10',
     packages=setuptools.find_packages(),
     entry_points={
         'console_scripts': [

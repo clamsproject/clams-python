@@ -31,8 +31,8 @@ def get_clams_pyver():
         import clams
         return clams.__version__
     except ImportError:
-        version_fname = os.path.join(os.path.dirname(__file__), '..', '..', 'VERSION')
-        if os.path.exists(version_fname):
+        version_fname = Path(__file__).joinpath('../../VERSION')
+        if version_fname.exists():
             with open(version_fname) as version_f:
                 return version_f.read().strip()
         else:
@@ -59,13 +59,21 @@ def get_mmif_specver():
     return mmif.__specver__
 
 
+def pop_titles(js):
+    for prop in js.get('properties', {}).values():
+        prop.pop('title', None)
+        
+        
+def jsonschema_versioning(js):
+    js['$schema'] = pydantic.json_schema.GenerateJsonSchema.schema_dialect
+    js['$comment'] = f"clams-python SDK {get_clams_pyver()} was used to generate this schema"
+
+
 class _BaseModel(pydantic.BaseModel):
     
-    class Config:
-        @staticmethod
-        def json_schema_extra(schema, model) -> None:
-            for prop in schema.get('properties', {}).values():
-                prop.pop('title', None)
+    model_config = {
+        "json_schema_extra": pop_titles
+    }
 
 
 class Output(_BaseModel):
@@ -97,17 +105,27 @@ class Output(_BaseModel):
         {}, 
         description="(optional) Specification for type properties, if any. ``\"*\"`` indicates any value."
     )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+    @pydantic.field_validator('at_type', mode='after')  # because pydantic v2 doesn't auto-convert url to string
+    @classmethod
+    def stringify(cls, val):
+        return str(val)
     
-    @pydantic.validator('at_type', pre=True)
+    @pydantic.field_validator('at_type', mode='before')
+    @classmethod
     def at_type_must_be_str(cls, v):
         if not isinstance(v, str):
             return str(v)
         return v
 
-    class Config:
-        title = 'CLAMS Output Specification'
-        extra = 'forbid'
-        allow_population_by_field_name = True
+    model_config = {
+        'title': 'CLAMS Output Specification',
+        'extra': 'forbid',
+        'validate_by_name': True,
+    }
     
     def add_description(self, description: str):
         """
@@ -127,20 +145,21 @@ class Input(Output):
     
     Developers should take diligent care to include all input types and their properties in the app metadata. 
     """
-    required: bool = pydantic.Field(
+    required: Optional[bool] = pydantic.Field(
         None, 
         description="(optional, True by default) Indicating whether this input type is mandatory or optional."
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         if self.required is None:
             self.required = True
 
-    class Config:
-        title = 'CLAMS Input Specification'
-        extra = 'forbid'
-        allow_population_by_field_name = True
+    model_config = {
+        'title': 'CLAMS Input Specification',
+        'extra': 'forbid',
+        'validate_by_name': True,
+    }
 
 
 class RuntimeParameter(_BaseModel):
@@ -178,12 +197,13 @@ class RuntimeParameter(_BaseModel):
                     "desired dictionary is ``{'key1': 'value1', 'key2': 'value2'}``, the default value (used when "
                     "initializing a parameter) should be ``['key1:value1','key2:value2']``\n."
     ) 
-    choices: List[real_valued_primitives] = pydantic.Field(
+    choices: Optional[List[real_valued_primitives]] = pydantic.Field(
         None, 
         description="(optional) List of string values that can be accepted."
     )
-    default: Union[real_valued_primitives, List[real_valued_primitives]] = pydantic.Field(
+    default: Optional[Union[real_valued_primitives, List[real_valued_primitives]]] = pydantic.Field(
         None, 
+        union_mode='left_to_right',
         description="(optional) Default value for the parameter.\n\n"
                     "Notes for developers: \n\n"
                     "Setting a default value makes a parameter `optional`. \n\n"
@@ -208,9 +228,10 @@ class RuntimeParameter(_BaseModel):
         if self.multivalued and self.default is not None and not isinstance(self.default, list):
             self.default = [self.default]
             
-    class Config:
-        title = 'CLAMS App Runtime Parameter'
-        extra = 'forbid'
+    model_config = {
+        'title': 'CLAMS App Runtime Parameter',
+        'extra': 'forbid',
+    }
         
         
 class AppMetadata(pydantic.BaseModel):
@@ -236,18 +257,19 @@ class AppMetadata(pydantic.BaseModel):
         description="A longer description of the app (what it does, how to use, etc.)."
     )
     app_version: str = pydantic.Field(
-        default_factory=generate_app_version,
+        '',  # instead of using default_factory, I will use model_validator to set the default value
+             # this will work around the limitation of exclude_defaults=True condition when serializing
         description="(AUTO-GENERATED, DO NOT SET MANUALLY)\n\n"
                     "Version of the app.\n\n"
                     "When the metadata is generated using clams-python SDK, this field is automatically filled in"
     )
     mmif_version: str = pydantic.Field(
-        default_factory=get_mmif_specver, 
+        '',  # same as above
         description="(AUTO-GENERATED, DO NOT SET MANUALLY)\n\n"
                     "Version of MMIF specification the app.\n\n"
                     "When the metadata is generated using clams-python SDK, this field is automatically filled in."
     )
-    analyzer_version: str = pydantic.Field(
+    analyzer_version: Optional[str] = pydantic.Field(
         None, 
         description="(optional) Version of an analyzer software, if the app is working as a wrapper for one. "
     )
@@ -255,7 +277,7 @@ class AppMetadata(pydantic.BaseModel):
         ..., 
         description="License information of the app."
     )
-    analyzer_license: str = pydantic.Field(
+    analyzer_license: Optional[str] = pydantic.Field(
         None,
         description="(optional) License information of an analyzer software, if the app works as a wrapper for one. "
     )
@@ -298,7 +320,7 @@ class AppMetadata(pydantic.BaseModel):
         [],
         description="List of runtime parameters. Can be empty."
     )
-    dependencies: List[str] = pydantic.Field(
+    dependencies: Optional[List[str]] = pydantic.Field(
         None,
         description="(optional) List of software dependencies of the app. \n\n"
                     "This list is completely optional, as in most cases such dependencies are specified in a separate "
@@ -307,36 +329,38 @@ class AppMetadata(pydantic.BaseModel):
                     "List items must be strings, not any kind of structured data. Thus, it is recommended to include "
                     "a package name and its version in the string value at the minimum (e.g., ``clams-python==1.2.3``)."
     )
-    more: Dict[str, str] = pydantic.Field(
+    more: Optional[Dict[str, str]] = pydantic.Field(
         None, 
         description="(optional) A string-to-string map that can be used to store any additional metadata of the app."
     )
 
-    class Config:
-        title = "CLAMS AppMetadata"
-        extra = 'forbid'
-        allow_population_by_field_name = True
+    model_config = {
+        'title': 'CLAMS AppMetadata',
+        'extra': 'forbid',
+        'validate_by_name': True,
+        'json_schema_extra': lambda schema, model: [adjust(schema) for adjust in [pop_titles, jsonschema_versioning]],
+    }
+    
+    @pydantic.model_validator(mode='after')
+    @classmethod
+    def assign_versions(cls, data):
+        if data.app_version == '':
+            data.app_version = generate_app_version()
+        if data.mmif_version == '':
+            data.mmif_version = get_mmif_specver()
+        return data
 
-        @staticmethod
-        def json_schema_extra(schema, model) -> None:
-            for prop in schema.get('properties', {}).values():
-                prop.pop('title', None)
-            schema['$schema'] = "http://json-schema.org/draft-07/schema#"  # currently pydantic doesn't natively support the $schema field. See https://github.com/samuelcolvin/pydantic/issues/1478
-            schema['$comment'] = f"clams-python SDK {get_clams_pyver()} was used to generate this schema"  # this is only to hold version information
-
-    @pydantic.validator('identifier', pre=True)
+    @pydantic.field_validator('identifier', mode='before')
+    @classmethod
     def append_version(cls, val):
         prefix = f'{app_directory_baseurl if "/" not in val else""}'
         suffix = generate_app_version()
         return '/'.join(map(lambda x: x.strip('/'), filter(None, (prefix, val, suffix))))
 
-    @pydantic.validator('mmif_version', pre=True)
-    def auto_mmif_version(cls, val):
-        return get_mmif_specver()
-    
-    @pydantic.validator('app_version', pre=True)
-    def auto_app_version(cls, val):
-        return generate_app_version()
+    @pydantic.field_validator('url', 'identifier', mode='after')  # because pydantic v2 doesn't auto-convert url to string
+    @classmethod
+    def stringify(cls, val):
+        return str(val)
     
     def _check_input_duplicate(self, a_input):
         for elem in self.input:
@@ -400,9 +424,7 @@ class AppMetadata(pydantic.BaseModel):
         :param properties: additional property specifications
         :return: the newly added Output object
         """
-        new = Output(at_type=at_type)
-        if len(properties) > 0:
-            new.properties = properties
+        new = Output(at_type=at_type, properties=properties)
         if new not in self.output:
             self.output.append(new)
         else:
@@ -412,7 +434,7 @@ class AppMetadata(pydantic.BaseModel):
     def add_parameter(self, name: str, description: str, type: param_value_types,
                       choices: Optional[List[real_valued_primitives]] = None,
                       multivalued: bool = False,
-                      default: Union[real_valued_primitives, List[real_valued_primitives]] = None):
+                      default: Union[None, real_valued_primitives, List[real_valued_primitives]] = None):
         """
         Helper method to add an element to the ``parameters`` list. 
         """
@@ -456,10 +478,7 @@ class AppMetadata(pydantic.BaseModel):
             raise ValueError("Key and value should not be empty!")
         
     def jsonify(self, pretty=False):
-        if pretty:
-            return self.json(exclude_defaults=True, by_alias=True, indent=2)
-        else:
-            return self.json(exclude_defaults=True, by_alias=True)
+        return self.model_dump_json(exclude_defaults=True, by_alias=True, indent=2 if pretty else None)
 
 
 if __name__ == '__main__':
