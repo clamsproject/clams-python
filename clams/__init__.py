@@ -1,10 +1,8 @@
+import argparse
 import sys
 
-from mmif import __specver__
-
+import mmif
 from clams import develop
-from clams.mmif_utils import source
-from clams.mmif_utils import rewind
 from clams.app import *
 from clams.app import __all__ as app_all
 from clams.appmetadata import AppMetadata
@@ -16,34 +14,41 @@ version_template = "{} (based on MMIF spec: {})"
 
 
 def prep_argparser():
-    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-v', '--version',
         action='version',
-        version=version_template.format(__version__, __specver__)
+        version=version_template.format(__version__, mmif.__specver__)
     )
     subparsers = parser.add_subparsers(title='sub-command', dest='subcmd')
-    for subcmd_module in [source, rewind, develop]:
-        subcmd_name = subcmd_module.__name__.rsplit('.')[-1]
-        subcmd_parser = subcmd_module.prep_argparser(add_help=False)
-        subparsers.add_parser(subcmd_name, parents=[subcmd_parser], 
-                              help=subcmd_module.describe_argparser()[0],
-                              description=subcmd_module.describe_argparser()[1],
-                              formatter_class=argparse.RawDescriptionHelpFormatter,
-                              )
-    return parser
+    return parser, subparsers
 
 
 def cli():
-    parser = prep_argparser()
+    parser, subparsers = prep_argparser()
+    cli_modules = {}
+    # thinly wrap all `mmif` subcommands
+    # this is primarily for backward compatibility for `souce` and `rewind` subcmds
+    to_register = list(mmif.find_all_modules('mmif.utils.cli'))
+    # then add my own subcommands
+    to_register.append(develop)
+    for cli_module in to_register:
+        cli_module_name = cli_module.__name__.rsplit('.')[-1]
+        cli_modules[cli_module_name] = cli_module
+        subcmd_parser = cli_module.prep_argparser(add_help=False)
+        subparsers.add_parser(cli_module_name, parents=[subcmd_parser],
+                              help=cli_module.describe_argparser()[0],
+                              description=cli_module.describe_argparser()[1],
+                              formatter_class=argparse.RawDescriptionHelpFormatter,
+                              )
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
     args = parser.parse_args()
-    if args.subcmd == 'source':
-        source.main(args)
-    if args.subcmd == 'rewind':
-        rewind.main(args)
-    if args.subcmd == 'develop':
-        develop.main(args)
+    if args.subcmd not in cli_modules:
+        parser.print_help(sys.stderr)
+    else:
+        cli_modules[args.subcmd].main(args)
+
+if __name__ == '__main__':
+    cli()
