@@ -4,3 +4,4 @@ LABEL org.opencontainers.image.description="clams-python-tf2 image is shipped wi
 
 RUN apt-get install -y build-essential libhdf5-dev
 RUN pip install --no-cache-dir tensorflow==2.*
+
