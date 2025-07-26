@@ -1,23 +1,21 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CLAMS App Metadata &mdash; clams-python  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
-        <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -36,9 +34,6 @@
           <a href="index.html" class="icon icon-home">
             clams-python
           </a>
-              <div class="version">
-                1.3.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -105,16 +100,16 @@
            <div itemprop="articleBody">
              
   <section id="clams-app-metadata">
-<span id="appmetadata"></span><h1>CLAMS App Metadata<a class="headerlink" href="#clams-app-metadata" title="Permalink to this heading"></a></h1>
+<span id="appmetadata"></span><h1>CLAMS App Metadata<a class="headerlink" href="#clams-app-metadata" title="Link to this heading"></a></h1>
 <section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
 <p>Every CLAMS app must provide information about the app itself. We call this set of information <strong>App Metadata</strong>.</p>
 <section id="format">
-<h3>Format<a class="headerlink" href="#format" title="Permalink to this heading"></a></h3>
+<h3>Format<a class="headerlink" href="#format" title="Link to this heading"></a></h3>
 <p>A CLAMS App Metadata should be able to be serialized into a JSON string.</p>
 </section>
 <section id="input-output-type-specification">
-<h3>Input/Output type specification<a class="headerlink" href="#input-output-type-specification" title="Permalink to this heading"></a></h3>
+<h3>Input/Output type specification<a class="headerlink" href="#input-output-type-specification" title="Link to this heading"></a></h3>
 <p>Essentially, all CLAMS apps are designed to take one MMIF file as input and produce another MMIF file as output. In this
 section, we will discuss how to specify, in the App Metadata, the <em>semantics</em> of the input and output MMIF files, and
 how that information should be formatted in terms of the App Metadata syntax, concretely by using <code class="docutils literal notranslate"><span class="pre">input</span></code> and
@@ -128,7 +123,7 @@ additional information about submission. Visit the <a class="reference external"
 metadata is rendered.</p>
 </div>
 <section id="annotation-types-in-mmif">
-<h4>Annotation types in MMIF<a class="headerlink" href="#annotation-types-in-mmif" title="Permalink to this heading"></a></h4>
+<h4>Annotation types in MMIF<a class="headerlink" href="#annotation-types-in-mmif" title="Link to this heading"></a></h4>
 <p>As described in the <a class="reference external" href="https://mmif.clams.ai">MMIF documentation</a>, MMIF files can contain annotations of various types.
 Currently, CLAMS team is using the following vocabularies with pre-defined annotation types:</p>
 <ul class="simple">
@@ -153,7 +148,7 @@ definition in action. In such a case, the app developer is expected to provide t
 the app metadata. See below for the syntax of I/O specification in the app metadata.</p>
 </section>
 <section id="syntax-for-i-o-specification-in-app-metadata">
-<h4>Syntax for I/O specification in App Metadata<a class="headerlink" href="#syntax-for-i-o-specification-in-app-metadata" title="Permalink to this heading"></a></h4>
+<h4>Syntax for I/O specification in App Metadata<a class="headerlink" href="#syntax-for-i-o-specification-in-app-metadata" title="Link to this heading"></a></h4>
 <p>In the App Metadata, the input and output types are specified as lists of objects. Each object in the list should have
 the following fields:</p>
 <ul class="simple">
@@ -164,7 +159,7 @@ the following fields:</p>
 defaults to <code class="docutils literal notranslate"><span class="pre">true</span></code>. Not applicable for output types.</p></li>
 </ul>
 <section id="simple-case-using-types-as-defined-in-the-vocabularies">
-<h5>Simple case - using types as defined in the vocabularies<a class="headerlink" href="#simple-case-using-types-as-defined-in-the-vocabularies" title="Permalink to this heading"></a></h5>
+<h5>Simple case - using types as defined in the vocabularies<a class="headerlink" href="#simple-case-using-types-as-defined-in-the-vocabularies" title="Link to this heading"></a></h5>
 <p>In the simplest case, where a developer merely re-uses an annotation type definition and pre-defined properties, an
 input specification can be as simple as the following:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
@@ -280,7 +275,7 @@ specification in the app metadata is a subset of the properties to be produced t
 in the downstream apps, as well as for human readers to understand the output.</p>
 </section>
 <section id="extended-case-adding-custom-properties-to-the-type-definition">
-<h5>Extended case - adding custom properties to the type definition<a class="headerlink" href="#extended-case-adding-custom-properties-to-the-type-definition" title="Permalink to this heading"></a></h5>
+<h5>Extended case - adding custom properties to the type definition<a class="headerlink" href="#extended-case-adding-custom-properties-to-the-type-definition" title="Link to this heading"></a></h5>
 <p>When the type definition is extended on the fly, developers are expected to provide the extended specification in the
 form of key-value pairs in the <code class="docutils literal notranslate"><span class="pre">properties</span></code> field. The grammar of the JSON object does not change, but developers are
 expected to provide a verbose description of the type extension in the <code class="docutils literal notranslate"><span class="pre">description</span></code> field.</p>
@@ -288,7 +283,7 @@ expected to provide a verbose description of the type extension in the <code cla
 </section>
 </section>
 <section id="runtime-parameter-specification">
-<h3>Runtime parameter specification<a class="headerlink" href="#runtime-parameter-specification" title="Permalink to this heading"></a></h3>
+<h3>Runtime parameter specification<a class="headerlink" href="#runtime-parameter-specification" title="Link to this heading"></a></h3>
 <p>CLAMS apps designed to be run as HTTP servers, preferably as <a class="reference external" href="https://en.wikipedia.org/wiki/Stateless_protocol">stateless</a>.
 When accepting HTTP requests, the app should take the request data payload (body) as the input MMIF, and any exposed
 configurations should be read from query strings in the URL.</p>
@@ -302,15 +297,15 @@ can be specified as <code class="docutils literal notranslate"><span class="pre"
 parameter value parsing works, please refer to the App Metadata json scheme (in the <a class="reference external" href="#clams-app-runtime-parameter">below</a>
 section).</p>
 <section id="syntax-for-parameter-specification-in-app-metadata">
-<h4>Syntax for parameter specification in App Metadata<a class="headerlink" href="#syntax-for-parameter-specification-in-app-metadata" title="Permalink to this heading"></a></h4>
+<h4>Syntax for parameter specification in App Metadata<a class="headerlink" href="#syntax-for-parameter-specification-in-app-metadata" title="Link to this heading"></a></h4>
 </section>
 </section>
 <section id="metadata-schema">
-<h3>Metadata Schema<a class="headerlink" href="#metadata-schema" title="Permalink to this heading"></a></h3>
+<h3>Metadata Schema<a class="headerlink" href="#metadata-schema" title="Link to this heading"></a></h3>
 <p>The schema for app metadata is as follows.
 (You can also download the schema in <a class="reference external" href="https://json-schema.org/">JSON Schema</a> format from <a class="reference external" href="appmetadata.jsonschema">here</a>.)</p>
 <section id="clams-appmetadata">
-<h4>CLAMS AppMetadata<a class="headerlink" href="#clams-appmetadata" title="Permalink to this heading"></a></h4>
+<h4>CLAMS AppMetadata<a class="headerlink" href="#clams-appmetadata" title="Link to this heading"></a></h4>
 <p>Data model that describes a CLAMS app.</p>
 <p>Can be initialized by simply passing all required key-value pairs.</p>
 <p>If you have a pre-generated metadata as an external file, you can read in the file as a <code class="docutils literal notranslate"><span class="pre">dict</span></code> and use it as
@@ -324,24 +319,20 @@ SDK.</p>
 </tr>
 <tr class="row-even"><td colspan="5"><p>properties</p></td>
 </tr>
-<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<tr class="row-odd"><td rowspan="2"><ul class="simple">
 <li><p><strong>name</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Name</em></p></td>
+<td colspan="4"><p>A short name of the app.</p></td>
 </tr>
-<tr class="row-even"><td colspan="4"><p>A short name of the app.</p></td>
-</tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-even"><td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="3"><ul class="simple">
+<tr class="row-odd"><td rowspan="2"><ul class="simple">
 <li><p><strong>description</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Description</em></p></td>
-</tr>
-<tr class="row-odd"><td colspan="4"><p>A longer description of the app (what it does, how to use, etc.).</p></td>
+<td colspan="4"><p>A longer description of the app (what it does, how to use, etc.).</p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
@@ -350,70 +341,78 @@ SDK.</p>
 <li><p>app_version</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>App Version</em></p></td>
-</tr>
-<tr class="row-even"><td colspan="4"><p>(AUTO-GENERATED, DO NOT SET MANUALLY)</p>
+<td colspan="4"><p>(AUTO-GENERATED, DO NOT SET MANUALLY)</p>
 <p>Version of the app.</p>
 <p>When the metadata is generated using clams-python SDK, this field is automatically filled in</p>
 </td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-even"><td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"></td>
 </tr>
 <tr class="row-even"><td rowspan="3"><ul class="simple">
 <li><p>mmif_version</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Mmif Version</em></p></td>
-</tr>
-<tr class="row-odd"><td colspan="4"><p>(AUTO-GENERATED, DO NOT SET MANUALLY)</p>
+<td colspan="4"><p>(AUTO-GENERATED, DO NOT SET MANUALLY)</p>
 <p>Version of MMIF specification the app.</p>
 <p>When the metadata is generated using clams-python SDK, this field is automatically filled in.</p>
 </td>
 </tr>
-<tr class="row-even"><td><p>type</p></td>
+<tr class="row-odd"><td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"></td>
+</tr>
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p>analyzer_version</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Analyzer Version</em></p></td>
+<td colspan="4"><p>(optional) Version of an analyzer software, if the app is working as a wrapper for one.</p></td>
 </tr>
-<tr class="row-even"><td colspan="4"><p>(optional) Version of an analyzer software, if the app is working as a wrapper for one.</p></td>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>null</p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="3"><p><em>string</em></p></td>
+<tr class="row-odd"><td rowspan="2"><p>anyOf</p></td>
+<td><p>type</p></td>
+<td colspan="2"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="3"><ul class="simple">
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="2"><p><em>null</em></p></td>
+</tr>
+<tr class="row-odd"><td rowspan="2"><ul class="simple">
 <li><p><strong>app_license</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>App License</em></p></td>
-</tr>
-<tr class="row-odd"><td colspan="4"><p>License information of the app.</p></td>
+<td colspan="4"><p>License information of the app.</p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p>analyzer_license</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Analyzer License</em></p></td>
+<td colspan="4"><p>(optional) License information of an analyzer software, if the app works as a wrapper for one.</p></td>
 </tr>
-<tr class="row-even"><td colspan="4"><p>(optional) License information of an analyzer software, if the app works as a wrapper for one.</p></td>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>null</p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="3"><p><em>string</em></p></td>
+<tr class="row-odd"><td rowspan="2"><p>anyOf</p></td>
+<td><p>type</p></td>
+<td colspan="2"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="6"><ul class="simple">
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="2"><p><em>null</em></p></td>
+</tr>
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p><strong>identifier</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Identifier</em></p></td>
-</tr>
-<tr class="row-odd"><td colspan="4"><p>(partly AUTO-GENERATED)</p>
+<td colspan="4"><p>(partly AUTO-GENERATED)</p>
 <p>IRI-formatted unique identifier for the app.</p>
 <p>If the app is to be published to the CLAMS app-directory, the developer should give a single string value composed with valid URL characters (no <code class="docutils literal notranslate"><span class="pre">/</span></code>, no whitespace),</p>
 <p>then when the metadata is generated using clams-python SDK, the app-directory URL is prepended and <code class="docutils literal notranslate"><span class="pre">app_version</span></code> value will be appended automatically.</p>
@@ -424,42 +423,32 @@ SDK.</p>
 <tr class="row-even"><td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>maxLength</p></td>
-<td colspan="3"><p>65536</p></td>
-</tr>
-<tr class="row-even"><td><p>minLength</p></td>
+<tr class="row-odd"><td><p>minLength</p></td>
 <td colspan="3"><p>1</p></td>
 </tr>
-<tr class="row-odd"><td><p>format</p></td>
+<tr class="row-even"><td><p>format</p></td>
 <td colspan="3"><p>uri</p></td>
 </tr>
-<tr class="row-even"><td rowspan="6"><ul class="simple">
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p><strong>url</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Url</em></p></td>
-</tr>
-<tr class="row-odd"><td colspan="4"><p>A public repository where the app’s source code (git-based) and/or documentation is available.</p></td>
+<td colspan="4"><p>A public repository where the app’s source code (git-based) and/or documentation is available.</p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
 <td colspan="3"><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>maxLength</p></td>
-<td colspan="3"><p>65536</p></td>
-</tr>
-<tr class="row-even"><td><p>minLength</p></td>
+<tr class="row-odd"><td><p>minLength</p></td>
 <td colspan="3"><p>1</p></td>
 </tr>
-<tr class="row-odd"><td><p>format</p></td>
+<tr class="row-even"><td><p>format</p></td>
 <td colspan="3"><p>uri</p></td>
 </tr>
-<tr class="row-even"><td rowspan="7"><ul class="simple">
+<tr class="row-odd"><td rowspan="6"><ul class="simple">
 <li><p>input</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Input</em></p></td>
-</tr>
-<tr class="row-odd"><td colspan="4"><p>List of input types. Must have at least one element.</p>
+<td colspan="4"><p>List of input types. Must have at least one element.</p>
 <p>This list should iterate all input types in an exhaustive and meticulous manner, meaning it is recommended for developers to pay extra attention to <code class="docutils literal notranslate"><span class="pre">input</span></code> and <code class="docutils literal notranslate"><span class="pre">output</span></code> fields to include 1) all types are listed, 2) if types to have specific properties, include the properties.</p>
 <p>This list should interpreted conjunctive (<code class="docutils literal notranslate"><span class="pre">AND</span></code>).</p>
 <p>However, a nested list in this list means <code class="docutils literal notranslate"><span class="pre">oneOf</span></code> disjunctive (<code class="docutils literal notranslate"><span class="pre">OR</span></code>) specification.</p>
@@ -475,38 +464,19 @@ SDK.</p>
 </tr>
 <tr class="row-even"><td rowspan="3"><p>items</p></td>
 <td rowspan="3"><p>anyOf</p></td>
-<td colspan="2"><p><span class="xref std std-ref">#/definitions/Input</span></p></td>
+<td colspan="2"><p><span class="xref std std-ref">#/$defs/Input</span></p></td>
 </tr>
 <tr class="row-odd"><td><p>type</p></td>
 <td><p><em>array</em></p></td>
 </tr>
 <tr class="row-even"><td><p>items</p></td>
-<td><p><span class="xref std std-ref">#/definitions/Input</span></p></td>
+<td><p><span class="xref std std-ref">#/$defs/Input</span></p></td>
 </tr>
-<tr class="row-odd"><td rowspan="5"><ul class="simple">
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p>output</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Output</em></p></td>
-</tr>
-<tr class="row-even"><td colspan="4"><p>List of output types. Must have at least one element.This list should iterate all output types in an exhaustive and meticulous manner, meaning it is recommended for developers to pay extra attention to <code class="docutils literal notranslate"><span class="pre">input</span></code> and <code class="docutils literal notranslate"><span class="pre">output</span></code> fields to include</p></td>
-</tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="3"><p><em>array</em></p></td>
-</tr>
-<tr class="row-even"><td><p>default</p></td>
-<td colspan="3"></td>
-</tr>
-<tr class="row-odd"><td><p>items</p></td>
-<td colspan="3"><p><span class="xref std std-ref">#/definitions/Output</span></p></td>
-</tr>
-<tr class="row-even"><td rowspan="5"><ul class="simple">
-<li><p>parameters</p></li>
-</ul>
-</td>
-<td colspan="4"><p><em>Parameters</em></p></td>
-</tr>
-<tr class="row-odd"><td colspan="4"><p>List of runtime parameters. Can be empty.</p></td>
+<td colspan="4"><p>List of output types. Must have at least one element.This list should iterate all output types in an exhaustive and meticulous manner, meaning it is recommended for developers to pay extra attention to <code class="docutils literal notranslate"><span class="pre">input</span></code> and <code class="docutils literal notranslate"><span class="pre">output</span></code> fields to include</p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
 <td colspan="3"><p><em>array</em></p></td>
@@ -515,40 +485,65 @@ SDK.</p>
 <td colspan="3"></td>
 </tr>
 <tr class="row-even"><td><p>items</p></td>
-<td colspan="3"><p><span class="xref std std-ref">#/definitions/RuntimeParameter</span></p></td>
+<td colspan="3"><p><span class="xref std std-ref">#/$defs/Output</span></p></td>
 </tr>
 <tr class="row-odd"><td rowspan="4"><ul class="simple">
+<li><p>parameters</p></li>
+</ul>
+</td>
+<td colspan="4"><p>List of runtime parameters. Can be empty.</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>array</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"></td>
+</tr>
+<tr class="row-even"><td><p>items</p></td>
+<td colspan="3"><p><span class="xref std std-ref">#/$defs/RuntimeParameter</span></p></td>
+</tr>
+<tr class="row-odd"><td rowspan="5"><ul class="simple">
 <li><p>dependencies</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Dependencies</em></p></td>
-</tr>
-<tr class="row-even"><td colspan="4"><p>(optional) List of software dependencies of the app.</p>
+<td colspan="4"><p>(optional) List of software dependencies of the app.</p>
 <p>This list is completely optional, as in most cases such dependencies are specified in a separate file in the codebase of the app (for example, <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> file for a Python app, or <code class="docutils literal notranslate"><span class="pre">pom.xml</span></code> file for a maven-based Java app).</p>
 <p>List items must be strings, not any kind of structured data. Thus, it is recommended to include a package name and its version in the string value at the minimum (e.g., <code class="docutils literal notranslate"><span class="pre">clams-python==1.2.3</span></code>).</p>
 </td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="3"><p><em>array</em></p></td>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>null</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><p>anyOf</p></td>
+<td><p>type</p></td>
+<td colspan="2"><p><em>array</em></p></td>
 </tr>
 <tr class="row-even"><td><p>items</p></td>
 <td><p>type</p></td>
-<td colspan="2"><p><em>string</em></p></td>
+<td><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td rowspan="4"><ul class="simple">
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="2"><p><em>null</em></p></td>
+</tr>
+<tr class="row-even"><td rowspan="5"><ul class="simple">
 <li><p>more</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>More</em></p></td>
+<td colspan="4"><p>(optional) A string-to-string map that can be used to store any additional metadata of the app.</p></td>
 </tr>
-<tr class="row-even"><td colspan="4"><p>(optional) A string-to-string map that can be used to store any additional metadata of the app.</p></td>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>null</p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="3"><p><em>object</em></p></td>
-</tr>
-<tr class="row-even"><td><p>additionalProperties</p></td>
+<tr class="row-even"><td rowspan="3"><p>anyOf</p></td>
 <td><p>type</p></td>
-<td colspan="2"><p><em>string</em></p></td>
+<td colspan="2"><p><em>object</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>additionalProperties</p></td>
+<td><p>type</p></td>
+<td><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="2"><p><em>null</em></p></td>
 </tr>
 <tr class="row-odd"><td><p>additionalProperties</p></td>
 <td colspan="4"><p>False</p></td>
@@ -556,7 +551,7 @@ SDK.</p>
 </tbody>
 </table>
 <section id="clams-input-specification">
-<h5>CLAMS Input Specification<a class="headerlink" href="#clams-input-specification" title="Permalink to this heading"></a></h5>
+<h5>CLAMS Input Specification<a class="headerlink" href="#clams-input-specification" title="Link to this heading"></a></h5>
 <p>Data model that describes input specification of a CLAMS app.</p>
 <p>CLAMS apps are expected to have at least one input type, and each type must
 be defined by a <code class="docutils literal notranslate"><span class="pre">&#64;type</span></code> URI string. If the type has specific properties and values required by the app,
@@ -566,88 +561,80 @@ verbose description can be provided in the (optional) <code class="docutils lite
 <table class="docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p>type</p></td>
-<td colspan="4"><p><em>object</em></p></td>
+<td colspan="3"><p><em>object</em></p></td>
 </tr>
-<tr class="row-even"><td colspan="5"><p>properties</p></td>
+<tr class="row-even"><td colspan="4"><p>properties</p></td>
 </tr>
-<tr class="row-odd"><td rowspan="6"><ul class="simple">
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p><strong>&#64;type</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>&#64;Type</em></p></td>
+<td colspan="3"><p>The type of the object. Must be a IRI string.</p></td>
 </tr>
-<tr class="row-even"><td colspan="4"><p>The type of the object. Must be a IRI string.</p></td>
-</tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="3"><p><em>string</em></p></td>
-</tr>
-<tr class="row-even"><td><p>maxLength</p></td>
-<td colspan="3"><p>65536</p></td>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="2"><p><em>string</em></p></td>
 </tr>
 <tr class="row-odd"><td><p>minLength</p></td>
-<td colspan="3"><p>1</p></td>
+<td colspan="2"><p>1</p></td>
 </tr>
 <tr class="row-even"><td><p>format</p></td>
-<td colspan="3"><p>uri</p></td>
+<td colspan="2"><p>uri</p></td>
 </tr>
-<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p>description</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Description</em></p></td>
+<td colspan="3"><p>A verbose, human-readable description of the type. This is intended to be used for documentation purpose for a particular use case of this annotation type and is not expected to be consumed by software. This description should work as a guideline for users to understand the output type, and also can be used as a expansion specification for the type definition beyond the base vocabulary.</p></td>
 </tr>
-<tr class="row-even"><td colspan="4"><p>A verbose, human-readable description of the type. This is intended to be used for documentation purpose for a particular use case of this annotation type and is not expected to be consumed by software. This description should work as a guideline for users to understand the output type, and also can be used as a expansion specification for the type definition beyond the base vocabulary.</p></td>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="2"><p>null</p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="3"><p><em>string</em></p></td>
+<tr class="row-odd"><td rowspan="2"><p>anyOf</p></td>
+<td><p>type</p></td>
+<td><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="8"><ul class="simple">
+<tr class="row-even"><td><p>type</p></td>
+<td><p><em>null</em></p></td>
+</tr>
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p>properties</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Properties</em></p></td>
-</tr>
-<tr class="row-odd"><td colspan="4"><p>(optional) Specification for type properties, if any. <code class="docutils literal notranslate"><span class="pre">&quot;*&quot;</span></code> indicates any value.</p></td>
+<td colspan="3"><p>(optional) Specification for type properties, if any. <code class="docutils literal notranslate"><span class="pre">&quot;*&quot;</span></code> indicates any value.</p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
-<td colspan="3"><p><em>object</em></p></td>
+<td colspan="2"><p><em>object</em></p></td>
 </tr>
 <tr class="row-odd"><td><p>default</p></td>
-<td colspan="3"></td>
+<td colspan="2"></td>
 </tr>
-<tr class="row-even"><td rowspan="4"><p>additionalProperties</p></td>
-<td rowspan="4"><p>anyOf</p></td>
-<td><p>type</p></td>
-<td><p><em>integer</em></p></td>
+<tr class="row-even"><td><p>additionalProperties</p></td>
+<td colspan="2"><p>True</p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td><p><em>number</em></p></td>
-</tr>
-<tr class="row-even"><td><p>type</p></td>
-<td><p><em>boolean</em></p></td>
-</tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td><p><em>string</em></p></td>
-</tr>
-<tr class="row-even"><td rowspan="3"><ul class="simple">
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p>required</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Required</em></p></td>
+<td colspan="3"><p>(optional, True by default) Indicating whether this input type is mandatory or optional.</p></td>
 </tr>
-<tr class="row-odd"><td colspan="4"><p>(optional, True by default) Indicating whether this input type is mandatory or optional.</p></td>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="2"><p>null</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="2"><p>anyOf</p></td>
+<td><p>type</p></td>
+<td><p><em>boolean</em></p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
-<td colspan="3"><p><em>boolean</em></p></td>
+<td><p><em>null</em></p></td>
 </tr>
 <tr class="row-odd"><td><p>additionalProperties</p></td>
-<td colspan="4"><p>False</p></td>
+<td colspan="3"><p>False</p></td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="clams-output-specification">
-<h5>CLAMS Output Specification<a class="headerlink" href="#clams-output-specification" title="Permalink to this heading"></a></h5>
+<h5>CLAMS Output Specification<a class="headerlink" href="#clams-output-specification" title="Link to this heading"></a></h5>
 <p>Data model that describes output specification of a CLAMS app.</p>
 <p>CLAMS apps are expected to have at least one output type, and each type must
 be defined by a <code class="docutils literal notranslate"><span class="pre">&#64;type</span></code> URI string. If the type has common properties and values generated by the app,
@@ -658,77 +645,64 @@ specify the property values, developers can use an actual value (for full match)
 <table class="docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p>type</p></td>
-<td colspan="4"><p><em>object</em></p></td>
+<td colspan="3"><p><em>object</em></p></td>
 </tr>
-<tr class="row-even"><td colspan="5"><p>properties</p></td>
+<tr class="row-even"><td colspan="4"><p>properties</p></td>
 </tr>
-<tr class="row-odd"><td rowspan="6"><ul class="simple">
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p><strong>&#64;type</strong></p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>&#64;Type</em></p></td>
+<td colspan="3"><p>The type of the object. Must be a IRI string.</p></td>
 </tr>
-<tr class="row-even"><td colspan="4"><p>The type of the object. Must be a IRI string.</p></td>
-</tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="3"><p><em>string</em></p></td>
-</tr>
-<tr class="row-even"><td><p>maxLength</p></td>
-<td colspan="3"><p>65536</p></td>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="2"><p><em>string</em></p></td>
 </tr>
 <tr class="row-odd"><td><p>minLength</p></td>
-<td colspan="3"><p>1</p></td>
+<td colspan="2"><p>1</p></td>
 </tr>
 <tr class="row-even"><td><p>format</p></td>
-<td colspan="3"><p>uri</p></td>
+<td colspan="2"><p>uri</p></td>
 </tr>
-<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p>description</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Description</em></p></td>
+<td colspan="3"><p>A verbose, human-readable description of the type. This is intended to be used for documentation purpose for a particular use case of this annotation type and is not expected to be consumed by software. This description should work as a guideline for users to understand the output type, and also can be used as a expansion specification for the type definition beyond the base vocabulary.</p></td>
 </tr>
-<tr class="row-even"><td colspan="4"><p>A verbose, human-readable description of the type. This is intended to be used for documentation purpose for a particular use case of this annotation type and is not expected to be consumed by software. This description should work as a guideline for users to understand the output type, and also can be used as a expansion specification for the type definition beyond the base vocabulary.</p></td>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="2"><p>null</p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="3"><p><em>string</em></p></td>
+<tr class="row-odd"><td rowspan="2"><p>anyOf</p></td>
+<td><p>type</p></td>
+<td><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="8"><ul class="simple">
+<tr class="row-even"><td><p>type</p></td>
+<td><p><em>null</em></p></td>
+</tr>
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
 <li><p>properties</p></li>
 </ul>
 </td>
-<td colspan="4"><p><em>Properties</em></p></td>
-</tr>
-<tr class="row-odd"><td colspan="4"><p>(optional) Specification for type properties, if any. <code class="docutils literal notranslate"><span class="pre">&quot;*&quot;</span></code> indicates any value.</p></td>
+<td colspan="3"><p>(optional) Specification for type properties, if any. <code class="docutils literal notranslate"><span class="pre">&quot;*&quot;</span></code> indicates any value.</p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
-<td colspan="3"><p><em>object</em></p></td>
+<td colspan="2"><p><em>object</em></p></td>
 </tr>
 <tr class="row-odd"><td><p>default</p></td>
-<td colspan="3"></td>
-</tr>
-<tr class="row-even"><td rowspan="4"><p>additionalProperties</p></td>
-<td rowspan="4"><p>anyOf</p></td>
-<td><p>type</p></td>
-<td><p><em>integer</em></p></td>
-</tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td><p><em>number</em></p></td>
-</tr>
-<tr class="row-even"><td><p>type</p></td>
-<td><p><em>boolean</em></p></td>
-</tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td><p><em>string</em></p></td>
+<td colspan="2"></td>
 </tr>
 <tr class="row-even"><td><p>additionalProperties</p></td>
-<td colspan="4"><p>False</p></td>
+<td colspan="2"><p>True</p></td>
+</tr>
+<tr class="row-odd"><td><p>additionalProperties</p></td>
+<td colspan="3"><p>False</p></td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="clams-app-runtime-parameter">
-<h5>CLAMS App Runtime Parameter<a class="headerlink" href="#clams-app-runtime-parameter" title="Permalink to this heading"></a></h5>
+<h5>CLAMS App Runtime Parameter<a class="headerlink" href="#clams-app-runtime-parameter" title="Link to this heading"></a></h5>
 <p>Defines a data model that describes a single runtime configuration of a CLAMS app.
 Usually, an app keeps a list of these configuration specifications in the <code class="docutils literal notranslate"><span class="pre">parameters</span></code> field.
 When initializing a RuntimeParameter object in python the value for the default field must be a string.
@@ -741,35 +715,29 @@ or their falsy counterpart, instead of <code class="docutils literal notranslate
 </tr>
 <tr class="row-even"><td colspan="6"><p>properties</p></td>
 </tr>
-<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<tr class="row-odd"><td rowspan="2"><ul class="simple">
 <li><p><strong>name</strong></p></li>
 </ul>
 </td>
-<td colspan="5"><p><em>Name</em></p></td>
-</tr>
-<tr class="row-even"><td colspan="5"><p>A short name of the parameter (works as a key).</p></td>
-</tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="4"><p><em>string</em></p></td>
-</tr>
-<tr class="row-even"><td rowspan="3"><ul class="simple">
-<li><p><strong>description</strong></p></li>
-</ul>
-</td>
-<td colspan="5"><p><em>Description</em></p></td>
-</tr>
-<tr class="row-odd"><td colspan="5"><p>A longer description of the parameter (what it does, how to use, etc.).</p></td>
+<td colspan="5"><p>A short name of the parameter (works as a key).</p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
 <td colspan="4"><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td rowspan="4"><ul class="simple">
+<tr class="row-odd"><td rowspan="2"><ul class="simple">
+<li><p><strong>description</strong></p></li>
+</ul>
+</td>
+<td colspan="5"><p>A longer description of the parameter (what it does, how to use, etc.).</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="4"><p><em>string</em></p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
 <li><p><strong>type</strong></p></li>
 </ul>
 </td>
-<td colspan="5"><p><em>Type</em></p></td>
-</tr>
-<tr class="row-even"><td colspan="5"><p>Type of the parameter value the app expects. Must be one of (‘integer’, ‘number’, ‘string’, ‘boolean’, ‘map’). When type is <code class="docutils literal notranslate"><span class="pre">map</span></code>, <code class="docutils literal notranslate"><span class="pre">multivalued=true</span></code> is forced, and when <code class="docutils literal notranslate"><span class="pre">boolean</span></code>, <code class="docutils literal notranslate"><span class="pre">multivalued=false</span></code> is forced.</p>
+<td colspan="5"><p>Type of the parameter value the app expects. Must be one of (‘integer’, ‘number’, ‘string’, ‘boolean’, ‘map’). When type is <code class="docutils literal notranslate"><span class="pre">map</span></code>, <code class="docutils literal notranslate"><span class="pre">multivalued=true</span></code> is forced, and when <code class="docutils literal notranslate"><span class="pre">boolean</span></code>, <code class="docutils literal notranslate"><span class="pre">multivalued=false</span></code> is forced.</p>
 <p>Notes for developers:</p>
 <p>When the type is <code class="docutils literal notranslate"><span class="pre">map</span></code>, the parameter value (still a single string from the users’ perspective) must be formatted as a <code class="docutils literal notranslate"><span class="pre">KEY:VALUE</span></code> pair, namely a colon-separated string. To pass multiple key-value pairs, users need to pass the parameter multiple times (remember <code class="docutils literal notranslate"><span class="pre">type=map</span></code> implies <code class="docutils literal notranslate"><span class="pre">multivalued=true</span></code>) with pairs in the colon-separated format.</p>
 <p>Also, the <cite>VALUE</cite> part of the user input is always expected and handled as a string. If a developers wants to do more text processing on the passed value to accept more complex data types or structures (e.g., map from a string to a list of strings), it is up to the developer. However, any additional form requirements should be precisely described in the <code class="docutils literal notranslate"><span class="pre">description</span></code> field for users.</p>
@@ -777,51 +745,57 @@ or their falsy counterpart, instead of <code class="docutils literal notranslate
 .</p>
 </td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
+<tr class="row-even"><td><p>type</p></td>
 <td colspan="4"><p><em>string</em></p></td>
 </tr>
-<tr class="row-even"><td><p>enum</p></td>
+<tr class="row-odd"><td><p>enum</p></td>
 <td colspan="4"><p>integer, number, string, boolean, map</p></td>
 </tr>
-<tr class="row-odd"><td rowspan="7"><ul class="simple">
+<tr class="row-even"><td rowspan="8"><ul class="simple">
 <li><p>choices</p></li>
 </ul>
 </td>
-<td colspan="5"><p><em>Choices</em></p></td>
+<td colspan="5"><p>(optional) List of string values that can be accepted.</p></td>
 </tr>
-<tr class="row-even"><td colspan="5"><p>(optional) List of string values that can be accepted.</p></td>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="4"><p>null</p></td>
 </tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="4"><p><em>array</em></p></td>
+<tr class="row-even"><td rowspan="6"><p>anyOf</p></td>
+<td><p>type</p></td>
+<td colspan="3"><p><em>array</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="4"><p>items</p></td>
+<tr class="row-odd"><td rowspan="4"><p>items</p></td>
 <td rowspan="4"><p>anyOf</p></td>
 <td><p>type</p></td>
-<td colspan="2"><p><em>integer</em></p></td>
-</tr>
-<tr class="row-odd"><td><p>type</p></td>
-<td colspan="2"><p><em>number</em></p></td>
+<td><p><em>integer</em></p></td>
 </tr>
 <tr class="row-even"><td><p>type</p></td>
-<td colspan="2"><p><em>boolean</em></p></td>
+<td><p><em>number</em></p></td>
 </tr>
 <tr class="row-odd"><td><p>type</p></td>
-<td colspan="2"><p><em>string</em></p></td>
+<td><p><em>boolean</em></p></td>
 </tr>
-<tr class="row-even"><td rowspan="11"><ul class="simple">
+<tr class="row-even"><td><p>type</p></td>
+<td><p><em>string</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>null</em></p></td>
+</tr>
+<tr class="row-even"><td rowspan="12"><ul class="simple">
 <li><p>default</p></li>
 </ul>
 </td>
-<td colspan="5"><p><em>Default</em></p></td>
-</tr>
-<tr class="row-odd"><td colspan="5"><p>(optional) Default value for the parameter.</p>
+<td colspan="5"><p>(optional) Default value for the parameter.</p>
 <p>Notes for developers:</p>
 <p>Setting a default value makes a parameter <cite>optional</cite>.</p>
 <p>When <code class="docutils literal notranslate"><span class="pre">multivalued=true</span></code>, the default value should be a list of values.</p>
 <p>When <code class="docutils literal notranslate"><span class="pre">type=map</span></code>, the default value should be a list of colon-separated strings.</p>
 </td>
 </tr>
-<tr class="row-even"><td rowspan="9"><p>anyOf</p></td>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="4"><p>null</p></td>
+</tr>
+<tr class="row-even"><td rowspan="10"><p>anyOf</p></td>
 <td><p>type</p></td>
 <td colspan="3"><p><em>integer</em></p></td>
 </tr>
@@ -851,13 +825,14 @@ or their falsy counterpart, instead of <code class="docutils literal notranslate
 <tr class="row-even"><td><p>type</p></td>
 <td><p><em>string</em></p></td>
 </tr>
-<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>null</em></p></td>
+</tr>
+<tr class="row-even"><td rowspan="2"><ul class="simple">
 <li><p><strong>multivalued</strong></p></li>
 </ul>
 </td>
-<td colspan="5"><p><em>Multivalued</em></p></td>
-</tr>
-<tr class="row-even"><td colspan="5"><p>(optional, False by default) Set True if the parameter can have multiple values.</p>
+<td colspan="5"><p>(optional, False by default) Set True if the parameter can have multiple values.</p>
 <p>Note that, for parameters that allow multiple values, the SDK will pass a singleton list to <code class="docutils literal notranslate"><span class="pre">_annotate()</span></code> even when one value is passed via HTTP.</p>
 </td>
 </tr>
@@ -886,7 +861,7 @@ or their falsy counterpart, instead of <code class="docutils literal notranslate
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Brandeis LLC.</p>
+    <p>&#169; Copyright 2025, Brandeis LLC.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

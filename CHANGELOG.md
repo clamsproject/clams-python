@@ -1,4 +1,18 @@
 
+## releasing 1.3.2 (2025-07-26)
+### Overview
+Patch release, mainly to support new MMIF spec and corresponding `mmif-python` SDK versions, with more base images with HF libraries and miscellaneous fixes. 
+
+### Additions
+* Now ships with `mmif-python` 1.1.1 and spec 1.1.0.
+* Base container images with HF `transformers` pre-installed are now available (https://github.com/clamsproject/clams-python/pull/247).
+
+### Changes
+* Minimal python version is now 3.10 (https://github.com/clamsproject/clams-python/issues/228).
+* Installation process is updated to support python 3.12 and newer.
+* Minor bugfixes and documentation improvements.
+
+
 ## releasing 1.3.1 (2024-07-29)
 ### Overview
 This patch includes update to the latest `mmif-python` which contains a hot fix for a critical bug. 

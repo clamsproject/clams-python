@@ -1,23 +1,21 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Using CLAMS App &mdash; clams-python  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
-        <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
@@ -34,9 +32,6 @@
           <a href="index.html" class="icon icon-home">
             clams-python
           </a>
-              <div class="version">
-                1.3.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -84,12 +79,12 @@
            <div itemprop="articleBody">
              
   <section id="using-clams-app">
-<h1>Using CLAMS App<a class="headerlink" href="#using-clams-app" title="Permalink to this heading"></a></h1>
+<h1>Using CLAMS App<a class="headerlink" href="#using-clams-app" title="Link to this heading"></a></h1>
 <p>This document provides general instructions for installing and using CLAMS Apps.
 App developers may provide additional information specific to their app,
 hence it’s advised also to look up the app website (or code repository) to get the additional information.</p>
 <section id="requirements">
-<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
+<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
 <p>Generally, a CLAMS App requires</p>
 <ul class="simple">
 <li><p>To run the app in a container (as an HTTP server), container management software such as <code class="docutils literal notranslate"><span class="pre">docker</span></code> or <code class="docutils literal notranslate"><span class="pre">podman</span></code>. This is the recommended way to use CLAMS Apps.</p>
@@ -104,7 +99,7 @@ hence it’s advised also to look up the app website (or code repository) to get
 However, there could be other non-Python software/library that are required by the app.</p>
 </section>
 <section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
 <p>CLAMS Apps available on the CLAMS App Directory. Currently, all CLAMS Apps are open-source projects and are distributed as</p>
 <ol class="arabic simple">
 <li><p>source code downloadable from code repository</p></li>
@@ -117,7 +112,7 @@ However, there could be other non-Python software/library that are required by t
 <li><p>downloading source code from the app code repository and manually building a container image (more flexible way if you want to modify the app, or have to build for a specific HW)</p></li>
 </ol>
 <section id="download-prebuilt-image">
-<h3>Download prebuilt image<a class="headerlink" href="#download-prebuilt-image" title="Permalink to this heading"></a></h3>
+<h3>Download prebuilt image<a class="headerlink" href="#download-prebuilt-image" title="Link to this heading"></a></h3>
 <p>This is the quickest (and recommended) way to get started with a CLAMS App.
 CLAMS apps in the App Directory come with public prebuilt container images, available in a container registry.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>pull<span class="w"> </span>&lt;prebulit_image_name&gt;
@@ -126,7 +121,7 @@ CLAMS apps in the App Directory come with public prebuilt container images, avai
 <p>The image name can be found on the App Directory entry of the app.</p>
 </section>
 <section id="build-an-image-from-source-code">
-<h3>Build an image from source code<a class="headerlink" href="#build-an-image-from-source-code" title="Permalink to this heading"></a></h3>
+<h3>Build an image from source code<a class="headerlink" href="#build-an-image-from-source-code" title="Link to this heading"></a></h3>
 <p>Alternatively, you can build a container image from the source code.
 This is useful when you want to modify the app itself, or when you want to change the image building process to adjust to your hardware environment (e.g., specific compute engine), or additional software dependencies (e.g. <a class="reference external" href="https://clams.ai/mmif-python/latest/plugins.html">MMIF plugins</a>).
 To download the source code, you can either use <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span></code> command or download a zip file from the source code repository.
@@ -139,11 +134,11 @@ The source code repository address can be found on the App Directory entry of th
 </section>
 </section>
 <section id="running-clams-app">
-<h2>Running CLAMS App<a class="headerlink" href="#running-clams-app" title="Permalink to this heading"></a></h2>
+<h2>Running CLAMS App<a class="headerlink" href="#running-clams-app" title="Link to this heading"></a></h2>
 <p>CLAMS Apps are primarily designed to run as an HTTP server, but some apps written based on <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> SDK additionally provide CLI equivalent to the HTTP requests.
 In this session, we will first cover the usage of CLAMS apps as an HTTP server, and then cover the (optional) CLI.</p>
 <section id="starting-the-http-server-as-a-container">
-<h3>Starting the HTTP server as a container<a class="headerlink" href="#starting-the-http-server-as-a-container" title="Permalink to this heading"></a></h3>
+<h3>Starting the HTTP server as a container<a class="headerlink" href="#starting-the-http-server-as-a-container" title="Link to this heading"></a></h3>
 <p>Once the image is built (by <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">build</span></code>) or downloaded (by <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span></code>), to create and start a container, run:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-v<span class="w"> </span>/path/to/data/directory:/data<span class="w"> </span>-p<span class="w"> </span>&lt;PORT&gt;:5000<span class="w"> </span>&lt;IMAGE_NAME&gt;
 </pre></div>
@@ -180,15 +175,15 @@ It is recommended to create a separate directory to use as a cache directory for
 </section>
 </section>
 <section id="invoking-the-app-server">
-<h2>Invoking the app server<a class="headerlink" href="#invoking-the-app-server" title="Permalink to this heading"></a></h2>
+<h2>Invoking the app server<a class="headerlink" href="#invoking-the-app-server" title="Link to this heading"></a></h2>
 <section id="to-get-app-metadata">
-<h3>To get app metadata<a class="headerlink" href="#to-get-app-metadata" title="Permalink to this heading"></a></h3>
+<h3>To get app metadata<a class="headerlink" href="#to-get-app-metadata" title="Link to this heading"></a></h3>
 <p>Once the app is running as an HTTP server, visit the server address (<a class="reference external" href="http://localhost:5000">localhost:5000</a>, or the remote host name if running on a remote computer) to get the app metadata.
 App metadata is also available at the App Directory entry of the app if the app is published on the App Directory.
 App metadata contains important information about the app that we will use in the following sections.</p>
 </section>
 <section id="to-process-input-media">
-<h3>To process input media<a class="headerlink" href="#to-process-input-media" title="Permalink to this heading"></a></h3>
+<h3>To process input media<a class="headerlink" href="#to-process-input-media" title="Link to this heading"></a></h3>
 <p>To actually run the app and process input media through computational analysis, simply send a POST request to the app with a MMIF input as the request body.</p>
 <p>MMIF input files can be obtained from outputs of other CLAMS apps, or you can create an <em>empty</em> MMIF only with source media locations using <code class="docutils literal notranslate"><span class="pre">clams</span> <span class="pre">source</span></code> command. See the help message for a more detailed instructions.
 (Make sure you have installed <cite>``clams-python`</cite> package &lt;<a class="reference external" href="https://pypi.org/project/clams-python/">https://pypi.org/project/clams-python/</a>&gt;`_ version from PyPI.)</p>
@@ -236,9 +231,11 @@ $<span class="w"> </span>curl<span class="w"> </span>-H<span class="w"> </span><
 $<span class="w"> </span>clams<span class="w"> </span><span class="nb">source</span><span class="w"> </span>audio:/data/audio/some-audio-file.mp3<span class="w"> </span><span class="p">|</span><span class="w"> </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-d@-<span class="w"> </span>-s<span class="w"> </span>http://localhost:5000<span class="w"> </span>&gt;<span class="w"> </span>output.mmif
 </pre></div>
 </div>
+<p>Windows PowerShell users may encounter an <code class="docutils literal notranslate"><span class="pre">Invoke-WebRequest</span></code> exception when attempting to send an input file with <code class="docutils literal notranslate"><span class="pre">curl</span></code>.
+This can be resolved for the duration of the current session by using the command <code class="docutils literal notranslate"><span class="pre">remove-item</span> <span class="pre">alias:curl</span></code> before proceeding to use <code class="docutils literal notranslate"><span class="pre">curl</span></code>.</p>
 </section>
 <section id="configuring-the-app">
-<h3>Configuring the app<a class="headerlink" href="#configuring-the-app" title="Permalink to this heading"></a></h3>
+<h3>Configuring the app<a class="headerlink" href="#configuring-the-app" title="Link to this heading"></a></h3>
 <p>Running as an HTTP server, CLAMS Apps are stateless, but can be configured for each HTTP request by providing configuration parameters as <a class="reference external" href="https://en.wikipedia.org/wiki/Query_string">query string</a>.</p>
 <p>For example, appending <code class="docutils literal notranslate"><span class="pre">?pretty=True</span></code> to the URL will result in a JSON output with indentation for better readability.</p>
 <blockquote>
@@ -249,16 +246,16 @@ When you’re using <code class="docutils literal notranslate"><span class="pre"
 </section>
 </section>
 <section id="using-clams-app-as-a-cli-program">
-<h2>Using CLAMS App as a CLI program<a class="headerlink" href="#using-clams-app-as-a-cli-program" title="Permalink to this heading"></a></h2>
+<h2>Using CLAMS App as a CLI program<a class="headerlink" href="#using-clams-app-as-a-cli-program" title="Link to this heading"></a></h2>
 <p>First and foremost, not all CLAMS Apps support command line interface (CLI).
 At the minimum, a CLAMS app is required to support HTTP interfaces described in the previous section.
 If any of the following instructions do not work for an app, it is likely that the app does not support CLI.</p>
 <section id="python-entry-points">
-<h3>Python entry points<a class="headerlink" href="#python-entry-points" title="Permalink to this heading"></a></h3>
+<h3>Python entry points<a class="headerlink" href="#python-entry-points" title="Link to this heading"></a></h3>
 <p>Apps written on <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> SDK have three python entry points by default: <code class="docutils literal notranslate"><span class="pre">app.py</span></code>, <code class="docutils literal notranslate"><span class="pre">metadata.py</span></code>, and <code class="docutils literal notranslate"><span class="pre">cli.py</span></code>.</p>
 </section>
 <section id="app-py-running-app-as-a-local-http-server">
-<h3><code class="docutils literal notranslate"><span class="pre">app.py</span></code>: Running app as a local HTTP server<a class="headerlink" href="#app-py-running-app-as-a-local-http-server" title="Permalink to this heading"></a></h3>
+<h3><code class="docutils literal notranslate"><span class="pre">app.py</span></code>: Running app as a local HTTP server<a class="headerlink" href="#app-py-running-app-as-a-local-http-server" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">app.py</span></code> is the main entry point for running the app as an HTTP server.
 To run the app as a local HTTP server without containerization, you can run the following command from the source code directory.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>python<span class="w"> </span>app.py
@@ -271,11 +268,11 @@ To run the app as a local HTTP server without containerization, you can run the 
 </ul>
 </section>
 <section id="metadata-py-getting-app-metadata">
-<h3><code class="docutils literal notranslate"><span class="pre">metadata.py</span></code>: Getting app metadata<a class="headerlink" href="#metadata-py-getting-app-metadata" title="Permalink to this heading"></a></h3>
+<h3><code class="docutils literal notranslate"><span class="pre">metadata.py</span></code>: Getting app metadata<a class="headerlink" href="#metadata-py-getting-app-metadata" title="Link to this heading"></a></h3>
 <p>Running <code class="docutils literal notranslate"><span class="pre">metadata.py</span></code> will print out the app metadata in JSON format.</p>
 </section>
 <section id="cli-py-running-as-a-cli-program">
-<h3><code class="docutils literal notranslate"><span class="pre">cli.py</span></code>: Running as a CLI program<a class="headerlink" href="#cli-py-running-as-a-cli-program" title="Permalink to this heading"></a></h3>
+<h3><code class="docutils literal notranslate"><span class="pre">cli.py</span></code>: Running as a CLI program<a class="headerlink" href="#cli-py-running-as-a-cli-program" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">cli.py</span></code> is completely optional for app developers, and unlike the other two above that are guaranteed to be available, <code class="docutils literal notranslate"><span class="pre">cli.py</span></code> may not be available for some apps.
 When running an app as a HTTP app, the input MMIF must be passed as POST request’s body, and the output MMIF will be returned as the response body.
 To mimic this behavior in a CLI, <code class="docutils literal notranslate"><span class="pre">cli.py</span></code> has two positional arguments;</p>
@@ -328,7 +325,7 @@ Here, make sure to pass <cite>`</cite>-i`` option to the <code class="docutils l
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Brandeis LLC.</p>
+    <p>&#169; Copyright 2025, Brandeis LLC.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

@@ -1,23 +1,21 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>I/O Specification &mdash; clams-python  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
-        <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -36,9 +34,6 @@
           <a href="index.html" class="icon icon-home">
             clams-python
           </a>
-              <div class="version">
-                1.3.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -90,14 +85,14 @@
            <div itemprop="articleBody">
              
   <section id="i-o-specification">
-<span id="input-output"></span><h1>I/O Specification<a class="headerlink" href="#i-o-specification" title="Permalink to this heading"></a></h1>
+<span id="input-output"></span><h1>I/O Specification<a class="headerlink" href="#i-o-specification" title="Link to this heading"></a></h1>
 <p>A CLAMS app must be able to take a MMIF JSON as input as well as to return a MMIF JSON as output. MMIF is a JSON-based open source data format (with some JSON-LD components). For more details and discussions, please visit the <a class="reference external" href="https://mmif.clams.ai">MMIF website</a> and the <a class="reference external" href="https://github.com/clamsproject/mmif/issues">issue tracker</a>.</p>
 <p>To learn more about MMIF, please visit <a class="reference external" href="https://mmif.clams.ai/">MMIF specification documentation</a>.</p>
 <section id="mmif-package">
-<h2><code class="docutils literal notranslate"><span class="pre">mmif</span></code> package<a class="headerlink" href="#mmif-package" title="Permalink to this heading"></a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">mmif</span></code> package<a class="headerlink" href="#mmif-package" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> PyPI package comes together with the installation of <code class="docutils literal notranslate"><span class="pre">clams-python</span></code>, and with it, you can use <code class="docutils literal notranslate"><span class="pre">mmif</span></code> python package.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mmif</span>
-<span class="kn">from</span> <span class="nn">mmif.serialize</span> <span class="kn">import</span> <span class="n">Mmif</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">mmif</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mmif.serialize</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mmif</span>
 <span class="n">new_mmif</span> <span class="o">=</span> <span class="n">Mmif</span><span class="p">()</span>
 <span class="c1"># this will fail because an empty MMIF will fail to validate under the MMIF JSON schema</span>
 </pre></div>
@@ -105,11 +100,11 @@
 <p>Because API’s of the <code class="docutils literal notranslate"><span class="pre">mmif</span></code> package is well documented in the <a class="reference external" href="http://clams.ai/mmif">mmif-python website</a>, we won’t go into more details here. Please refer to the website.</p>
 </section>
 <section id="mmif-version-and-clams-apps">
-<h2>MMIF version and CLAMS apps<a class="headerlink" href="#mmif-version-and-clams-apps" title="Permalink to this heading"></a></h2>
+<h2>MMIF version and CLAMS apps<a class="headerlink" href="#mmif-version-and-clams-apps" title="Link to this heading"></a></h2>
 <p>As some parts of <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> implementation is relying on structure of MMIF, it is possible that a MMIF file of a specific version does not work with a CLAMS app that is based on a incompatible version of <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code>.</p>
 <p>As we saw in the above, when using <code class="docutils literal notranslate"><span class="pre">Mmif</span></code> class, the MMIF JSON string is automatically validated under the MMIF JSON schema (shipped with the <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code>).
 So in most cases you don’t have to worry about the compatibility issue, but it is still important to understand the versioning scheme of MMIF + <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> and <code class="docutils literal notranslate"><span class="pre">clams-python</span></code>, because all <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> distributions are depending on specific versions of <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> as a Python library.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mmif</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">mmif</span>
 <span class="n">mmif</span><span class="o">.</span><span class="n">__specver__</span>
 </pre></div>
 </div>
@@ -125,7 +120,7 @@ So in most cases you don’t have to worry about the compatibility issue, but it
 </ol>
 <p>For more information on the relation between <code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> versions and MMIF specification versions, or MMIF version compatibility, please take time to read our decision on the subject <a class="reference external" href="https://mmif.clams.ai/versioning/">here</a>. You can also find a table with all public <code class="docutils literal notranslate"><span class="pre">clams-python</span></code> packages and their target MMIF versions in the below. As we mentioned, developers don’t usually need to worry about MMIF versions.</p>
 <table class="docutils align-default" id="id1">
-<caption><span class="caption-text">Target Specification Versions</span><a class="headerlink" href="#id1" title="Permalink to this table"></a></caption>
+<caption><span class="caption-text">Target Specification Versions</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
 <thead>
 <tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">clams-python</span></code> version</p></th>
 <th class="head"><p><code class="docutils literal notranslate"><span class="pre">mmif-python</span></code> version</p></th>
@@ -133,203 +128,207 @@ So in most cases you don’t have to worry about the compatibility issue, but it
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.3.1/">1.3.1</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.3.2/">1.3.2</a></p></td>
+<td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.1.1/">1.1.1</a></p></td>
+<td><p><a class="reference external" href="https://mmif.clams.ai/1.1.0/">1.1.0</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.3.1/">1.3.1</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.19/">1.0.19</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.5/">1.0.5</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.3.0/">1.3.0</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.3.0/">1.3.0</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.18/">1.0.18</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.5/">1.0.5</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.6/">1.2.6</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.6/">1.2.6</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.18/">1.0.18</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.5/">1.0.5</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.5/">1.2.5</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.5/">1.2.5</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.17/">1.0.17</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.5/">1.0.5</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.4/">1.2.4</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.4/">1.2.4</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.16/">1.0.16</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.4/">1.0.4</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.3/">1.2.3</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.3/">1.2.3</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.15/">1.0.15</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.4/">1.0.4</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.2/">1.2.2</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.2/">1.2.2</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.14/">1.0.14</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.4/">1.0.4</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.1/">1.2.1</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.1/">1.2.1</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.13/">1.0.13</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.4/">1.0.4</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.0/">1.2.0</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.2.0/">1.2.0</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.13/">1.0.13</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.4/">1.0.4</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.6/">1.1.6</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.6/">1.1.6</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.13/">1.0.13</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.4/">1.0.4</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.5/">1.1.5</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.5/">1.1.5</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.11/">1.0.11</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.4/">1.0.4</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.4/">1.1.4</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.4/">1.1.4</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.11/">1.0.11</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.4/">1.0.4</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.3/">1.1.3</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.3/">1.1.3</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.10/">1.0.10</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.2/">1.0.2</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.2/">1.1.2</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.2/">1.1.2</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.9/">1.0.9</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.1.0/">1.1.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.1/">1.1.1</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.1/">1.1.1</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.8/">1.0.8</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.0/">1.0.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.0/">1.1.0</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.1.0/">1.1.0</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.8/">1.0.8</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.0/">1.0.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.9/">1.0.9</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.9/">1.0.9</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.8/">1.0.8</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.0/">1.0.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.8/">1.0.8</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.8/">1.0.8</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.8/">1.0.8</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.0/">1.0.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.7/">1.0.7</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.7/">1.0.7</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.6/">1.0.6</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.0/">1.0.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.6/">1.0.6</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.6/">1.0.6</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.6/">1.0.6</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.0/">1.0.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.5/">1.0.5</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.5/">1.0.5</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.5/">1.0.5</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.0/">1.0.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.4/">1.0.4</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.4/">1.0.4</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.4/">1.0.4</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.0/">1.0.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.3/">1.0.3</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.3/">1.0.3</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.1/">1.0.1</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.0/">1.0.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.2/">1.0.2</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.2/">1.0.2</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.1/">1.0.1</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.0/">1.0.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.1/">1.0.1</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.1/">1.0.1</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.1/">1.0.1</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/1.0.0/">1.0.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.0/">1.0.0</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/1.0.0/">1.0.0</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/1.0.0/">1.0.0</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.5.0/">0.5.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.6.3/">0.6.3</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.6.3/">0.6.3</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.5.2/">0.5.2</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.5.0/">0.5.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.6.2/">0.6.2</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.6.2/">0.6.2</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.5.2/">0.5.2</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.5.0/">0.5.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.6.1/">0.6.1</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.6.1/">0.6.1</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.5.2/">0.5.2</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.5.0/">0.5.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.6.0/">0.6.0</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.6.0/">0.6.0</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.5.1/">0.5.1</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.5.0/">0.5.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.5.3/">0.5.3</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.5.3/">0.5.3</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.4.8/">0.4.8</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.4.2/">0.4.2</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.5.2/">0.5.2</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.5.2/">0.5.2</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.4.6/">0.4.6</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.4.0/">0.4.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.5.1/">0.5.1</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.5.1/">0.5.1</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.4.6/">0.4.6</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.4.0/">0.4.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.5.0/">0.5.0</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.5.0/">0.5.0</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.4.5/">0.4.5</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.4.0/">0.4.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.4.4/">0.4.4</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.4.4/">0.4.4</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.4.5/">0.4.5</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.4.0/">0.4.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.4.3/">0.4.3</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.4.3/">0.4.3</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.4.4/">0.4.4</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.4.0/">0.4.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.4.2/">0.4.2</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.4.2/">0.4.2</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.4.2/">0.4.2</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.4.0/">0.4.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.4.1/">0.4.1</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.4.1/">0.4.1</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.4.1/">0.4.1</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.4.0/">0.4.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.4.0/">0.4.0</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.4.0/">0.4.0</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.4.1/">0.4.1</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.4.0/">0.4.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.3.0/">0.3.0</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.3.0/">0.3.0</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.3.5/">0.3.5</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.3.1/">0.3.1</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.2.4/">0.2.4</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.2.4/">0.2.4</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.3.3/">0.3.3</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.3.1/">0.3.1</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.2.3/">0.2.3</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.2.3/">0.2.3</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.3.1/">0.3.1</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.3.0/">0.3.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.2.2/">0.2.2</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.2.2/">0.2.2</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.3.1/">0.3.1</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.3.0/">0.3.0</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.2.1/">0.2.1</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.2.1/">0.2.1</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.3.0/">0.3.0</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.3.0/">0.3.0</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.2.0/">0.2.0</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.2.0/">0.2.0</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.2.2/">0.2.2</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.2.1/">0.2.1</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.1.8/">0.1.8</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.1.8/">0.1.8</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.2.2/">0.2.2</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.2.1/">0.2.1</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.1.7/">0.1.7</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.1.7/">0.1.7</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.2.2/">0.2.2</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.2.1/">0.2.1</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.1.6/">0.1.6</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.1.6/">0.1.6</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.2.1/">0.2.1</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.2.1/">0.2.1</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.1.5/">0.1.5</a></p></td>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.1.5/">0.1.5</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.2.1/">0.2.1</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.2.1/">0.2.1</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.1.4/">0.1.4</a></p></td>
+<tr class="row-even"><td><p><a class="reference external" href="https://pypi.org/project/clams-python/0.1.4/">0.1.4</a></p></td>
 <td><p><a class="reference external" href="https://pypi.org/project/mmif-python/0.2.1/">0.2.1</a></p></td>
 <td><p><a class="reference external" href="https://mmif.clams.ai/0.2.1/">0.2.1</a></p></td>
 </tr>
@@ -349,7 +348,7 @@ So in most cases you don’t have to worry about the compatibility issue, but it
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Brandeis LLC.</p>
+    <p>&#169; Copyright 2025, Brandeis LLC.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
