@@ -6,10 +6,9 @@ check_deps := $(foreach dep,$(deps), $(if $(shell which $(dep)),some string,$(er
 # constants
 packagename = clams
 generatedcode = $(packagename)/ver
-sdistname = $(packagename)-python
-bdistname = $(packagename)_python
+distname = $(packagename)_python
 artifact = build/lib/$(packagename)
-buildcaches = build/bdist* $(bdistname).egg-info __pycache__
+buildcaches = build/bdist* $(distname).egg-info __pycache__
 testcaches = .hypothesis .pytest_cache .pytype coverage.xml htmlcov .coverage
 
 .PHONY: all
@@ -44,7 +43,7 @@ docs: VERSION $(generatedcode)
 	pip install --upgrade --no-input "$(mmif)" "$(pydantic)"
 	rm -rf docs
 	mkdir -p docs
-	python3 clams/appmetadata/__init__.py > documentation/appmetadata.jsonschema
+	python3 -m clams.appmetadata.__init__ > documentation/appmetadata.jsonschema
 	sphinx-build -a -b html documentation/ docs
 	mv documentation/appmetadata.jsonschema docs/
 	touch docs/.nojekyll

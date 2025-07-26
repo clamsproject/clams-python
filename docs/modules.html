@@ -1,27 +1,25 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>clams package &mdash; clams-python  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
-        <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="clams.restify package" href="autodoc/clams.restify.html" />
+    <link rel="next" title="clams.app package" href="autodoc/clams.app.html" />
     <link rel="prev" title="Tutorial: Wrapping an NLP Application" href="tutorial.html" /> 
 </head>
 
@@ -36,9 +34,6 @@
           <a href="index.html" class="icon icon-home">
             clams-python
           </a>
-              <div class="version">
-                1.2.0
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -60,10 +55,10 @@
 <p class="caption" role="heading"><span class="caption-text">API documentation:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">clams package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.restify.html">clams.restify package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="autodoc/clams.app.html">clams.app package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.source.html">clams.source package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="autodoc/clams.appmetadata.html">clams.appmetadata package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.restify.html">clams.restify package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.mmif_utils.html">clams.mmif_utils package</a></li>
 </ul>
 </li>
 </ul>
@@ -92,24 +87,120 @@
            <div itemprop="articleBody">
              
   <section id="clams-package">
-<h1>clams package<a class="headerlink" href="#clams-package" title="Permalink to this heading"></a></h1>
+<h1>clams package<a class="headerlink" href="#clams-package" title="Link to this heading"></a></h1>
 <p>API documentation</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="autodoc/clams.restify.html">clams.restify package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.restify.html#module-contents">Module contents</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="autodoc/clams.app.html">clams.app package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.app.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp"><code class="docutils literal notranslate"><span class="pre">ClamsApp</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._RAW_PARAMS_KEY"><code class="docutils literal notranslate"><span class="pre">ClamsApp._RAW_PARAMS_KEY</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._abc_impl"><code class="docutils literal notranslate"><span class="pre">ClamsApp._abc_impl</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._annotate"><code class="docutils literal notranslate"><span class="pre">ClamsApp._annotate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._appmetadata"><code class="docutils literal notranslate"><span class="pre">ClamsApp._appmetadata()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._check_mmif_compatibility"><code class="docutils literal notranslate"><span class="pre">ClamsApp._check_mmif_compatibility()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata"><code class="docutils literal notranslate"><span class="pre">ClamsApp._load_appmetadata()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp._refine_params"><code class="docutils literal notranslate"><span class="pre">ClamsApp._refine_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.annotate"><code class="docutils literal notranslate"><span class="pre">ClamsApp.annotate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.appmetadata"><code class="docutils literal notranslate"><span class="pre">ClamsApp.appmetadata()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.get_configuration"><code class="docutils literal notranslate"><span class="pre">ClamsApp.get_configuration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.open_document_location"><code class="docutils literal notranslate"><span class="pre">ClamsApp.open_document_location()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.record_error"><code class="docutils literal notranslate"><span class="pre">ClamsApp.record_error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.set_error_view"><code class="docutils literal notranslate"><span class="pre">ClamsApp.set_error_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.sign_view"><code class="docutils literal notranslate"><span class="pre">ClamsApp.sign_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.universal_parameters"><code class="docutils literal notranslate"><span class="pre">ClamsApp.universal_parameters</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.app.html#clams.app.ClamsApp.validate_document_locations"><code class="docutils literal notranslate"><span class="pre">ClamsApp.validate_document_locations()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="autodoc/clams.source.html">clams.source package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.source.html#module-contents">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="autodoc/clams.appmetadata.html">clams.appmetadata package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.appmetadata.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata"><code class="docutils literal notranslate"><span class="pre">AppMetadata</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata.add_input"><code class="docutils literal notranslate"><span class="pre">AppMetadata.add_input()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata.add_more"><code class="docutils literal notranslate"><span class="pre">AppMetadata.add_more()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata.add_output"><code class="docutils literal notranslate"><span class="pre">AppMetadata.add_output()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata.add_parameter"><code class="docutils literal notranslate"><span class="pre">AppMetadata.add_parameter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.AppMetadata.model_config"><code class="docutils literal notranslate"><span class="pre">AppMetadata.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input"><code class="docutils literal notranslate"><span class="pre">Input</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.add_description"><code class="docutils literal notranslate"><span class="pre">Input.add_description()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.copy"><code class="docutils literal notranslate"><span class="pre">Input.copy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_config"><code class="docutils literal notranslate"><span class="pre">Input.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_construct"><code class="docutils literal notranslate"><span class="pre">Input.model_construct()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_copy"><code class="docutils literal notranslate"><span class="pre">Input.model_copy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_dump"><code class="docutils literal notranslate"><span class="pre">Input.model_dump()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_dump_json"><code class="docutils literal notranslate"><span class="pre">Input.model_dump_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_extra"><code class="docutils literal notranslate"><span class="pre">Input.model_extra</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_fields_set"><code class="docutils literal notranslate"><span class="pre">Input.model_fields_set</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_json_schema"><code class="docutils literal notranslate"><span class="pre">Input.model_json_schema()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_parametrized_name"><code class="docutils literal notranslate"><span class="pre">Input.model_parametrized_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_post_init"><code class="docutils literal notranslate"><span class="pre">Input.model_post_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_rebuild"><code class="docutils literal notranslate"><span class="pre">Input.model_rebuild()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_validate"><code class="docutils literal notranslate"><span class="pre">Input.model_validate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_validate_json"><code class="docutils literal notranslate"><span class="pre">Input.model_validate_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Input.model_validate_strings"><code class="docutils literal notranslate"><span class="pre">Input.model_validate_strings()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output"><code class="docutils literal notranslate"><span class="pre">Output</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.add_description"><code class="docutils literal notranslate"><span class="pre">Output.add_description()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.copy"><code class="docutils literal notranslate"><span class="pre">Output.copy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_config"><code class="docutils literal notranslate"><span class="pre">Output.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_construct"><code class="docutils literal notranslate"><span class="pre">Output.model_construct()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_copy"><code class="docutils literal notranslate"><span class="pre">Output.model_copy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_dump"><code class="docutils literal notranslate"><span class="pre">Output.model_dump()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_dump_json"><code class="docutils literal notranslate"><span class="pre">Output.model_dump_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_extra"><code class="docutils literal notranslate"><span class="pre">Output.model_extra</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_fields_set"><code class="docutils literal notranslate"><span class="pre">Output.model_fields_set</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_json_schema"><code class="docutils literal notranslate"><span class="pre">Output.model_json_schema()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_parametrized_name"><code class="docutils literal notranslate"><span class="pre">Output.model_parametrized_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_post_init"><code class="docutils literal notranslate"><span class="pre">Output.model_post_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_rebuild"><code class="docutils literal notranslate"><span class="pre">Output.model_rebuild()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_validate"><code class="docutils literal notranslate"><span class="pre">Output.model_validate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_validate_json"><code class="docutils literal notranslate"><span class="pre">Output.model_validate_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.Output.model_validate_strings"><code class="docutils literal notranslate"><span class="pre">Output.model_validate_strings()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.copy"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.copy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_config"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_construct"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_construct()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_copy"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_copy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_dump"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_dump()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_dump_json"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_dump_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_extra"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_extra</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_fields_set"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_fields_set</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_json_schema"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_json_schema()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_parametrized_name"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_parametrized_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_post_init"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_post_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_rebuild"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_rebuild()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_validate"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_validate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_validate_json"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_validate_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.appmetadata.html#clams.appmetadata.RuntimeParameter.model_validate_strings"><code class="docutils literal notranslate"><span class="pre">RuntimeParameter.model_validate_strings()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="autodoc/clams.restify.html">clams.restify package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.restify.html#clams.restify.ClamsHTTPApi"><code class="docutils literal notranslate"><span class="pre">ClamsHTTPApi</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.restify.html#clams.restify.ClamsHTTPApi.get"><code class="docutils literal notranslate"><span class="pre">ClamsHTTPApi.get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.restify.html#clams.restify.ClamsHTTPApi.json_to_response"><code class="docutils literal notranslate"><span class="pre">ClamsHTTPApi.json_to_response()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.restify.html#clams.restify.ClamsHTTPApi.methods"><code class="docutils literal notranslate"><span class="pre">ClamsHTTPApi.methods</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.restify.html#clams.restify.ClamsHTTPApi.post"><code class="docutils literal notranslate"><span class="pre">ClamsHTTPApi.post()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.restify.html#clams.restify.ClamsHTTPApi.put"><code class="docutils literal notranslate"><span class="pre">ClamsHTTPApi.put()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.restify.html#clams.restify.Restifier"><code class="docutils literal notranslate"><span class="pre">Restifier</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.restify.html#clams.restify.Restifier.run"><code class="docutils literal notranslate"><span class="pre">Restifier.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.restify.html#clams.restify.Restifier.serve_development"><code class="docutils literal notranslate"><span class="pre">Restifier.serve_development()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.restify.html#clams.restify.Restifier.serve_production"><code class="docutils literal notranslate"><span class="pre">Restifier.serve_production()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="autodoc/clams.restify.html#clams.restify.Restifier.test_client"><code class="docutils literal notranslate"><span class="pre">Restifier.test_client()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="autodoc/clams.mmif_utils.html">clams.mmif_utils package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.mmif_utils.html#rewind-module"><code class="docutils literal notranslate"><span class="pre">rewind</span></code> module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autodoc/clams.mmif_utils.html#source-module"><code class="docutils literal notranslate"><span class="pre">source</span></code> module</a></li>
 </ul>
 </li>
 </ul>
@@ -121,13 +212,13 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="tutorial.html" class="btn btn-neutral float-left" title="Tutorial: Wrapping an NLP Application" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="autodoc/clams.restify.html" class="btn btn-neutral float-right" title="clams.restify package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="autodoc/clams.app.html" class="btn btn-neutral float-right" title="clams.app package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Brandeis LLC.</p>
+    <p>&#169; Copyright 2025, Brandeis LLC.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

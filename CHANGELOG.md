@@ -1,4 +1,105 @@
 
+## releasing 1.3.2 (2025-07-26)
+### Overview
+Patch release, mainly to support new MMIF spec and corresponding `mmif-python` SDK versions, with more base images with HF libraries and miscellaneous fixes. 
+
+### Additions
+* Now ships with `mmif-python` 1.1.1 and spec 1.1.0.
+* Base container images with HF `transformers` pre-installed are now available (https://github.com/clamsproject/clams-python/pull/247).
+
+### Changes
+* Minimal python version is now 3.10 (https://github.com/clamsproject/clams-python/issues/228).
+* Installation process is updated to support python 3.12 and newer.
+* Minor bugfixes and documentation improvements.
+
+
+## releasing 1.3.1 (2024-07-29)
+### Overview
+This patch includes update to the latest `mmif-python` which contains a hot fix for a critical bug. 
+
+### Changes
+- based on `mmif-python==1.0.19`
+
+
+## releasing 1.3.0 (2024-07-22)
+### Overview
+This version added two universal runtime parameters that make some aspects of the runtime environment are recorded in the views' metadata. 
+
+
+### Additions
+- `hwFetch` universal parameter will record CPU architecture and CUDA devices in `view.metadata.appRunningHardware` 
+- `runningTime` universal parameter will record app's running time in `view.metadata.appRunningTime`
+- See https://github.com/clamsproject/clams-python/issues/236 for rationale behind 
+
+
+
+## releasing 1.2.6 (2024-07-15)
+### Overview
+Patch release to update mmif SDK version, and minor improvements
+
+### Additions
+- `clams source --help` will display formatting guidelines for docloc plugins, if provided by the plugin developer (https://github.com/clamsproject/clams-python/issues/235)
+
+### Changes
+- now based on `mmif-python` 1.0.18
+- bug fix "raw" runtime parameters weren't properly recorded when an app fails to refine the parameters (https://github.com/clamsproject/clams-python/issues/232) 
+
+
+## releasing 1.2.5 (2024-06-26)
+### Overview
+Patch release to fix an error in app cookie cutter, also updated to the latest MMIF and mmif-python. 
+
+### Changes
+- updated `mmif-python` to 1.0.17
+- fixed `Containerfile` from the app cookie cutter wasn't building an image due to an error
+
+## releasing 1.2.4 (2024-06-14)
+### Overview
+Patches bug in `clams develop` command and updated in documentation and `mmif-python` version 
+
+
+### Changes
+* fixed `clams develop` command not working to start a new app from scratch
+* updated `mmif-python` version to 1.0.16
+* updated app development documentation
+
+
+## releasing 1.2.3 (2024-06-07)
+### Overview
+This version includes significant change to app development template, with some other changes
+
+### Additions
+- `clams develop` cookie cutter now includes `cli.py` that enables secondary entry point to the app (https://github.com/clamsproject/clams-python/issues/198). 
+
+### Changes
+- `clams develop` command now has `--update` flag to help "reheating" an existing app directory with latest template
+- minor bug fix related to interpreting boolean runtime parameter values
+- base container images now based on debian 12
+- base container image and containerfile in app template now hardcode XDG_CACHE_DIR to `/cache` for consistent cache bind-mount (https://github.com/clamsproject/clams-python/issues/221)
+- base opencv container image now use opencv 4.10 
+- updated to `mmif-python` 1.0.15
+
+
+## releasing 1.2.2 (2024-05-14)
+### Overview
+This is minor patch with bug fix for parameter handling
+
+### Changes
+* fixed bug when passing default values for a `multivalued=True` parameter, values are not properly set (#219)
+* updated to the latest `mmif-python` (1.0.14)
+
+
+## releasing 1.2.1 (2024-04-21)
+### Overview
+This release includes documentation updates and bug fixes
+
+### Additions
+* lots of details were added to app metadata documentation for app developers (https://github.com/clamsproject/clams-python/issues/201)
+
+### Changes
+* fixed a bug where raw user input parameters with `multivalued=True` were not fully recorded in the output MMIF view metadata (https://github.com/clamsproject/clams-python/issues/214)
+
+
 ## releasing 1.2.0 (2024-04-11)
 ### Overview
 This is a minor release that brings improved portability of `clams source` command but also breaks some backward compatibility. If your app is based on clams-python 1.0.x or 1.1.x, please read the changelog carefully. 

@@ -18,7 +18,7 @@ import sys
 import mmif
 
 proj_root_dir = Path(__file__).resolve().parent.parent
-sys.path.insert(0, proj_root_dir)
+sys.path.insert(0, str(proj_root_dir))
 
 
 # -- Project information -----------------------------------------------------

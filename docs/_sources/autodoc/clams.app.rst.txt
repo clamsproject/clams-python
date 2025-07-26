@@ -1,8 +1,7 @@
 clams.app package
-===================
+==================
 
-Module contents
----------------
+Core package providing classes for representing CLAMS apps.
 
 .. automodule:: clams.app
    :members:
