@@ -1,5 +1,5 @@
 ARG clams_version
-FROM ghcr.io/clamsproject/clams-python--ffmpeg:$clams_version
+FROM ghcr.io/clamsproject/clams-python-ffmpeg:$clams_version
 LABEL org.opencontainers.image.description="clams-python-opencv4 image is shipped with clams-python and opencv4 (ffmpeg backend)"
 
 ARG OPENCV_VERSION=4.10.0
