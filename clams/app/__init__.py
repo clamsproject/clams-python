@@ -404,7 +404,13 @@ class ParameterCaster(object):
                             if valuetype == dict:
                                 casted.setdefault(k, {}).update(v)
                             else:
-                                casted.setdefault(k, []).append(v)
+                                # pytype will complain about the next line, but it is actually correct
+                                # casted.setdefault(k, []).append(v)
+                                # so doing it in a more explicit way
+                                if k in casted and isinstance(casted[k], list):
+                                    casted[k].append(v)
+                                else:
+                                    casted[k] = [v]
                         else: 
                             casted[k] = v
                 # when an empty value is passed (usually as a default value)

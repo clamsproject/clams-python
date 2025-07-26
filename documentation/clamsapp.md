@@ -172,6 +172,9 @@ $ curl -H "Accept: application/json" -X POST -d@input.mmif -s http://localhost:5
 $ clams source audio:/data/audio/some-audio-file.mp3 | curl -X POST -d@- -s http://localhost:5000 > output.mmif
 ```
 
+Windows PowerShell users may encounter an `Invoke-WebRequest` exception when attempting to send an input file with `curl`.
+This can be resolved for the duration of the current session by using the command `remove-item alias:curl` before proceeding to use `curl`.
+
 #### Configuring the app
 
 Running as an HTTP server, CLAMS Apps are stateless, but can be configured for each HTTP request by providing configuration parameters as [query string](https://en.wikipedia.org/wiki/Query_string). 

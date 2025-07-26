@@ -22,7 +22,7 @@ testcaches = .hypothesis .pytest_cache .pytype coverage.xml htmlcov .coverage
 
 all: version test build
 
-develop: devversion package
+develop: devversion package test
 	python3 setup.py develop --uninstall
 	python3 setup.py develop
 
@@ -32,7 +32,9 @@ publish: distclean version package test
 	@git push origin `cat VERSION`
 
 $(generatedcode): VERSION
-	python3 setup.py donothing
+    # this will generate the version subpackage inside clams package
+	python3 setup.py --help  2>/dev/null || echo "Ignore setuptools import error for now"
+	ls $(generatedcode)*
 
 # generating jsonschema depends on mmif-python and pydantic
 docs: mmif := $(shell grep mmif-python requirements.txt)
@@ -41,7 +43,7 @@ docs: VERSION $(generatedcode)
 	pip install --upgrade --no-input "$(mmif)" "$(pydantic)"
 	rm -rf docs
 	mkdir -p docs
-	python3 clams/appmetadata/__init__.py > documentation/appmetadata.jsonschema
+	python3 -m clams.appmetadata.__init__ > documentation/appmetadata.jsonschema
 	sphinx-build -a -b html documentation/ docs
 	mv documentation/appmetadata.jsonschema docs/
 	touch docs/.nojekyll
@@ -96,5 +98,8 @@ distclean:
 	@rm -rf dist $(artifact) build/bdist*
 clean: distclean
 	@rm -rf VERSION VERSION.dev $(testcaches) $(buildcaches) $(generatedcode)
+	@rm -rf docs
+	@rm -rf .*cache
+	@rm -rf .hypothesis tests/.hypothesis
 cleandocs: 
 	@git checkout -- docs && git clean -fx docs
