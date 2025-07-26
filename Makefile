@@ -23,7 +23,7 @@ testcaches = .hypothesis .pytest_cache .pytype coverage.xml htmlcov .coverage
 
 all: version test build
 
-develop: devversion package
+develop: devversion package test
 	python3 setup.py develop --uninstall
 	python3 setup.py develop
 
@@ -33,7 +33,9 @@ publish: distclean version package test
 	@git push origin `cat VERSION`
 
 $(generatedcode): VERSION
-	python3 setup.py donothing
+    # this will generate the version subpackage inside clams package
+	python3 setup.py --help  2>/dev/null || echo "Ignore setuptools import error for now"
+	ls $(generatedcode)*
 
 # generating jsonschema depends on mmif-python and pydantic
 docs: mmif := $(shell grep mmif-python requirements.txt)
