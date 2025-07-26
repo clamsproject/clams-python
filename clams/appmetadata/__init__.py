@@ -3,7 +3,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Union, Dict, List, Optional, Literal
+from typing import Union, Dict, List, Optional, Literal, Any
 
 import mmif
 import pydantic
@@ -101,10 +101,32 @@ class Output(_BaseModel):
                     "and also can be used as a expansion specification for the type definition beyond the base "
                     "vocabulary."
     )
-    properties: Dict[str, real_valued_primitives] = pydantic.Field(
-        {}, 
+    # TODO (krim @ 5/12/21): currently there's no way to validate the property 
+    # types based on vocabulary specification of an annotation type. As a result,
+    # we allow "any" type and do some basic validation below, but we need a 
+    # better way for validation.
+    properties: Dict[str, Any] = pydantic.Field(
+        {},
         description="(optional) Specification for type properties, if any. ``\"*\"`` indicates any value."
     )
+
+    @pydantic.field_validator('properties', mode='before')
+    @classmethod
+    def validate_properties(cls, value):
+        if not isinstance(value, dict):
+            raise ValueError("Properties must be a dictionary.")
+        for key, val in value.items():
+            if not isinstance(key, str):
+                raise ValueError(f"Property key '{key}' must be a string.")
+            if isinstance(val, list):
+                if not all(isinstance(item, type(val[0])) for item in val):
+                    raise ValueError(f"All elements in the list for key '{key}' must be of the same type.")
+            elif isinstance(val, dict):
+                if not all(isinstance(k, str) for k in val.keys()):
+                    raise ValueError(f"All keys in the dictionary for key '{key}' must be strings.")
+                if not all(isinstance(v, type(next(iter(val.values())))) for v in val.values()):
+                    raise ValueError(f"All values in the dictionary for key '{key}' must be of the same type.")
+        return value
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
