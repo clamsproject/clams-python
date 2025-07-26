@@ -1,4 +1,4 @@
-mmif-python==1.0.20
+mmif-python==1.1.1
 
 Flask>=2
 Flask-RESTful>=0.3.9
