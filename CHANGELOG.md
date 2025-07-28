@@ -1,4 +1,9 @@
 
+## releasing 1.3.3 (2025-07-28)
+### Overview
+Updated `mmif-python` version that includes a hotfix for reading 1.0.x MMIF
+
+
 ## releasing 1.3.2 (2025-07-26)
 ### Overview
 Patch release, mainly to support new MMIF spec and corresponding `mmif-python` SDK versions, with more base images with HF libraries and miscellaneous fixes. 
