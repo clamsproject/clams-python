@@ -148,7 +148,7 @@ class ClamsApp(ABC):
         pretty = refined.get('pretty', False)
         t = datetime.now()
         with warnings.catch_warnings(record=True) as ws:
-            annotated = self._annotate(mmif, **refined)
+            annotated, cuda_profiler = self._profile_cuda_memory(self._annotate)(mmif, **refined)
             if ws:
                 issued_warnings.extend(ws)
         if issued_warnings:
@@ -164,11 +164,21 @@ class ClamsApp(ABC):
             runtime_recs['architecture'] = platform.machine()
             # runtime_recs['processor'] = platform.processor()  # this only works on Windows
             runtime_recs['cuda'] = []
-            if shutil.which('nvidia-smi'):
+            # Use cuda_profiler data if available, otherwise fallback to nvidia-smi
+            if cuda_profiler:
+                for gpu_info, peak_memory_bytes in cuda_profiler.items():
+                    # Convert peak memory to human-readable format
+                    peak_memory_mb = peak_memory_bytes / (1000 * 1000)
+                    if peak_memory_mb >= 1000:
+                        peak_memory_str = f"{peak_memory_mb / 1000:.2f} GiB"
+                    else:
+                        peak_memory_str = f"{peak_memory_mb:.1f} MiB"
+                    runtime_recs['cuda'].append(f"{gpu_info}, Used {self._cuda_memory_to_str(peak_memory_bytes)}")
+            elif shutil.which('nvidia-smi'):
                 for gpu in subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader'], 
                                           stdout=subprocess.PIPE).stdout.decode('utf-8').strip().split('\n'):
                     name, mem = gpu.split(', ')
-                    runtime_recs['cuda'].append(f'{name} ({mem})')
+                    runtime_recs['cuda'].append(self._cuda_device_name_concat(name, mem))
         for annotated_view in annotated.views:
             if annotated_view.metadata.app == self.metadata.identifier:
                 if runningTime:
@@ -320,6 +330,66 @@ class ClamsApp(ABC):
                 # TODO (krim @ 12/15/20): with implementation of file checksum
                 #  (https://github.com/clamsproject/mmif/issues/150) , here is a good place for additional check for
                 #  file integrity
+
+    @staticmethod
+    def _cuda_memory_to_str(mem) -> str:
+        mib = mem / (1024 * 1024)
+        if mib >= 1024:
+            return f"{mib / 1024:.2f} GiB"
+        else:
+            return f"{mib:.1f} MiB"
+
+    @staticmethod
+    def _cuda_device_name_concat(name, mem):
+        if type(mem) in (bytes, int):
+            mem = ClamsApp._cuda_memory_to_str(mem)
+        return f"{name}, With {mem}"
+
+    @staticmethod
+    def _profile_cuda_memory(func):
+        """
+        Decorator for profiling CUDA memory usage during _annotate execution.
+        
+        :param func: The function to wrap (typically _annotate)
+        :return: Decorated function that returns (result, cuda_profiler)
+                 where cuda_profiler is dict with "<GPU_NAME>, <GPU_TOTAL_MEMORY>" keys
+                 and peak memory usage values
+        """
+        def wrapper(*args, **kwargs):
+            cuda_profiler = {}
+            torch_available = False
+            cuda_available = False
+            device_count = 0
+            
+            try:
+                import torch  # pytype: disable=import-error
+                torch_available = True
+                cuda_available = torch.cuda.is_available()
+                device_count = torch.cuda.device_count()
+                if cuda_available:
+                    # Reset peak memory stats for all devices
+                    torch.cuda.reset_peak_memory_stats('cuda')
+            except ImportError:
+                pass
+            
+            try:
+                result = func(*args, **kwargs)
+                
+                if torch_available and cuda_available and device_count > 0:
+                    for device_id in range(device_count):
+                        device_id = f'cuda:{device_id}'
+                        peak_memory = torch.cuda.max_memory_allocated(device_id)
+                        gpu_name = torch.cuda.get_device_name(device_id)
+                        gpu_total_memory = torch.cuda.get_device_properties(device_id).total_memory
+                        key = ClamsApp._cuda_device_name_concat(gpu_name, gpu_total_memory)
+                        cuda_profiler[key] = peak_memory
+                
+                return result, cuda_profiler
+            finally:
+                if torch_available and cuda_available:
+                    torch.cuda.empty_cache()
+        
+        return wrapper
 
     @staticmethod
     @contextmanager
