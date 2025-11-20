@@ -42,14 +42,48 @@ class Restifier(object):
     def serve_production(self, **options):
         """
         Runs the CLAMS app as a flask webapp, using a production-ready web server (gunicorn, https://docs.gunicorn.org/en/stable/#).
-        
+
         :param options: any additional options to pass to the web server.
         """
         import gunicorn.app.base
         import multiprocessing
+        import os
 
         def number_of_workers():
-            return (multiprocessing.cpu_count() * 2) + 1  # +1 to make sure at least two workers are running
+            # Allow override via environment variable
+            if 'CLAMS_WORKERS' in os.environ:
+                return int(os.environ['CLAMS_WORKERS'])
+
+            cpu_workers = (multiprocessing.cpu_count() * 2) + 1
+
+            # Get GPU memory requirement from app metadata
+            try:
+                metadata = self.cla.metadata
+                gpu_mem_mb = metadata.gpu_mem_min  # some apps may not have this field, or devs may forget to set it
+            except Exception:
+                gpu_mem_mb = 0
+
+            if gpu_mem_mb <= 0:
+                return cpu_workers
+
+            # Calculate workers based on total VRAM of the first CUDA device (no other GPUs are considered for now)
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    total_vram_bytes = torch.cuda.get_device_properties(0).total_memory
+                    total_vram_mb = total_vram_bytes / (1024 * 1024)
+                    vram_workers = max(1, int(total_vram_mb // gpu_mem_mb))
+                    workers = min(vram_workers, cpu_workers)
+                    self.cla.logger.info(
+                        f"GPU detected: {total_vram_mb:.0f} MB VRAM, "
+                        f"app requires {gpu_mem_mb} MB, "
+                        f"using {workers} workers (max {vram_workers} by VRAM, {cpu_workers} by CPU)"
+                    )
+                    return workers
+            except ImportError:
+                pass
+
+            return cpu_workers
         
         class ProductionApplication(gunicorn.app.base.BaseApplication):
 
