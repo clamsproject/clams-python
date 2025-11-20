@@ -405,6 +405,148 @@ curl http://localhost:5000/?includeVRAM=true
 }
 ```
 
+### Component 5: Automatic Memory Profiling
+
+**When developers don't provide model requirements**, the SDK uses a conservative approach with historical profiling:
+
+**Strategy:**
+- **First request**: Require 80% of total VRAM to be available (very conservative)
+- **Subsequent requests**: Use measured peak memory from previous runs (accurate)
+
+**Persistence via hash-based filenames (write-once, read-many):**
+
+```python
+# clams/app/__init__.py - Add to ClamsApp
+
+import hashlib
+import json
+import pathlib
+
+class ClamsApp(ABC):
+
+    def _get_param_hash(self, **parameters):
+        """Create deterministic hash of parameters for filename"""
+        param_str = json.dumps(parameters, sort_keys=True)
+        return hashlib.sha256(param_str.encode()).hexdigest()[:16]
+
+    def _get_profile_path(self, param_hash):
+        """Get path for memory profile file"""
+        cache_dir = pathlib.Path.home() / '.cache' / 'clams' / 'memory_profiles'
+        return cache_dir / f"memory_{param_hash}.txt"
+
+    def _get_model_requirements(self, **parameters):
+        """
+        Default implementation with conservative first request + historical profiling.
+        Apps can override for explicit model size declarations.
+
+        :param parameters: Runtime parameters from the request
+        :return: Dict with 'size_bytes', 'name', and 'source'
+        """
+        param_hash = self._get_param_hash(**parameters)
+        profile_path = self._get_profile_path(param_hash)
+
+        # Check for historical measurement
+        if profile_path.exists():
+            try:
+                measured = int(profile_path.read_text().strip())
+                return {
+                    'size_bytes': int(measured * 1.2),  # 20% buffer
+                    'name': param_hash,
+                    'source': 'historical'
+                }
+            except:
+                pass  # Corrupted file, fall through to conservative
+
+        # First request: require 80% of total VRAM
+        try:
+            import torch
+            if torch.cuda.is_available():
+                device = torch.cuda.current_device()
+                total_vram = torch.cuda.get_device_properties(device).total_memory
+                conservative_requirement = int(total_vram * 0.8)
+
+                self.logger.info(
+                    f"First request for {param_hash}: "
+                    f"requiring 80% of VRAM ({conservative_requirement/1024**3:.2f}GB) "
+                    f"until actual usage is measured"
+                )
+
+                return {
+                    'size_bytes': conservative_requirement,
+                    'name': param_hash,
+                    'source': 'conservative-first-request'
+                }
+        except:
+            pass
+
+        return None
+
+    def _record_memory_usage(self, parameters, peak_bytes):
+        """
+        Record peak memory to file using write-once pattern.
+        Uses atomic write (temp file + rename) to avoid race conditions.
+
+        :param parameters: Request parameters (used for hash)
+        :param peak_bytes: Measured peak VRAM usage
+        """
+        param_hash = self._get_param_hash(**parameters)
+        profile_path = self._get_profile_path(param_hash)
+
+        try:
+            profile_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Only write if file doesn't exist or new measurement is higher
+            should_write = True
+            if profile_path.exists():
+                try:
+                    existing = int(profile_path.read_text().strip())
+                    if peak_bytes <= existing:
+                        should_write = False  # Existing value is fine
+                    else:
+                        self.logger.info(
+                            f"Updating peak memory {param_hash}: "
+                            f"{existing/1024**3:.2f}GB → {peak_bytes/1024**3:.2f}GB"
+                        )
+                except:
+                    pass  # Corrupted, overwrite
+
+            if should_write:
+                # Atomic write: write to temp, then rename
+                temp_path = profile_path.with_suffix('.tmp')
+                temp_path.write_text(str(peak_bytes))
+                temp_path.rename(profile_path)  # Atomic on POSIX
+
+                self.logger.info(
+                    f"Recorded peak memory for {param_hash}: {peak_bytes/1024**3:.2f}GB"
+                )
+        except Exception as e:
+            self.logger.warning(f"Failed to record memory profile: {e}")
+```
+
+**File structure:**
+```
+~/.cache/clams/memory_profiles/
+├── memory_3a7f2b9c.txt    # {model: "large", language: "en"} → "6442450944"
+├── memory_8d2c1e4f.txt    # {model: "medium", language: "en"} → "3221225472"
+└── memory_f1a9b3e7.txt    # {model: "large", language: "es"} → "6442450944"
+```
+
+**Race condition safety:**
+
+| Scenario | Behavior | Outcome |
+|----------|----------|---------|
+| Two workers, same params, first request | Both write similar values | Last write wins, both valid |
+| Worker reads while another writes | Atomic rename | Sees old or new file, never partial |
+| Two workers update with higher values | Each reads, writes higher | Highest value persists |
+
+**Benefits:**
+- ✅ No developer effort required
+- ✅ No file locking needed (write-once pattern)
+- ✅ Atomic writes via temp + rename
+- ✅ Shared across workers and restarts
+- ✅ Self-calibrating over time
+- ✅ Conservative first request prevents OOM
+
 ---
 
 ## How It Works
@@ -414,8 +556,9 @@ curl http://localhost:5000/?includeVRAM=true
 1. **Client sends POST request** with MMIF data and parameters (e.g., `model=large`)
 
 2. **SDK calls `_get_model_requirements()`** to determine memory needs
-   - If app implements it: Returns `{'size_bytes': 6*1024**3, 'name': 'large'}`
-   - If not implemented: Returns `None`, no VRAM checking
+   - **If app overrides with explicit values**: Uses app-provided size (e.g., `6*1024**3`)
+   - **If historical measurement exists**: Uses measured peak × 1.2 buffer
+   - **If first request (no history)**: Requires 80% of total VRAM (conservative)
 
 3. **SDK checks current VRAM availability**
    - Queries CUDA driver for real-time memory state
@@ -426,7 +569,26 @@ curl http://localhost:5000/?includeVRAM=true
    - **Sufficient VRAM**: Proceed to `_annotate()`, app loads model
    - **Insufficient VRAM**: Raise `RuntimeError`, return HTTP 500 with clear message
 
-5. **After annotation completes**: SDK calls `torch.cuda.empty_cache()` to release cached memory
+5. **After annotation completes**:
+   - SDK records peak memory usage to profile file (for future requests)
+   - SDK calls `torch.cuda.empty_cache()` to release cached memory
+
+### Memory Requirement Resolution
+
+```
+Priority order for _get_model_requirements():
+
+1. App override (explicit)     → App knows exact model sizes
+2. Historical measurement      → Measured from previous run
+3. Conservative 80%            → First request, no data yet
+```
+
+**Example progression for new parameter combination:**
+
+| Request | Source | Requirement | Behavior |
+|---------|--------|-------------|----------|
+| 1st | conservative | 19.2GB (80% of 24GB) | Fails if <19.2GB available |
+| 2nd+ | historical | 3.6GB (3GB measured × 1.2) | Accurate, efficient |
 
 ### Error Handling
 
@@ -583,44 +745,52 @@ Verify apps without `_get_model_requirements()` still work:
 
 ## Implementation Checklist
 
-**SDK Changes:**
-- [ ] Add `_get_model_requirements()` API to `ClamsApp`
+**SDK Changes - Core VRAM Management:**
+- [ ] Add `_get_model_requirements()` with default implementation (80% conservative + historical)
+- [ ] Add `_get_param_hash()` for deterministic parameter hashing
+- [ ] Add `_get_profile_path()` for profile file location
+- [ ] Add `_record_memory_usage()` with atomic write pattern
 - [ ] Add `_check_vram_available()` static method
 - [ ] Add `_get_available_vram()` static method
-- [ ] Enhance `_profile_cuda_memory()` decorator with VRAM checking
-- [ ] Add `get_runtime_info()` method to `ClamsApp`
+- [ ] Enhance `_profile_cuda_memory()` decorator with VRAM checking and recording
+
+**SDK Changes - Configuration:**
 - [ ] Modify `number_of_workers()` for conservative GPU count
+- [ ] Add `get_runtime_info()` method to `ClamsApp`
 - [ ] Modify `ClamsHTTPApi.get()` to support `includeVRAM` parameter
 
 **Documentation:**
-- [ ] Document `_get_model_requirements()` API for app developers
+- [ ] Document automatic memory profiling behavior
+- [ ] Document `_get_model_requirements()` override for explicit values
 - [ ] Document `?includeVRAM=true` parameter for clients
 - [ ] Document error handling and retry best practices
-- [ ] Update app development template with example implementation
+- [ ] Document profile file location and cleanup
 
 **Testing:**
 - [ ] Unit tests for VRAM checking logic
+- [ ] Unit tests for hash-based file persistence
+- [ ] Tests for atomic write behavior
 - [ ] Integration tests with mock CUDA
 - [ ] Multi-process isolation verification
 - [ ] Backward compatibility tests
 
-**App Updates (Optional):**
-- [ ] Update whisper-wrapper with `_get_model_requirements()`
+**App Updates (Optional - for explicit model sizes):**
+- [ ] Update whisper-wrapper to override `_get_model_requirements()` with explicit sizes
 - [ ] Update other GPU-based apps as needed
 
 ---
 
 ## Open Questions
 
-1. **Safety Margin**: Is 10% headroom appropriate, or should it be configurable?
+1. **Profile File Location**: Is `~/.cache/clams/memory_profiles/` appropriate for all deployment scenarios? Consider container environments with ephemeral storage.
 
 2. **Multi-GPU**: Should SDK support GPU selection/load balancing across devices?
 
 3. **Health Endpoint**: Add dedicated `/health` endpoint in addition to `?includeVRAM`?
 
-4. **Model Unloading**: Should SDK provide automatic model eviction after idle time?
+4. **Profile Cleanup**: Should SDK provide mechanism to clear old/stale profile files?
 
-5. **Worker Override**: Should apps be able to override worker count calculation?
+5. **Conservative Threshold**: Is 80% appropriate for first request, or should it be configurable?
 
 ---
 
@@ -647,9 +817,11 @@ Verify apps without `_get_model_requirements()` still work:
 The proposed SDK-level solution addresses the root cause of issue #243 by:
 
 1. **Checking VRAM at runtime** - No static assumptions about availability
-2. **Failing fast with clear errors** - Better than OOM crashes
-3. **Conservative worker defaults** - Prevents overloading GPU systems
-4. **Centralized implementation** - All apps benefit automatically
-5. **Backward compatible** - No breaking changes
+2. **Automatic memory profiling** - Conservative first request (80%), then uses measured values
+3. **Zero developer effort** - Works without app changes; apps can optionally override for explicit values
+4. **Race-condition safe persistence** - Hash-based files with atomic writes
+5. **Failing fast with clear errors** - Better than OOM crashes
+6. **Conservative worker defaults** - Prevents overloading GPU systems
+7. **Centralized implementation** - All apps benefit automatically
 
-This approach provides a robust foundation for GPU resource management in the CLAMS ecosystem while maintaining flexibility for future enhancements.
+This approach provides a robust foundation for GPU resource management in the CLAMS ecosystem while requiring no changes from app developers. Apps that want more precise control can override `_get_model_requirements()` with explicit model sizes.
