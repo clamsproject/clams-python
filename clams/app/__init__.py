@@ -181,10 +181,13 @@ class ClamsApp(ABC):
                     runtime_recs['cuda'].append(self._cuda_device_name_concat(name, mem))
         for annotated_view in annotated.views:
             if annotated_view.metadata.app == self.metadata.identifier:
+                profiling_data = {}
                 if runningTime:
-                    annotated_view.metadata.set_additional_property('appRunningTime', str(td))
+                    profiling_data['runningTime'] = str(td)
                 if len(runtime_recs) > 0:
-                    annotated_view.metadata.set_additional_property('appRunningHardware', runtime_recs)
+                    profiling_data['hardware'] = runtime_recs
+                if profiling_data:
+                    annotated_view.metadata.set_additional_property('appProfiling', profiling_data)
                     
         return annotated.serialize(pretty=pretty, sanitize=True)
 
