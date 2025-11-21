@@ -18,7 +18,7 @@ class InsufficientVRAMError(RuntimeError):
 from typing import Union, Any, Optional, Dict, List, Tuple
 
 from mmif import Mmif, Document, DocumentTypes, View
-from mmif.utils.cli.describe import generate_param_hash
+from mmif.utils.cli.describe import generate_param_hash  # pytype: disable=import-error
 from clams.appmetadata import AppMetadata, real_valued_primitives, python_type, map_param_kv_delimiter
 
 logging.basicConfig(
@@ -373,7 +373,7 @@ class ClamsApp(ABC):
         :return: True if sufficient VRAM available
         """
         try:
-            import torch
+            import torch  # pytype: disable=import-error
             if not torch.cuda.is_available():
                 return True  # No CUDA, no constraints
 
@@ -406,7 +406,7 @@ class ClamsApp(ABC):
         :return: Available VRAM in bytes, or 0 if unavailable
         """
         try:
-            import torch
+            import torch  # pytype: disable=import-error
             if not torch.cuda.is_available():
                 return 0
 
@@ -447,7 +447,7 @@ class ClamsApp(ABC):
 
         # Priority 2: Conservative first request (80% of total VRAM)
         try:
-            import torch
+            import torch  # pytype: disable=import-error
             if torch.cuda.is_available():
                 device = torch.cuda.current_device()
                 total_vram = torch.cuda.get_device_properties(device).total_memory
@@ -536,7 +536,7 @@ class ClamsApp(ABC):
         """
         def wrapper(*args, **kwargs):
             # Get the ClamsApp instance from the bound method
-            app_instance = func.__self__
+            app_instance = getattr(func, '__self__', None)
 
             cuda_profiler = {}
             torch_available = False

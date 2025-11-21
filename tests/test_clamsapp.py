@@ -297,13 +297,13 @@ class TestClamsApp(unittest.TestCase):
 
     def test_open_document_location(self):
         mmif = ExampleInputMMIF.get_rawmmif()
-        with self.app.open_document_location(mmif.documents['t1']) as f:
+        with self.app.open_document_location(mmif['t1']) as f:
             self.assertEqual(f.read(), ExampleInputMMIF.EXAMPLE_TEXT)
 
     def test_open_document_location_custom_opener(self):
         from PIL import Image
         mmif = ExampleInputMMIF.get_rawmmif()
-        with self.app.open_document_location(mmif.documents['i1'], Image.open) as f:
+        with self.app.open_document_location(mmif['i1'], Image.open) as f:
             self.assertEqual(f.size, (200, 71))
             
     def test_refine_parameters(self):

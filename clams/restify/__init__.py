@@ -68,7 +68,7 @@ class Restifier(object):
 
             # Calculate workers based on total VRAM of the first CUDA device (no other GPUs are considered for now)
             try:
-                import torch
+                import torch  # pytype: disable=import-error
                 if torch.cuda.is_available():
                     total_vram_bytes = torch.cuda.get_device_properties(0).total_memory
                     total_vram_mb = total_vram_bytes / (1024 * 1024)
