@@ -216,6 +216,7 @@ When running in production mode, the following environment variables can be used
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `CLAMS_WORKERS` | Number of gunicorn worker processes | Auto-calculated based on CPU cores and GPU memory |
+| `CLAMS_LOGLEVEL` | Logging verbosity level (`debug`, `info`, `warning`, `error`) | `warning` |
 
 By default, the number of workers is calculated as `(CPU cores × 2) + 1`. For GPU-based apps, see [GPU Memory Management](gpu-apps.md) for details on automatic worker scaling and VRAM management.
 

@@ -22,7 +22,7 @@ from mmif.utils.cli.describe import generate_param_hash  # pytype: disable=impor
 from clams.appmetadata import AppMetadata, real_valued_primitives, python_type, map_param_kv_delimiter
 
 logging.basicConfig(
-    level=logging.WARNING,
+    level=getattr(logging, os.environ.get('CLAMS_LOGLEVEL', 'WARNING').upper(), logging.WARNING),
     format="%(asctime)s %(name)s %(levelname)-8s %(thread)d %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S")
 
@@ -360,37 +360,27 @@ class ClamsApp(ABC):
         """
         # Sanitize app identifier for filesystem use
         app_id = self.metadata.identifier.replace('/', '-').replace(':', '-')
-        cache_dir = pathlib.Path.home() / '.cache' / 'clams' / 'memory_profiles' / app_id
+        cache_base = pathlib.Path(os.environ.get('XDG_CACHE_HOME', pathlib.Path.home() / '.cache'))
+        cache_dir = cache_base / 'clams' / 'memory_profiles' / app_id
         return cache_dir / f"memory_{param_hash}.txt"
 
     @staticmethod
     def _check_vram_available(required_bytes: int, safety_margin: float = 0.1) -> bool:
         """
-        Check if sufficient VRAM is currently available.
+        Check if sufficient VRAM is currently available (GPU-wide).
 
         :param required_bytes: Bytes needed for model
-        :param safety_margin: Fraction of total VRAM to keep as headroom (default 10%)
+        :param safety_margin: Additional safety buffer as fraction of required (default 10%)
         :return: True if sufficient VRAM available
         """
         try:
-            import torch  # pytype: disable=import-error
-            if not torch.cuda.is_available():
-                return True  # No CUDA, no constraints
+            available = ClamsApp._get_available_vram()
+            if available == 0:
+                # Can't determine available VRAM, fail open
+                return True
 
-            device = torch.cuda.current_device()
-            props = torch.cuda.get_device_properties(device)
-            total_vram = props.total_memory
-
-            # Get currently used memory (max of allocated and reserved)
-            allocated = torch.cuda.memory_allocated(device)
-            reserved = torch.cuda.memory_reserved(device)
-            used = max(allocated, reserved)
-
-            # Calculate available VRAM right now
-            available = total_vram - used
-
-            # Apply safety margin
-            required_with_margin = required_bytes + (total_vram * safety_margin)
+            # Apply safety margin to required bytes
+            required_with_margin = required_bytes * (1 + safety_margin)
 
             return available >= required_with_margin
 
@@ -401,10 +391,28 @@ class ClamsApp(ABC):
     @staticmethod
     def _get_available_vram() -> int:
         """
-        Get currently available VRAM in bytes.
+        Get currently available VRAM in bytes (GPU-wide, across all processes).
+
+        Uses nvidia-smi to get actual available memory, not just current process.
 
         :return: Available VRAM in bytes, or 0 if unavailable
         """
+        try:
+            import subprocess
+            import shutil
+            if shutil.which('nvidia-smi'):
+                # Get free memory from nvidia-smi (reports GPU-wide, not per-process)
+                result = subprocess.run(
+                    ['nvidia-smi', '--query-gpu=memory.free', '--format=csv,noheader,nounits', '-i', '0'],
+                    capture_output=True, text=True, timeout=5
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    free_mb = float(result.stdout.strip())
+                    return int(free_mb * 1024 * 1024)  # Convert MB to bytes
+        except Exception:
+            pass
+
+        # Fallback to torch (only sees current process memory)
         try:
             import torch  # pytype: disable=import-error
             if not torch.cuda.is_available():
@@ -572,11 +580,13 @@ class ClamsApp(ABC):
                     if not ClamsApp._check_vram_available(required_bytes):
                         available_gb = ClamsApp._get_available_vram() / 1024**3
                         required_gb = required_bytes / 1024**3
+                        required_with_buffer_gb = required_gb * 1.1  # 10% safety margin
 
                         error_msg = (
                             f"Insufficient GPU memory for {model_name}. "
-                            f"Requested: {required_gb:.2f}GB, "
-                            f"Available: {available_gb:.2f}GB. "
+                            f"Tried to allocate {required_with_buffer_gb:.2f}GB "
+                            f"(estimated {required_gb:.2f}GB + 10% buffer), "
+                            f"available {available_gb:.2f}GB. "
                         )
                         if source == 'conservative-first-request':
                             error_msg += (

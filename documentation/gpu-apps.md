@@ -4,10 +4,17 @@ This document covers GPU memory management features in the CLAMS SDK for develop
 
 ### Overview
 
-CLAMS apps that use GPU acceleration face memory management challenges when running as HTTP servers with multiple workers. Each gunicorn worker loads models independently into GPU VRAM, which can cause out-of-memory (OOM) errors.
+CLAMS apps that use GPU acceleration face memory management challenges when running as HTTP servers with multiple workers. 
+Each gunicorn worker loads models independently into GPU VRAM, which can cause out-of-memory (OOM) errors.
 
-> **Note**: The VRAM profiling and runtime checking features described in this document are **PyTorch-only**. Apps using TensorFlow or other frameworks will not benefit from automatic VRAM profiling, though worker calculation based on `gpu_mem_min` still works. TensorFlow-based apps should set conservative `gpu_mem_min` values and rely on manual testing to determine appropriate worker counts.
+:::{note}
+The memory profiling features (peak usage tracking) require **PyTorch** since they use `torch.cuda` APIs.
+Worker calculation and VRAM availability checking use `nvidia-smi` and work with any framework, but the system requires PyTorch to be installed.
+TensorFlow-based apps should set conservative (high) VRAM usage values in app metadata since profiling won't track TensorFlow allocations.
 
+All the VRAM-related log messages are set to `info` level.
+:::
+ 
 The CLAMS SDK provides:
 1. **Metadata fields** for declaring GPU memory requirements
 2. **Automatic worker scaling** based on available VRAM
@@ -44,11 +51,11 @@ class MyGPUApp(ClamsApp):
         return metadata
 ```
 
-#### Guidelines for Setting Values
+#### General Guidelines for Setting Values
 
 - **`gpu_mem_min`**: The absolute minimum VRAM needed to load the smallest supported model configuration. 0 (the default) means the app does not use GPU.
 
-- **`gpu_mem_typ`**: Expected VRAM usage with default parameters. This value is displayed to users and helps them understand resource requirements. Must be >= `gpu_mem_min`.
+- **`gpu_mem_typ`**: Expected VRAM usage with default parameters. This value is used for automatic worker calculation and displayed to users to help them understand resource requirements. Must be >= `gpu_mem_min`.
 
 If `gpu_mem_typ` is set lower than `gpu_mem_min`, the SDK will automatically correct it and issue a warning.
 
@@ -57,17 +64,33 @@ If `gpu_mem_typ` is set lower than `gpu_mem_min`, the SDK will automatically cor
 When running in production mode (gunicorn), the SDK automatically calculates the optimal number of workers based on:
 
 1. CPU cores: `(cores × 2) + 1`
-2. Available VRAM: `total_vram / gpu_mem_min`
+2. Available VRAM: `total_vram / gpu_mem_typ`
 
-The final worker count is the minimum of these two values, ensuring workers don't exceed available GPU memory.
+The final worker count is the minimum of these two values, ensuring workers don't exceed available GPU memory. Using `gpu_mem_typ` (typical usage) rather than `gpu_mem_min` provides more realistic worker counts for typical workloads.
 
-#### Example Calculation
+##### Example Calculation
 
 For a system with:
 - 8 CPU cores → 17 CPU-based workers
-- 24GB VRAM, app requires 4GB → 6 VRAM-based workers
+- 24GB VRAM, app typically uses 6GB (`gpu_mem_typ=6000`) → 4 VRAM-based workers
 
-Result: 6 workers (limited by VRAM)
+Result: 4 workers (limited by VRAM)
+
+#### Worker Recycling
+
+By default, workers are recycled after each request (`max_requests=1`). This ensures GPU memory is fully released between requests, which is important for:
+- Apps that load different models based on parameters
+- Preventing memory fragmentation over time
+- Ensuring accurate VRAM availability checks
+
+For apps with a single persistent model, developers can disable recycling for better performance:
+
+```python
+# In app.py
+if __name__ == '__main__':
+    restifier = Restifier(MyApp())
+    restifier.serve_production(max_requests=0)  # Workers persist indefinitely
+```
 
 #### Overriding Worker Count
 
@@ -79,6 +102,10 @@ CLAMS_WORKERS=2 python app.py --production
 
 # In Docker
 docker run -e CLAMS_WORKERS=2 -p 5000:5000 <IMAGE_NAME>
+```
+
+```bash
+CLAMS_LOGLEVEL=info python app.py --production
 ```
 
 ### Runtime VRAM Checking
@@ -114,8 +141,10 @@ The SDK automatically profiles and caches memory usage per parameter combination
 
 Profiles are stored in:
 ```
-~/.cache/clams/memory_profiles/<app_id>/<param_hash>.txt
+$XDG_CACHE_HOME/clams/memory_profiles/<app_id>/<param_hash>.txt
 ```
+
+If `XDG_CACHE_HOME` is not set, defaults to `~/.cache`. In containers based on `clams-python-*` base images, this is typically `/cache/clams/memory_profiles/`.
 
 Each profile contains a single integer: the peak memory usage in bytes.
 
@@ -182,7 +211,54 @@ VRAM checking is only performed when all conditions are met:
 
 Apps without GPU requirements (default `gpu_mem_min=0`) skip all VRAM checks.
 
-> **Important**: TensorFlow-based apps will not trigger VRAM checking even with `gpu_mem_min > 0`, because the profiling relies on PyTorch's CUDA APIs. For TensorFlow apps, the `gpu_mem_min` value is still used for worker calculation, but runtime VRAM checking and memory profiling are disabled.
+:::{important}
+The VRAM checking system requires PyTorch to be installed. TensorFlow-based apps with PyTorch installed will get worker calculation and VRAM availability checking (via `nvidia-smi`), but memory profiling will only track PyTorch allocations, not TensorFlow allocations. For accurate profiling, TensorFlow apps should set conservative `gpu_mem_typ` values based on manual measurements.
+:::
+
+### Model Loading Strategy
+
+#### Single Model
+
+Load the model in `__init__` so it's ready when requests arrive:
+
+```python
+class MyGPUApp(ClamsApp):
+    def __init__(self):
+        super().__init__()
+        self.model = load_model()  # Load once per worker
+
+    def _annotate(self, mmif, **params):
+        result = self.model.predict(...)  # Model already loaded
+        return mmif
+```
+
+Each gunicorn worker calls `__init__` independently, so each worker gets its own model copy. Worker count is limited by `gpu_mem_typ` to prevent OOM.
+In this case, it's generally recommended to use a `max_requests` value that's larger than 1 to save model loading time.
+
+#### Multiple Model Variants
+
+For apps supporting different model sizes (e.g., tiny/base/large), use lazy loading with caching:
+
+```python
+class WhisperApp(ClamsApp):
+    def __init__(self):
+        super().__init__()
+        self.models = {}  # Cache for loaded models
+
+    def _annotate(self, mmif, modelSize='base', **params):
+        if modelSize not in self.models:
+            self.models[modelSize] = whisper.load_model(modelSize)
+
+        model = self.models[modelSize]
+        # use model...
+        return mmif
+```
+
+**Considerations for multiple models:**
+- Set `gpu_mem_min` for the smallest supported model (absolute minimum to run)
+- Set `gpu_mem_typ` for the largest commonly-used model (this determines worker count)
+- Historical profiles are keyed by parameter hash, so different model sizes get separate profiles
+- Multiple models may accumulate in memory within a single worker (consider enabling worker recycling with `max_requests=1`)
 
 ### Memory Optimization Tips
 
@@ -214,7 +290,7 @@ To add GPU memory management to an existing app:
 
 #### Workers not scaling correctly
 
-- Verify `gpu_mem_min` is set in metadata (not 0)
+- Verify `gpu_mem_typ` is set in metadata (not 0) - this determines worker count
 - Check PyTorch is installed and CUDA is available
 - Use `CLAMS_WORKERS` to override if needed
 
@@ -222,11 +298,11 @@ To add GPU memory management to an existing app:
 
 - Check available VRAM with `nvidia-smi`
 - Clear GPU memory from other processes
-- Profile cache may have outdated high values (delete `~/.cache/clams/memory_profiles/`)
+- Profile cache may have outdated high values (delete `~/.cache/clams/memory_profiles/` or `$XDG_CACHE_HOME/clams/memory_profiles/`)
 
 #### OOM errors despite worker limits
 
-- `gpu_mem_min` may be set too low
+- `gpu_mem_typ` may be set too low, allowing too many workers
 - Memory fragmentation; try restarting workers
 - Other processes consuming VRAM
 

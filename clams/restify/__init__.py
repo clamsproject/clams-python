@@ -57,9 +57,10 @@ class Restifier(object):
             cpu_workers = (multiprocessing.cpu_count() * 2) + 1
 
             # Get GPU memory requirement from app metadata
+            # Use gpu_mem_typ (typical usage) for worker calculation
             try:
                 metadata = self.cla.metadata
-                gpu_mem_mb = metadata.gpu_mem_min  # some apps may not have this field, or devs may forget to set it
+                gpu_mem_mb = metadata.gpu_mem_typ  # typical usage determines how many workers fit
             except Exception:
                 gpu_mem_mb = 0
 
@@ -67,20 +68,26 @@ class Restifier(object):
                 return cpu_workers
 
             # Calculate workers based on total VRAM of the first CUDA device (no other GPUs are considered for now)
+            # Use nvidia-smi instead of torch to avoid initializing CUDA in parent process before fork
             try:
-                import torch  # pytype: disable=import-error
-                if torch.cuda.is_available():
-                    total_vram_bytes = torch.cuda.get_device_properties(0).total_memory
-                    total_vram_mb = total_vram_bytes / (1024 * 1024)
-                    vram_workers = max(1, int(total_vram_mb // gpu_mem_mb))
-                    workers = min(vram_workers, cpu_workers)
-                    self.cla.logger.info(
-                        f"GPU detected: {total_vram_mb:.0f} MB VRAM, "
-                        f"app requires {gpu_mem_mb} MB, "
-                        f"using {workers} workers (max {vram_workers} by VRAM, {cpu_workers} by CPU)"
+                import subprocess
+                import shutil
+                if shutil.which('nvidia-smi'):
+                    result = subprocess.run(
+                        ['nvidia-smi', '--query-gpu=memory.total', '--format=csv,noheader,nounits', '-i', '0'],
+                        capture_output=True, text=True, timeout=5
                     )
-                    return workers
-            except ImportError:
+                    if result.returncode == 0 and result.stdout.strip():
+                        total_vram_mb = float(result.stdout.strip())
+                        vram_workers = max(1, int(total_vram_mb // gpu_mem_mb))
+                        workers = min(vram_workers, cpu_workers)
+                        self.cla.logger.info(
+                            f"GPU detected: {total_vram_mb:.0f} MB VRAM, "
+                            f"app requires {gpu_mem_mb} MB, "
+                            f"using {workers} workers (max {vram_workers} by VRAM, {cpu_workers} by CPU)"
+                        )
+                        return workers
+            except Exception:
                 pass
 
             return cpu_workers
@@ -92,9 +99,16 @@ class Restifier(object):
                     'bind': f'{host}:{port}',
                     'workers': number_of_workers(),
                     'threads': 2,
+                    # disable timeout for long-running GPU workloads (default 30s is too short)
+                    'timeout': 0,
                     # because the default is 'None'
                     'accesslog': '-',
                     # errorlog, however, is redirected to stderr by default since 19.2, so no need to set
+                    # log level is warning by default
+                    'loglevel': os.environ.get('CLAMS_LOGLEVEL', 'warning').lower(),
+                    # default to 1 to free GPU memory after each request
+                    # developers can override via serve_production(max_requests=N) for single-model apps
+                    'max_requests': 1,
                 }
                 self.options.update(options)
                 self.application = app
@@ -108,6 +122,13 @@ class Restifier(object):
 
             def load(self):
                 return self.application
+
+        # Log max_requests setting
+        max_req = options.get('max_requests', 1)  # default is 1, meaning workers are killed after each request
+        if max_req == 0:
+            self.cla.logger.info("Worker recycling: disabled (workers persist)")
+        else:
+            self.cla.logger.info(f"Worker recycling: after {max_req} request(s)")
 
         ProductionApplication(self.flask_app, self.host, self.port, **options).run()
 
@@ -180,7 +201,7 @@ class ClamsHTTPApi(Resource):
             return self.json_to_response(self.cla.annotate(raw_data, **raw_params))
         except InsufficientVRAMError as e:
             self.cla.logger.warning(f"Request rejected due to insufficient VRAM: {e}")
-            return Response(response=str(e), status=503, mimetype='text/plain')
+            return self.json_to_response(self.cla.record_error(raw_data, **raw_params).serialize(pretty=True), status=503)
         except Exception:
             self.cla.logger.exception("Error in annotation")
             return self.json_to_response(self.cla.record_error(raw_data, **raw_params).serialize(pretty=True), status=500)
