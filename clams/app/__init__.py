@@ -8,11 +8,17 @@ from contextlib import contextmanager
 from datetime import datetime
 from urllib import parse as urlparser
 
-__all__ = ['ClamsApp']
+__all__ = ['ClamsApp', 'InsufficientVRAMError']
+
+
+class InsufficientVRAMError(RuntimeError):
+    """Raised when insufficient GPU memory is available for processing."""
+    pass
 
 from typing import Union, Any, Optional, Dict, List, Tuple
 
 from mmif import Mmif, Document, DocumentTypes, View
+from mmif.utils.cli.describe import generate_param_hash
 from clams.appmetadata import AppMetadata, real_valued_primitives, python_type, map_param_kv_delimiter
 
 logging.basicConfig(
@@ -47,7 +53,7 @@ class ClamsApp(ABC):
             'description': 'The JSON body of the HTTP response will be re-formatted with 2-space indentation',
         },
         {
-            'name': 'runningTime', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
+            'name': 'runningTime', 'type': 'boolean', 'choices': None, 'default': True, 'multivalued': False,
             'description': 'The running time of the app will be recorded in the view metadata',
         },
         {
@@ -166,14 +172,12 @@ class ClamsApp(ABC):
             runtime_recs['cuda'] = []
             # Use cuda_profiler data if available, otherwise fallback to nvidia-smi
             if cuda_profiler:
-                for gpu_info, peak_memory_bytes in cuda_profiler.items():
-                    # Convert peak memory to human-readable format
-                    peak_memory_mb = peak_memory_bytes / (1000 * 1000)
-                    if peak_memory_mb >= 1000:
-                        peak_memory_str = f"{peak_memory_mb / 1000:.2f} GiB"
-                    else:
-                        peak_memory_str = f"{peak_memory_mb:.1f} MiB"
-                    runtime_recs['cuda'].append(f"{gpu_info}, Used {self._cuda_memory_to_str(peak_memory_bytes)}")
+                for gpu_info, mem_info in cuda_profiler.items():
+                    available_str = self._cuda_memory_to_str(mem_info['available_before'])
+                    peak_str = self._cuda_memory_to_str(mem_info['peak'])
+                    runtime_recs['cuda'].append(
+                        f"{gpu_info}, {available_str} available, {peak_str} peak used"
+                    )
             elif shutil.which('nvidia-smi'):
                 for gpu in subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader'], 
                                           stdout=subprocess.PIPE).stdout.decode('utf-8').strip().split('\n'):
@@ -345,50 +349,291 @@ class ClamsApp(ABC):
             mem = ClamsApp._cuda_memory_to_str(mem)
         return f"{name}, With {mem}"
 
+    def _get_profile_path(self, param_hash: str) -> pathlib.Path:
+        """
+        Get filesystem path for memory profile file.
+
+        Profile files are stored in a per-app directory under user's cache.
+
+        :param param_hash: Hash of parameters from :func:`mmif.utils.cli.describe.generate_param_hash`
+        :return: Path to the profile file
+        """
+        # Sanitize app identifier for filesystem use
+        app_id = self.metadata.identifier.replace('/', '-').replace(':', '-')
+        cache_dir = pathlib.Path.home() / '.cache' / 'clams' / 'memory_profiles' / app_id
+        return cache_dir / f"memory_{param_hash}.txt"
+
+    @staticmethod
+    def _check_vram_available(required_bytes: int, safety_margin: float = 0.1) -> bool:
+        """
+        Check if sufficient VRAM is currently available.
+
+        :param required_bytes: Bytes needed for model
+        :param safety_margin: Fraction of total VRAM to keep as headroom (default 10%)
+        :return: True if sufficient VRAM available
+        """
+        try:
+            import torch
+            if not torch.cuda.is_available():
+                return True  # No CUDA, no constraints
+
+            device = torch.cuda.current_device()
+            props = torch.cuda.get_device_properties(device)
+            total_vram = props.total_memory
+
+            # Get currently used memory (max of allocated and reserved)
+            allocated = torch.cuda.memory_allocated(device)
+            reserved = torch.cuda.memory_reserved(device)
+            used = max(allocated, reserved)
+
+            # Calculate available VRAM right now
+            available = total_vram - used
+
+            # Apply safety margin
+            required_with_margin = required_bytes + (total_vram * safety_margin)
+
+            return available >= required_with_margin
+
+        except Exception:
+            # If we can't check, fail open (allow the request)
+            return True
+
+    @staticmethod
+    def _get_available_vram() -> int:
+        """
+        Get currently available VRAM in bytes.
+
+        :return: Available VRAM in bytes, or 0 if unavailable
+        """
+        try:
+            import torch
+            if not torch.cuda.is_available():
+                return 0
+
+            device = torch.cuda.current_device()
+            total = torch.cuda.get_device_properties(device).total_memory
+            used = max(torch.cuda.memory_allocated(device),
+                       torch.cuda.memory_reserved(device))
+            return total - used
+        except Exception:
+            return 0
+
+    def _get_estimated_vram_usage(self, **parameters) -> Optional[Dict[str, Any]]:
+        """
+        Get model memory requirements for VRAM checking.
+
+        Default implementation uses conservative 80% for first request,
+        then historical measurements for subsequent requests.
+
+        Apps can override this to provide explicit model sizes.
+
+        :param parameters: Runtime parameters from the request
+        :return: Dict with 'size_bytes', 'name', and 'source', or None
+        """
+        param_hash = generate_param_hash(parameters)
+        profile_path = self._get_profile_path(param_hash)
+
+        # Priority 1: Historical measurement
+        if profile_path.exists():
+            try:
+                measured = int(profile_path.read_text().strip())
+                return {
+                    'size_bytes': int(measured * 1.2),  # 20% safety buffer
+                    'name': f'params:{param_hash}',
+                    'source': 'historical'
+                }
+            except (ValueError, IOError) as e:
+                self.logger.warning(f"Failed to read profile {profile_path}: {e}")
+
+        # Priority 2: Conservative first request (80% of total VRAM)
+        try:
+            import torch
+            if torch.cuda.is_available():
+                device = torch.cuda.current_device()
+                total_vram = torch.cuda.get_device_properties(device).total_memory
+                conservative_requirement = int(total_vram * 0.8)
+
+                self.logger.info(
+                    f"First request for params:{param_hash}: "
+                    f"requesting 80% of VRAM ({conservative_requirement/1024**3:.2f}GB) "
+                    f"until actual usage is measured"
+                )
+
+                return {
+                    'size_bytes': conservative_requirement,
+                    'name': f'params:{param_hash}',
+                    'source': 'conservative-first-request'
+                }
+        except ImportError:
+            pass
+        except Exception as e:
+            self.logger.warning(f"Failed to get CUDA info: {e}")
+
+        return None
+
+    def _record_vram_usage(self, parameters: dict, peak_bytes: int) -> None:
+        """
+        Record peak memory usage to profile file.
+
+        Uses atomic write (temp + rename) to avoid corruption from
+        concurrent writes. Only updates if new value is higher.
+
+        :param parameters: Request parameters (for hash)
+        :param peak_bytes: Measured peak VRAM usage
+        """
+        if peak_bytes <= 0:
+            return
+
+        param_hash = generate_param_hash(parameters)
+        profile_path = self._get_profile_path(param_hash)
+
+        try:
+            profile_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Check if we should update
+            should_write = True
+            if profile_path.exists():
+                try:
+                    existing = int(profile_path.read_text().strip())
+                    if peak_bytes <= existing:
+                        should_write = False  # Existing value is sufficient
+                    else:
+                        self.logger.debug(
+                            f"Updating peak memory for {param_hash}: "
+                            f"{existing/1024**3:.2f}GB -> {peak_bytes/1024**3:.2f}GB"
+                        )
+                except (ValueError, IOError):
+                    pass  # Corrupted file, overwrite
+
+            if should_write:
+                # Atomic write: write to temp, then rename
+                temp_path = profile_path.with_suffix('.tmp')
+                temp_path.write_text(str(peak_bytes))
+                temp_path.rename(profile_path)  # Atomic on POSIX
+
+                self.logger.info(
+                    f"Recorded peak memory for {param_hash}: "
+                    f"{peak_bytes/1024**3:.2f}GB"
+                )
+        except Exception as e:
+            self.logger.warning(f"Failed to record memory profile: {e}")
+
     @staticmethod
     def _profile_cuda_memory(func):
         """
-        Decorator for profiling CUDA memory usage during _annotate execution.
-        
+        Decorator for profiling CUDA memory usage and managing VRAM availability.
+
+        This decorator:
+        1. Checks VRAM requirements before execution (if conditions met)
+        2. Rejects requests if insufficient VRAM
+        3. Records peak memory usage after execution
+        4. Calls empty_cache() for cleanup
+
         :param func: The function to wrap (typically _annotate)
         :return: Decorated function that returns (result, cuda_profiler)
                  where cuda_profiler is dict with "<GPU_NAME>, <GPU_TOTAL_MEMORY>" keys
-                 and peak memory usage values
+                 and dict values containing 'available_before' and 'peak' memory in bytes
         """
         def wrapper(*args, **kwargs):
+            # Get the ClamsApp instance from the bound method
+            app_instance = func.__self__
+
             cuda_profiler = {}
             torch_available = False
             cuda_available = False
             device_count = 0
-            
+            available_before = {}
+
             try:
                 import torch  # pytype: disable=import-error
                 torch_available = True
                 cuda_available = torch.cuda.is_available()
                 device_count = torch.cuda.device_count()
-                if cuda_available:
-                    # Reset peak memory stats for all devices
-                    torch.cuda.reset_peak_memory_stats('cuda')
             except ImportError:
                 pass
-            
+
+            # VRAM checking: only when torch available, CUDA available, and app declares GPU usage
+            should_check_vram = (
+                torch_available and
+                cuda_available and
+                hasattr(app_instance, 'metadata') and
+                getattr(app_instance.metadata, 'gpu_mem_min', 0) > 0
+            )
+
+            if should_check_vram:
+                requirements = app_instance._get_estimated_vram_usage(**kwargs)
+
+                if requirements:
+                    required_bytes = requirements['size_bytes']
+                    model_name = requirements.get('name', 'model')
+                    source = requirements.get('source', 'unknown')
+
+                    # Check if sufficient VRAM available RIGHT NOW
+                    if not ClamsApp._check_vram_available(required_bytes):
+                        available_gb = ClamsApp._get_available_vram() / 1024**3
+                        required_gb = required_bytes / 1024**3
+
+                        error_msg = (
+                            f"Insufficient GPU memory for {model_name}. "
+                            f"Requested: {required_gb:.2f}GB, "
+                            f"Available: {available_gb:.2f}GB. "
+                        )
+                        if source == 'conservative-first-request':
+                            error_msg += (
+                                "This is a first request with this parameter set. "
+                                "Conservative 80% VRAM requirement applied. "
+                            )
+                        error_msg += (
+                            "GPU may be in use by other processes. "
+                            "Please retry later."
+                        )
+
+                        app_instance.logger.error(error_msg)
+                        raise InsufficientVRAMError(error_msg)
+
+                    app_instance.logger.info(
+                        f"VRAM check passed for {model_name} ({source}): "
+                        f"{required_bytes/1024**3:.2f}GB requested, "
+                        f"{ClamsApp._get_available_vram()/1024**3:.2f}GB available"
+                    )
+
+            # Capture available VRAM before execution and reset stats
+            if torch_available and cuda_available:
+                for device_id in range(device_count):
+                    device_id_str = f'cuda:{device_id}'
+                    total = torch.cuda.get_device_properties(device_id_str).total_memory
+                    allocated = torch.cuda.memory_allocated(device_id_str)
+                    available_before[device_id] = total - allocated
+                # Reset peak memory stats for all devices
+                torch.cuda.reset_peak_memory_stats('cuda')
+
             try:
                 result = func(*args, **kwargs)
-                
+
+                # Record peak memory usage
+                total_peak = 0
                 if torch_available and cuda_available and device_count > 0:
                     for device_id in range(device_count):
-                        device_id = f'cuda:{device_id}'
-                        peak_memory = torch.cuda.max_memory_allocated(device_id)
-                        gpu_name = torch.cuda.get_device_name(device_id)
-                        gpu_total_memory = torch.cuda.get_device_properties(device_id).total_memory
+                        device_id_str = f'cuda:{device_id}'
+                        peak_memory = torch.cuda.max_memory_allocated(device_id_str)
+                        total_peak = max(total_peak, peak_memory)
+                        gpu_name = torch.cuda.get_device_name(device_id_str)
+                        gpu_total_memory = torch.cuda.get_device_properties(device_id_str).total_memory
                         key = ClamsApp._cuda_device_name_concat(gpu_name, gpu_total_memory)
-                        cuda_profiler[key] = peak_memory
-                
+                        cuda_profiler[key] = {
+                            'available_before': available_before.get(device_id, 0),
+                            'peak': peak_memory
+                        }
+
+                    # Record peak memory for future requests (if VRAM checking enabled)
+                    if should_check_vram and total_peak > 0:
+                        app_instance._record_vram_usage(kwargs, total_peak)
+
                 return result, cuda_profiler
             finally:
                 if torch_available and cuda_available:
                     torch.cuda.empty_cache()
-        
+
         return wrapper
 
     @staticmethod

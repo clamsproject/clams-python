@@ -3,7 +3,7 @@ from flask import Flask, request, Response
 from flask_restful import Resource, Api
 from mmif import Mmif
 
-from clams.app import ClamsApp
+from clams.app import ClamsApp, InsufficientVRAMError
 
 
 class Restifier(object):
@@ -178,6 +178,9 @@ class ClamsHTTPApi(Resource):
             return Response(response="Invalid input data. See below for validation error.\n\n" + str(e), status=500, mimetype='text/plain')
         try:
             return self.json_to_response(self.cla.annotate(raw_data, **raw_params))
+        except InsufficientVRAMError as e:
+            self.cla.logger.warning(f"Request rejected due to insufficient VRAM: {e}")
+            return Response(response=str(e), status=503, mimetype='text/plain')
         except Exception:
             self.cla.logger.exception("Error in annotation")
             return self.json_to_response(self.cla.record_error(raw_data, **raw_params).serialize(pretty=True), status=500)
