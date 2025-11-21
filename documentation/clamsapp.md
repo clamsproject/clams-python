@@ -217,17 +217,7 @@ When running in production mode, the following environment variables can be used
 |----------|-------------|---------|
 | `CLAMS_WORKERS` | Number of gunicorn worker processes | Auto-calculated based on CPU cores and GPU memory |
 
-By default, the number of workers is calculated as `(CPU cores × 2) + 1`. However, for GPU-based apps that declare their GPU memory requirements in the app metadata, the SDK will automatically limit workers based on available GPU VRAM to prevent out-of-memory errors.
-
-To override the automatic calculation:
-
-```bash
-# Set a fixed number of workers
-$ CLAMS_WORKERS=2 python app.py --production
-
-# Or in docker
-$ docker run -e CLAMS_WORKERS=2 -p 5000:5000 <IMAGE_NAME>
-```
+By default, the number of workers is calculated as `(CPU cores × 2) + 1`. For GPU-based apps, see [GPU Memory Management](gpu-apps.md) for details on automatic worker scaling and VRAM management.
 
 #### `metadata.py`: Getting app metadata
 

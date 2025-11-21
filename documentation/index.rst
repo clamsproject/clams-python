@@ -10,6 +10,7 @@ Welcome to CLAMS Python SDK documentation!
   introduction
   input-output
   runtime-params
+  gpu-apps
   appmetadata
   appdirectory
   cli
