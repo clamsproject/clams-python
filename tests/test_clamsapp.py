@@ -85,7 +85,7 @@ class ExampleClamsApp(clams.app.ClamsApp):
 class TestClamsApp(unittest.TestCase):
     
     def setUp(self):
-        self.appmetadataschema = json.loads(AppMetadata.schema_json())
+        self.appmetadataschema = AppMetadata.model_json_schema()
         self.app = ExampleClamsApp()
         self.in_mmif = ExampleInputMMIF.get_mmif()
 
@@ -297,13 +297,13 @@ class TestClamsApp(unittest.TestCase):
 
     def test_open_document_location(self):
         mmif = ExampleInputMMIF.get_rawmmif()
-        with self.app.open_document_location(mmif.documents['t1']) as f:
+        with self.app.open_document_location(mmif['t1']) as f:
             self.assertEqual(f.read(), ExampleInputMMIF.EXAMPLE_TEXT)
 
     def test_open_document_location_custom_opener(self):
         from PIL import Image
         mmif = ExampleInputMMIF.get_rawmmif()
-        with self.app.open_document_location(mmif.documents['i1'], Image.open) as f:
+        with self.app.open_document_location(mmif['i1'], Image.open) as f:
             self.assertEqual(f.size, (200, 71))
             
     def test_refine_parameters(self):
@@ -355,19 +355,59 @@ class TestClamsApp(unittest.TestCase):
     def test_error_handling(self):
         params = {'raise_error': ['true'], 'pretty': ['true']}
         in_mmif = Mmif(self.in_mmif)
-        try: 
+        try:
             out_mmif = self.app.annotate(in_mmif, **params)
         except Exception as e:
             out_mmif_from_str = self.app.set_error_view(self.in_mmif, **params)
             out_mmif_from_mmif = self.app.set_error_view(in_mmif, **params)
             self.assertEqual(
-                out_mmif_from_mmif.views.get_last(),
-                out_mmif_from_str.views.get_last())
+                out_mmif_from_mmif.views.get_last_contentful_view(),
+                out_mmif_from_str.views.get_last_contentful_view())
             out_mmif = out_mmif_from_str
         self.assertIsNotNone(out_mmif)
         last_view: View = next(reversed(out_mmif.views))
         self.assertEqual(len(last_view.metadata.contains), 0)
         self.assertEqual(len(last_view.metadata.error), 2)
+
+    def test_gpu_mem_fields_default_zero(self):
+        """GPU memory fields default to 0."""
+        metadata = AppMetadata(
+            name="Test App",
+            description="Test",
+            app_license="MIT",
+            identifier="test-app",
+            url="https://example.com",
+        )
+        metadata.add_input(DocumentTypes.TextDocument)
+        metadata.add_output(AnnotationTypes.TimeFrame)
+
+        self.assertEqual(metadata.est_gpu_mem_min, 0)
+        self.assertEqual(metadata.est_gpu_mem_typ, 0)
+
+    def test_est_gpu_mem_typ_validation(self):
+        """Warning issued when est_gpu_mem_typ < est_gpu_mem_min, autocorrected."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            metadata = AppMetadata(
+                name="Test App",
+                description="Test",
+                app_license="MIT",
+                identifier="test-app",
+                url="https://example.com",
+                est_gpu_mem_min=4000,  # 4GB min
+                est_gpu_mem_typ=2000,  # 2GB typical (less than min!)
+            )
+            metadata.add_input(DocumentTypes.TextDocument)
+            metadata.add_output(AnnotationTypes.TimeFrame)
+
+            # Should have issued a warning
+            self.assertEqual(len(w), 1)
+            self.assertIn('est_gpu_mem_typ', str(w[0].message))
+            self.assertIn('est_gpu_mem_min', str(w[0].message))
+
+            # Should have auto-corrected
+            self.assertEqual(metadata.est_gpu_mem_typ, metadata.est_gpu_mem_min)
 
 
 class TestRestifier(unittest.TestCase):

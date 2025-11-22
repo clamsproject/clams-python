@@ -352,8 +352,19 @@ class AppMetadata(pydantic.BaseModel):
                     "a package name and its version in the string value at the minimum (e.g., ``clams-python==1.2.3``)."
     )
     more: Optional[Dict[str, str]] = pydantic.Field(
-        None, 
+        None,
         description="(optional) A string-to-string map that can be used to store any additional metadata of the app."
+    )
+    est_gpu_mem_min: int = pydantic.Field(
+        0,
+        description="(optional) Minimum GPU memory required to run the app, in megabytes (MB). "
+                    "Set to 0 (default) if the app does not use GPU."
+    )
+    est_gpu_mem_typ: int = pydantic.Field(
+        0,
+        description="(optional) Typical GPU memory usage for default parameters, in megabytes (MB). "
+                    "Must be equal or larger than est_gpu_mem_min. "
+                    "Set to 0 (default) if the app does not use GPU."
     )
 
     model_config = {
@@ -370,6 +381,21 @@ class AppMetadata(pydantic.BaseModel):
             data.app_version = generate_app_version()
         if data.mmif_version == '':
             data.mmif_version = get_mmif_specver()
+        return data
+
+    @pydantic.model_validator(mode='after')
+    @classmethod
+    def validate_gpu_memory(cls, data):
+        import warnings
+        if data.est_gpu_mem_typ > 0 and data.est_gpu_mem_min > 0:
+            if data.est_gpu_mem_typ < data.est_gpu_mem_min:
+                warnings.warn(
+                    f"est_gpu_mem_typ ({data.est_gpu_mem_typ} MB) is less than "
+                    f"est_gpu_mem_min ({data.est_gpu_mem_min} MB). "
+                    f"Setting est_gpu_mem_typ to {data.est_gpu_mem_min} MB.",
+                    UserWarning
+                )
+                data.est_gpu_mem_typ = data.est_gpu_mem_min
         return data
 
     @pydantic.field_validator('identifier', mode='before')

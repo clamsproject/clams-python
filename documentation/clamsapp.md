@@ -183,8 +183,8 @@ For example, appending `?pretty=True` to the URL will result in a JSON output wi
 
 > **Note**
 > When you're using `curl` from a shell session, you need to escape the `?` or `&` characters with `\` to prevent the shell from interpreting it as a special character.
- 
-Different apps have different configurability. For configuration parameters of an app, please refer to `parameter` section of the app metadata.
+
+Different apps have different configurability. For configuration parameters of an app, please refer to `parameter` section of the app metadata. In addition to app-specific parameters, all apps support universal parameters (e.g., `pretty` for formatted output). Check the app metadata for the complete and up-to-date list.
 
 ### Using CLAMS App as a CLI program
 
@@ -208,6 +208,17 @@ $ python app.py
 * By default, the app will be listening to port 5000, but you can change the port number by passing `--port <NUMBER>` option.
 * Be default, the app will be running in *debugging* mode, but you can change it to *production* mode by passing `--production` option to support larger traffic volume.
 * As you might have noticed, the default `CMD` in the prebuilt containers is `python app.py --production --port 5000`.
+
+##### Environment variables for production mode
+
+When running in production mode, the following environment variables can be used to configure the app server:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CLAMS_GUNICORN_WORKERS` | Number of gunicorn worker processes | Auto-calculated based on CPU cores and GPU memory |
+| `CLAMS_LOGLEVEL` | Logging verbosity level (`debug`, `info`, `warning`, `error`) | `warning` |
+
+By default, the number of workers is calculated as `(CPU cores × 2) + 1`. For GPU-based apps, see [GPU Memory Management](gpu-apps.md) for details on automatic worker scaling and VRAM management.
 
 #### `metadata.py`: Getting app metadata
 
