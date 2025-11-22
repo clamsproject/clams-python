@@ -295,6 +295,10 @@ class AppMetadata(pydantic.BaseModel):
         None, 
         description="(optional) Version of an analyzer software, if the app is working as a wrapper for one. "
     )
+    analyzer_versions: Optional[Dict[str, str]] = pydantic.Field(
+        None,
+        description="(optional) Map of analyzer IDs to their versions, for apps that wrap multiple models or families."
+    )
     app_license: str = pydantic.Field(
         ..., 
         description="License information of the app."
