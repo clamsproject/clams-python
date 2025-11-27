@@ -77,7 +77,7 @@ class ClamsApp(ABC):
 
         self.metadata_param_caster = ParameterCaster(self.metadata_param_spec)
         self.annotate_param_caster = ParameterCaster(self.annotate_param_spec)
-        self.logger = logging.getLogger(self.metadata.identifier)
+        self.logger = logging.getLogger(str(self.metadata.identifier))
         
     def appmetadata(self, **kwargs: List[str]) -> str:
         """
@@ -138,6 +138,7 @@ class ClamsApp(ABC):
         """
         if not isinstance(mmif, Mmif):
             mmif = Mmif(mmif)
+        existing_view_ids = {view.id for view in mmif.views}
         issued_warnings = []
         for key in runtime_params:
             if key not in self.annotate_param_spec:
@@ -156,7 +157,8 @@ class ClamsApp(ABC):
             warnings_view = annotated.new_view()
             self.sign_view(warnings_view, refined)
             warnings_view.metadata.warnings = issued_warnings
-        td = datetime.now() - t
+        run_id = datetime.now()
+        td = run_id - t
         runningTime = refined.get('runningTime', False)
         hwFetch = refined.get('hwFetch', False)
         runtime_recs = {}
@@ -180,7 +182,8 @@ class ClamsApp(ABC):
                     name, mem = gpu.split(', ')
                     runtime_recs['cuda'].append(self._cuda_device_name_concat(name, mem))
         for annotated_view in annotated.views:
-            if annotated_view.metadata.app == self.metadata.identifier:
+            if annotated_view.id not in existing_view_ids and annotated_view.metadata.app == str(self.metadata.identifier):
+                annotated_view.metadata.timestamp = run_id
                 profiling_data = {}
                 if runningTime:
                     profiling_data['runningTime'] = str(td)
@@ -265,7 +268,7 @@ class ClamsApp(ABC):
         :param view: a view to sign
         :param runtime_conf: runtime configuration of the app as k-v pairs
         """
-        view.metadata.app = self.metadata.identifier
+        view.metadata.app = str(self.metadata.identifier)
         params_map = {p.name: p for p in self.metadata.parameters}
         if self._RAW_PARAMS_KEY in runtime_conf:
             for k, v in runtime_conf.items():
@@ -300,7 +303,7 @@ class ClamsApp(ABC):
             mmif = Mmif(mmif)
         error_view: Optional[View] = None
         for view in reversed(mmif.views):
-            if view.metadata.app == self.metadata.identifier:
+            if view.metadata.app == str(self.metadata.identifier):
                 error_view = view
                 break
         if error_view is None:
@@ -358,7 +361,7 @@ class ClamsApp(ABC):
         :return: Path to the profile file
         """
         # Sanitize app identifier for filesystem use
-        app_id = self.metadata.identifier.replace('/', '-').replace(':', '-')
+        app_id = str(self.metadata.identifier).replace('/', '-').replace(':', '-')
         cache_base = pathlib.Path(os.environ.get('XDG_CACHE_HOME', pathlib.Path.home() / '.cache'))
         cache_dir = cache_base / 'clams' / 'memory_profiles' / app_id
         return cache_dir / f"memory_{param_hash}.json"

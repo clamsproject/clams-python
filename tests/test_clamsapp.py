@@ -234,12 +234,12 @@ class TestClamsApp(unittest.TestCase):
         m = Mmif(self.in_mmif)
         v1 = m.new_view()
         self.app.sign_view(v1, {})
-        self.assertEqual(v1.metadata.app, self.app.metadata.identifier)
+        self.assertEqual(v1.metadata.app, str(self.app.metadata.identifier))
         self.assertEqual(len(v1.metadata.parameters), 0)
         v2 = m.new_view()
         args2 = {'undefined_param1': ['value1']}  # values are lists as our restifier uses `to_dict(flat=False)`
         self.app.sign_view(v2, self.app._refine_params(**args2))
-        self.assertEqual(v2.metadata.app, self.app.metadata.identifier)
+        self.assertEqual(v2.metadata.app, str(self.app.metadata.identifier))
         self.assertEqual(len(v2.metadata.parameters), 1)
         self.assertFalse(clams.ClamsApp._RAW_PARAMS_KEY in v2.metadata.appConfiguration)
         for param in self.app.metadata.parameters:
@@ -271,19 +271,41 @@ class TestClamsApp(unittest.TestCase):
         out_mmif = Mmif(out_mmif)
         self.assertEqual(len(out_mmif.views), 2)
         for v in out_mmif.views:
-            if v.metadata.app == self.app.metadata.identifier:
+            if v.metadata.app == str(self.app.metadata.identifier):
                 self.assertEqual(len(v.metadata.parameters), 0)  # no params were passed when `annotate()` was called
         out_mmif = self.app.annotate(self.in_mmif, pretty=[str(False)])
         out_mmif = Mmif(out_mmif)
         for v in out_mmif.views:
-            if v.metadata.app == self.app.metadata.identifier:
+            if v.metadata.app == str(self.app.metadata.identifier):
                 self.assertEqual(len(v.metadata.parameters), 1)  # 'pretty` parameter was passed 
         out_mmif = Mmif(self.app.annotate(out_mmif))
         self.assertEqual(len(out_mmif.views), 4)
         views = list(out_mmif.views)
         # insertion order is kept
-        self.assertTrue(views[0].metadata.timestamp < views[1].metadata.timestamp)
-    
+        self.assertEqual(views[0].metadata.timestamp, views[1].metadata.timestamp)
+        self.assertEqual(views[2].metadata.timestamp, views[3].metadata.timestamp)
+        self.assertTrue(views[1].metadata.timestamp < views[2].metadata.timestamp)
+
+    def test_run_id(self):
+        # first run
+        out_mmif = Mmif(self.app.annotate(self.in_mmif))
+        app_views = [v for v in out_mmif.views if v.metadata.app == str(self.app.metadata.identifier)]
+        self.assertTrue(len(app_views) > 0)
+        first_timestamp = app_views[0].metadata.timestamp
+        for view in app_views[1:]:
+            self.assertEqual(first_timestamp, view.metadata.timestamp)
+        # second run
+        out_mmif2 = Mmif(self.app.annotate(out_mmif))
+        app_views2 = [v for v in out_mmif2.views if v.metadata.app == str(self.app.metadata.identifier)]
+        self.assertEqual(len(app_views2), len(app_views) * 2)
+        second_timestamp = app_views2[-1].metadata.timestamp
+        self.assertNotEqual(first_timestamp, second_timestamp)
+        for view in app_views2:
+            if view.id in [v.id for v in app_views]:
+                self.assertEqual(first_timestamp, view.metadata.timestamp)
+            else:
+                self.assertEqual(second_timestamp, view.metadata.timestamp)
+
     def test_annotate_returns_invalid_mmif(self):
         m = Mmif(self.in_mmif)
         v = m.new_view()
