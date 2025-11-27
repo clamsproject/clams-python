@@ -431,6 +431,35 @@ class TestClamsApp(unittest.TestCase):
             # Should have auto-corrected
             self.assertEqual(metadata.est_gpu_mem_typ, metadata.est_gpu_mem_min)
 
+        def test_analyzer_versions_default_none(self):
+            """analyzer_versions field defaults to None."""
+            metadata = AppMetadata(
+                name="Test App",
+                description="Test",
+                app_license="MIT",
+                identifier="test-app",
+                url="https://example.com",
+            )
+            metadata.add_input(DocumentTypes.TextDocument)
+            metadata.add_output(AnnotationTypes.TimeFrame)
+
+            self.assertIsNone(metadata.analyzer_versions)
+
+        def test_analyzer_versions_with_value(self):
+            """analyzer_versions can be set with a dictionary."""
+            test_versions = {"model_a": "1.0", "model_b": "2.1"}
+            metadata = AppMetadata(
+                name="Test App",
+                description="Test",
+                app_license="MIT",
+                identifier="test-app",
+                url="https://example.com",
+                analyzer_versions=test_versions,
+            )
+            metadata.add_input(DocumentTypes.TextDocument)
+            metadata.add_output(AnnotationTypes.TimeFrame)
+
+            self.assertEqual(metadata.analyzer_versions, test_versions)
 
 class TestRestifier(unittest.TestCase):
 
