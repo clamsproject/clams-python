@@ -282,7 +282,9 @@ class TestClamsApp(unittest.TestCase):
         self.assertEqual(len(out_mmif.views), 4)
         views = list(out_mmif.views)
         # insertion order is kept
-        self.assertTrue(views[0].metadata.timestamp < views[1].metadata.timestamp)
+        self.assertEqual(views[0].metadata.timestamp, views[1].metadata.timestamp)
+        self.assertEqual(views[2].metadata.timestamp, views[3].metadata.timestamp)
+        self.assertTrue(views[1].metadata.timestamp < views[2].metadata.timestamp)
     
     def test_annotate_returns_invalid_mmif(self):
         m = Mmif(self.in_mmif)
@@ -408,6 +410,26 @@ class TestClamsApp(unittest.TestCase):
 
             # Should have auto-corrected
             self.assertEqual(metadata.est_gpu_mem_typ, metadata.est_gpu_mem_min)
+
+    def test_run_id(self):
+        # first run
+        out_mmif = Mmif(self.app.annotate(self.in_mmif))
+        app_views = [v for v in out_mmif.views if v.metadata.app == self.app.metadata.identifier]
+        self.assertTrue(len(app_views) > 0)
+        first_timestamp = app_views[0].metadata.timestamp
+        for view in app_views[1:]:
+            self.assertEqual(first_timestamp, view.metadata.timestamp)
+        # second run
+        out_mmif2 = Mmif(self.app.annotate(out_mmif))
+        app_views2 = [v for v in out_mmif2.views if v.metadata.app == self.app.metadata.identifier]
+        self.assertEqual(len(app_views2), len(app_views) * 2)
+        second_timestamp = app_views2[-1].metadata.timestamp
+        self.assertNotEqual(first_timestamp, second_timestamp)
+        for view in app_views2:
+            if view.id in [v.id for v in app_views]:
+                self.assertEqual(first_timestamp, view.metadata.timestamp)
+            else:
+                self.assertEqual(second_timestamp, view.metadata.timestamp)
 
 
 class TestRestifier(unittest.TestCase):

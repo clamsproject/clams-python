@@ -1,19 +1,17 @@
-from mmif import AnnotationTypes, DocumentTypes
 
-from clams import AppMetadata
-
+from clams.appmetadata import AppMetadata
+from mmif.vocabulary import DocumentTypes, AnnotationTypes
 
 def appmetadata() -> AppMetadata:
     metadata = AppMetadata(
-        name="Example CLAMS App for testing",
-        description="This app doesn't do anything",
+        name="Example Clams App",
+        description="An example app for testing.",
         app_license="MIT",
-        identifier=f"https://apps.clams.ai/example",
-        output=[{'@type': AnnotationTypes.TimeFrame}],
-        dependencies=['clams-python==develop-ver', 'mmif-pyhon==0.0.999'],
-        url="https://fakegithub.com/some/repository"
+        identifier="example-app",
+        url="http://example.com/example-app"
     )
     metadata.add_input(DocumentTypes.TextDocument)
-    metadata.add_input_oneof(DocumentTypes.AudioDocument, str(DocumentTypes.VideoDocument))
-    metadata.add_parameter(name='raise_error', description='force raise a ValueError', type='boolean', default='false')
+    metadata.add_input(DocumentTypes.VideoDocument)
+    metadata.add_output(AnnotationTypes.TimeFrame)
+    metadata.add_parameter(name='raise_error', description='a dummy parameter', type='boolean', default=False)
     return metadata

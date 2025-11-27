@@ -138,6 +138,7 @@ class ClamsApp(ABC):
         """
         if not isinstance(mmif, Mmif):
             mmif = Mmif(mmif)
+        existing_view_ids = {view.id for view in mmif.views}
         issued_warnings = []
         for key in runtime_params:
             if key not in self.annotate_param_spec:
@@ -156,7 +157,8 @@ class ClamsApp(ABC):
             warnings_view = annotated.new_view()
             self.sign_view(warnings_view, refined)
             warnings_view.metadata.warnings = issued_warnings
-        td = datetime.now() - t
+        run_id = datetime.now()
+        td = run_id - t
         runningTime = refined.get('runningTime', False)
         hwFetch = refined.get('hwFetch', False)
         runtime_recs = {}
@@ -180,7 +182,8 @@ class ClamsApp(ABC):
                     name, mem = gpu.split(', ')
                     runtime_recs['cuda'].append(self._cuda_device_name_concat(name, mem))
         for annotated_view in annotated.views:
-            if annotated_view.metadata.app == self.metadata.identifier:
+            if annotated_view.id not in existing_view_ids and annotated_view.metadata.app == self.metadata.identifier:
+                annotated_view.metadata.timestamp = run_id
                 profiling_data = {}
                 if runningTime:
                     profiling_data['runningTime'] = str(td)
