@@ -340,10 +340,7 @@ class ClamsApp(ABC):
     @staticmethod
     def _cuda_memory_to_str(mem) -> str:
         mib = mem / (1024 * 1024)
-        if mib >= 1024:
-            return f"{mib / 1024:.2f} GiB"
-        else:
-            return f"{mib:.1f} MiB"
+        return f"{mib:.0f} MiB"  # No decimal places
 
     @staticmethod
     def _cuda_device_name_concat(name, mem):
@@ -440,7 +437,7 @@ class ClamsApp(ABC):
                     else:
                         self.logger.debug(
                             f"Updating peak memory for {param_hash}: "
-                            f"{existing/1024**3:.2f}GB -> {peak_bytes/1024**3:.2f}GB"
+                            f"{self._cuda_memory_to_str(existing)} -> {self._cuda_memory_to_str(peak_bytes)}"
                         )
                 except (ValueError, IOError, json.JSONDecodeError):
                     pass  # Corrupted file, overwrite
@@ -464,7 +461,7 @@ class ClamsApp(ABC):
 
                 self.logger.info(
                     f"Recorded peak memory for {param_hash}: "
-                    f"{peak_bytes/1024**3:.2f}GB"
+                    f"{self._cuda_memory_to_str(peak_bytes)}"
                 )
         except Exception as e:
             self.logger.warning(f"Failed to record memory profile: {e}")
