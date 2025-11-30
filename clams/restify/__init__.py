@@ -42,14 +42,55 @@ class Restifier(object):
     def serve_production(self, **options):
         """
         Runs the CLAMS app as a flask webapp, using a production-ready web server (gunicorn, https://docs.gunicorn.org/en/stable/#).
-        
+
         :param options: any additional options to pass to the web server.
         """
         import gunicorn.app.base
         import multiprocessing
+        import os
 
         def number_of_workers():
-            return (multiprocessing.cpu_count() * 2) + 1  # +1 to make sure at least two workers are running
+            # Allow override via environment variable
+            if 'CLAMS_GUNICORN_WORKERS' in os.environ:
+                return int(os.environ['CLAMS_GUNICORN_WORKERS'])
+
+            cpu_workers = (multiprocessing.cpu_count() * 2) + 1
+
+            # Get GPU memory requirement from app metadata
+            # Use est_gpu_mem_typ (typical usage) for worker calculation
+            try:
+                metadata = self.cla.metadata
+                gpu_mem_mb = metadata.est_gpu_mem_typ  # typical usage determines how many workers fit
+            except Exception:
+                gpu_mem_mb = 0
+
+            if gpu_mem_mb <= 0:
+                return cpu_workers
+
+            # Calculate workers based on total VRAM of the first CUDA device (no other GPUs are considered for now)
+            # Use nvidia-smi instead of torch to avoid initializing CUDA in parent process before fork
+            try:
+                import subprocess
+                import shutil
+                if shutil.which('nvidia-smi'):
+                    result = subprocess.run(
+                        ['nvidia-smi', '--query-gpu=memory.total', '--format=csv,noheader,nounits', '-i', '0'],
+                        capture_output=True, text=True, timeout=5
+                    )
+                    if result.returncode == 0 and result.stdout.strip():
+                        total_vram_mb = float(result.stdout.strip())
+                        vram_workers = max(1, int(total_vram_mb // gpu_mem_mb))
+                        workers = min(vram_workers, cpu_workers)
+                        self.cla.logger.info(
+                            f"GPU detected: {total_vram_mb:.0f} MB VRAM, "
+                            f"app requires {gpu_mem_mb} MB, "
+                            f"using {workers} workers (max {vram_workers} by VRAM, {cpu_workers} by CPU)"
+                        )
+                        return workers
+            except Exception:
+                pass
+
+            return cpu_workers
         
         class ProductionApplication(gunicorn.app.base.BaseApplication):
 
@@ -58,9 +99,16 @@ class Restifier(object):
                     'bind': f'{host}:{port}',
                     'workers': number_of_workers(),
                     'threads': 2,
+                    # disable timeout for long-running GPU workloads (default 30s is too short)
+                    'timeout': 0,
                     # because the default is 'None'
                     'accesslog': '-',
                     # errorlog, however, is redirected to stderr by default since 19.2, so no need to set
+                    # log level is warning by default
+                    'loglevel': os.environ.get('CLAMS_LOGLEVEL', 'warning').lower(),
+                    # default to 1 to free GPU memory after each request
+                    # developers can override via serve_production(max_requests=N) for single-model apps
+                    'max_requests': 1,
                 }
                 self.options.update(options)
                 self.application = app
@@ -74,6 +122,13 @@ class Restifier(object):
 
             def load(self):
                 return self.application
+
+        # Log max_requests setting
+        max_req = options.get('max_requests', 1)  # default is 1, meaning workers are killed after each request
+        if max_req == 0:
+            self.cla.logger.info("Worker recycling: disabled (workers persist)")
+        else:
+            self.cla.logger.info(f"Worker recycling: after {max_req} request(s)")
 
         ProductionApplication(self.flask_app, self.host, self.port, **options).run()
 

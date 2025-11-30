@@ -85,7 +85,7 @@ class ExampleClamsApp(clams.app.ClamsApp):
 class TestClamsApp(unittest.TestCase):
     
     def setUp(self):
-        self.appmetadataschema = json.loads(AppMetadata.schema_json())
+        self.appmetadataschema = AppMetadata.model_json_schema()
         self.app = ExampleClamsApp()
         self.in_mmif = ExampleInputMMIF.get_mmif()
 
@@ -234,12 +234,12 @@ class TestClamsApp(unittest.TestCase):
         m = Mmif(self.in_mmif)
         v1 = m.new_view()
         self.app.sign_view(v1, {})
-        self.assertEqual(v1.metadata.app, self.app.metadata.identifier)
+        self.assertEqual(v1.metadata.app, str(self.app.metadata.identifier))
         self.assertEqual(len(v1.metadata.parameters), 0)
         v2 = m.new_view()
         args2 = {'undefined_param1': ['value1']}  # values are lists as our restifier uses `to_dict(flat=False)`
         self.app.sign_view(v2, self.app._refine_params(**args2))
-        self.assertEqual(v2.metadata.app, self.app.metadata.identifier)
+        self.assertEqual(v2.metadata.app, str(self.app.metadata.identifier))
         self.assertEqual(len(v2.metadata.parameters), 1)
         self.assertFalse(clams.ClamsApp._RAW_PARAMS_KEY in v2.metadata.appConfiguration)
         for param in self.app.metadata.parameters:
@@ -271,19 +271,41 @@ class TestClamsApp(unittest.TestCase):
         out_mmif = Mmif(out_mmif)
         self.assertEqual(len(out_mmif.views), 2)
         for v in out_mmif.views:
-            if v.metadata.app == self.app.metadata.identifier:
+            if v.metadata.app == str(self.app.metadata.identifier):
                 self.assertEqual(len(v.metadata.parameters), 0)  # no params were passed when `annotate()` was called
         out_mmif = self.app.annotate(self.in_mmif, pretty=[str(False)])
         out_mmif = Mmif(out_mmif)
         for v in out_mmif.views:
-            if v.metadata.app == self.app.metadata.identifier:
+            if v.metadata.app == str(self.app.metadata.identifier):
                 self.assertEqual(len(v.metadata.parameters), 1)  # 'pretty` parameter was passed 
         out_mmif = Mmif(self.app.annotate(out_mmif))
         self.assertEqual(len(out_mmif.views), 4)
         views = list(out_mmif.views)
         # insertion order is kept
-        self.assertTrue(views[0].metadata.timestamp < views[1].metadata.timestamp)
-    
+        self.assertEqual(views[0].metadata.timestamp, views[1].metadata.timestamp)
+        self.assertEqual(views[2].metadata.timestamp, views[3].metadata.timestamp)
+        self.assertTrue(views[1].metadata.timestamp < views[2].metadata.timestamp)
+
+    def test_run_id(self):
+        # first run
+        out_mmif = Mmif(self.app.annotate(self.in_mmif))
+        app_views = [v for v in out_mmif.views if v.metadata.app == str(self.app.metadata.identifier)]
+        self.assertTrue(len(app_views) > 0)
+        first_timestamp = app_views[0].metadata.timestamp
+        for view in app_views[1:]:
+            self.assertEqual(first_timestamp, view.metadata.timestamp)
+        # second run
+        out_mmif2 = Mmif(self.app.annotate(out_mmif))
+        app_views2 = [v for v in out_mmif2.views if v.metadata.app == str(self.app.metadata.identifier)]
+        self.assertEqual(len(app_views2), len(app_views) * 2)
+        second_timestamp = app_views2[-1].metadata.timestamp
+        self.assertNotEqual(first_timestamp, second_timestamp)
+        for view in app_views2:
+            if view.id in [v.id for v in app_views]:
+                self.assertEqual(first_timestamp, view.metadata.timestamp)
+            else:
+                self.assertEqual(second_timestamp, view.metadata.timestamp)
+
     def test_annotate_returns_invalid_mmif(self):
         m = Mmif(self.in_mmif)
         v = m.new_view()
@@ -297,13 +319,13 @@ class TestClamsApp(unittest.TestCase):
 
     def test_open_document_location(self):
         mmif = ExampleInputMMIF.get_rawmmif()
-        with self.app.open_document_location(mmif.documents['t1']) as f:
+        with self.app.open_document_location(mmif['t1']) as f:
             self.assertEqual(f.read(), ExampleInputMMIF.EXAMPLE_TEXT)
 
     def test_open_document_location_custom_opener(self):
         from PIL import Image
         mmif = ExampleInputMMIF.get_rawmmif()
-        with self.app.open_document_location(mmif.documents['i1'], Image.open) as f:
+        with self.app.open_document_location(mmif['i1'], Image.open) as f:
             self.assertEqual(f.size, (200, 71))
             
     def test_refine_parameters(self):
@@ -355,20 +377,89 @@ class TestClamsApp(unittest.TestCase):
     def test_error_handling(self):
         params = {'raise_error': ['true'], 'pretty': ['true']}
         in_mmif = Mmif(self.in_mmif)
-        try: 
+        try:
             out_mmif = self.app.annotate(in_mmif, **params)
         except Exception as e:
             out_mmif_from_str = self.app.set_error_view(self.in_mmif, **params)
             out_mmif_from_mmif = self.app.set_error_view(in_mmif, **params)
             self.assertEqual(
-                out_mmif_from_mmif.views.get_last(),
-                out_mmif_from_str.views.get_last())
+                out_mmif_from_mmif.views.get_last_contentful_view(),
+                out_mmif_from_str.views.get_last_contentful_view())
             out_mmif = out_mmif_from_str
         self.assertIsNotNone(out_mmif)
         last_view: View = next(reversed(out_mmif.views))
         self.assertEqual(len(last_view.metadata.contains), 0)
         self.assertEqual(len(last_view.metadata.error), 2)
 
+    def test_gpu_mem_fields_default_zero(self):
+        """GPU memory fields default to 0."""
+        metadata = AppMetadata(
+            name="Test App",
+            description="Test",
+            app_license="MIT",
+            identifier="test-app",
+            url="https://example.com",
+        )
+        metadata.add_input(DocumentTypes.TextDocument)
+        metadata.add_output(AnnotationTypes.TimeFrame)
+
+        self.assertEqual(metadata.est_gpu_mem_min, 0)
+        self.assertEqual(metadata.est_gpu_mem_typ, 0)
+
+    def test_est_gpu_mem_typ_validation(self):
+        """Warning issued when est_gpu_mem_typ < est_gpu_mem_min, autocorrected."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            metadata = AppMetadata(
+                name="Test App",
+                description="Test",
+                app_license="MIT",
+                identifier="test-app",
+                url="https://example.com",
+                est_gpu_mem_min=4000,  # 4GB min
+                est_gpu_mem_typ=2000,  # 2GB typical (less than min!)
+            )
+            metadata.add_input(DocumentTypes.TextDocument)
+            metadata.add_output(AnnotationTypes.TimeFrame)
+
+            # Should have issued a warning
+            self.assertEqual(len(w), 1)
+            self.assertIn('est_gpu_mem_typ', str(w[0].message))
+            self.assertIn('est_gpu_mem_min', str(w[0].message))
+
+            # Should have auto-corrected
+            self.assertEqual(metadata.est_gpu_mem_typ, metadata.est_gpu_mem_min)
+
+        def test_analyzer_versions_default_none(self):
+            """analyzer_versions field defaults to None."""
+            metadata = AppMetadata(
+                name="Test App",
+                description="Test",
+                app_license="MIT",
+                identifier="test-app",
+                url="https://example.com",
+            )
+            metadata.add_input(DocumentTypes.TextDocument)
+            metadata.add_output(AnnotationTypes.TimeFrame)
+
+            self.assertIsNone(metadata.analyzer_versions)
+
+        def test_analyzer_versions_with_value(self):
+            """analyzer_versions can be set with a dictionary."""
+            test_versions = {"model_a": "1.0", "model_b": "2.1"}
+            metadata = AppMetadata(
+                name="Test App",
+                description="Test",
+                app_license="MIT",
+                identifier="test-app",
+                url="https://example.com",
+                analyzer_versions=test_versions,
+            )
+            metadata.add_input(DocumentTypes.TextDocument)
+            metadata.add_output(AnnotationTypes.TimeFrame)
+
+            self.assertEqual(metadata.analyzer_versions, test_versions)
 
 class TestRestifier(unittest.TestCase):
 

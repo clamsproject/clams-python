@@ -131,11 +131,6 @@ class Output(_BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
-    @pydantic.field_validator('at_type', mode='after')  # because pydantic v2 doesn't auto-convert url to string
-    @classmethod
-    def stringify(cls, val):
-        return str(val)
-    
     @pydantic.field_validator('at_type', mode='before')
     @classmethod
     def at_type_must_be_str(cls, v):
@@ -295,6 +290,10 @@ class AppMetadata(pydantic.BaseModel):
         None, 
         description="(optional) Version of an analyzer software, if the app is working as a wrapper for one. "
     )
+    analyzer_versions: Optional[Dict[str, str]] = pydantic.Field(
+        None,
+        description="(optional) Map of analyzer IDs to their versions, for apps that wrap multiple models or families."
+    )
     app_license: str = pydantic.Field(
         ..., 
         description="License information of the app."
@@ -352,8 +351,19 @@ class AppMetadata(pydantic.BaseModel):
                     "a package name and its version in the string value at the minimum (e.g., ``clams-python==1.2.3``)."
     )
     more: Optional[Dict[str, str]] = pydantic.Field(
-        None, 
+        None,
         description="(optional) A string-to-string map that can be used to store any additional metadata of the app."
+    )
+    est_gpu_mem_min: int = pydantic.Field(
+        0,
+        description="(optional) Minimum GPU memory required to run the app, in megabytes (MB). "
+                    "Set to 0 (default) if the app does not use GPU."
+    )
+    est_gpu_mem_typ: int = pydantic.Field(
+        0,
+        description="(optional) Typical GPU memory usage for default parameters, in megabytes (MB). "
+                    "Must be equal or larger than est_gpu_mem_min. "
+                    "Set to 0 (default) if the app does not use GPU."
     )
 
     model_config = {
@@ -364,13 +374,26 @@ class AppMetadata(pydantic.BaseModel):
     }
     
     @pydantic.model_validator(mode='after')
-    @classmethod
-    def assign_versions(cls, data):
-        if data.app_version == '':
-            data.app_version = generate_app_version()
-        if data.mmif_version == '':
-            data.mmif_version = get_mmif_specver()
-        return data
+    def assign_versions(self):
+        if self.app_version == '':
+            self.app_version = generate_app_version()
+        if self.mmif_version == '':
+            self.mmif_version = get_mmif_specver()
+        return self
+
+    @pydantic.model_validator(mode='after')
+    def validate_gpu_memory(self):
+        import warnings
+        if self.est_gpu_mem_typ > 0 and self.est_gpu_mem_min > 0:
+            if self.est_gpu_mem_typ < self.est_gpu_mem_min:
+                warnings.warn(
+                    f"est_gpu_mem_typ ({self.est_gpu_mem_typ} MB) is less than "
+                    f"est_gpu_mem_min ({self.est_gpu_mem_min} MB). "
+                    f"Setting est_gpu_mem_typ to {self.est_gpu_mem_min} MB.",
+                    UserWarning
+                )
+                self.est_gpu_mem_typ = self.est_gpu_mem_min
+        return self
 
     @pydantic.field_validator('identifier', mode='before')
     @classmethod
@@ -379,11 +402,7 @@ class AppMetadata(pydantic.BaseModel):
         suffix = generate_app_version()
         return '/'.join(map(lambda x: x.strip('/'), filter(None, (prefix, val, suffix))))
 
-    @pydantic.field_validator('url', 'identifier', mode='after')  # because pydantic v2 doesn't auto-convert url to string
-    @classmethod
-    def stringify(cls, val):
-        return str(val)
-    
+
     def _check_input_duplicate(self, a_input):
         for elem in self.input:
             if isinstance(elem, list):

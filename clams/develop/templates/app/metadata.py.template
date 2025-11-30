@@ -39,6 +39,9 @@ def appmetadata() -> AppMetadata:
         # this trick can also be useful (replace ANALYZER_NAME with the pypi dist name)
         analyzer_version=[l.strip().rsplit('==')[-1] for l in open(pathlib.Path(__file__).parent / 'requirements.txt').readlines() if re.match(r'^ANALYZER_NAME==', l)][0],
         analyzer_license="",  # short name for a software license
+        # GPU memory estimates (in MB). Set to 0 if the app does not use GPU.
+        est_gpu_mem_min=0,  # estimated memory usage with minimal computation parameters
+        est_gpu_mem_typ=0,  # estimated memory usage with default parameters, must be >= est_gpu_mem_min
     )
     # and then add I/O specifications: an app must have at least one input and one output
     metadata.add_input(DocumentTypes.Document)

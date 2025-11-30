@@ -3,6 +3,12 @@ Welcome to CLAMS Python SDK documentation!
 
 .. mdinclude:: ../README.md
 
+----
+
+.. mdinclude:: whatsnew.md
+
+----
+
 .. toctree::
   :maxdepth: 2
   :caption: Contents
@@ -10,6 +16,7 @@ Welcome to CLAMS Python SDK documentation!
   introduction
   input-output
   runtime-params
+  gpu-apps
   appmetadata
   appdirectory
   cli
