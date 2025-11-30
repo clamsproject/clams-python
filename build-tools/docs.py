@@ -25,8 +25,6 @@ def build_docs_local(source_dir: Path):
     print("\n--- Step 1: Installing in editable mode ---")
     try:
         run_command([sys.executable, "-m", "pip", "install", "-e", "."], cwd=source_dir)
-        # Explicitly run schema generation to be sure
-        run_command([sys.executable, "setup.py", "generate_schema"], cwd=source_dir)
     except SystemExit:
         print("Warning: 'pip install -e .' failed. This might be due to an externally managed environment.")
         print("Attempting to proceed with documentation build assuming dependencies are met...")

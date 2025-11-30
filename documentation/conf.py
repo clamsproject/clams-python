@@ -63,6 +63,8 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # dynamically generated files
 exclude_patterns.extend(['cli_help.rst', 'whatsnew.md'])
+# this is user manual, and not part of API docs, will be used in a remote site
+exclude_patterns.extend(['clamsapp.md'])
 
 
 # -- Options for HTML output -------------------------------------------------
