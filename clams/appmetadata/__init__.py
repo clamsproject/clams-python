@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import subprocess
@@ -523,4 +524,4 @@ class AppMetadata(pydantic.BaseModel):
 
 
 if __name__ == '__main__':
-    print(AppMetadata.schema_json(indent=2))
+    print(json.dumps(AppMetadata.model_json_schema(), indent=2))

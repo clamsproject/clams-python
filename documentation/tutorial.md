@@ -23,8 +23,7 @@ def tokenize(text):
 
 ```
 
-``` python
-$ python
+``` pycon
 >>> import tokenizer
 >>> tokenizer.tokenize('Fido barks.')
 [(0, 4), (5, 10)]
