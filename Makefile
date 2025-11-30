@@ -37,17 +37,14 @@ $(generatedcode): VERSION
 	ls $(generatedcode)*
 
 # generating jsonschema depends on mmif-python and pydantic
-docs: mmif := $(shell grep mmif-python requirements.txt)
-docs: pydantic := $(shell grep pydantic requirements.txt)
-docs: VERSION $(generatedcode)
-	pip install --upgrade --no-input "$(mmif)" "$(pydantic)"
-	rm -rf docs
-	mkdir -p docs
-	python3 -m clams.appmetadata.__init__ > documentation/appmetadata.jsonschema
-	sphinx-build -a -b html documentation/ docs
-	mv documentation/appmetadata.jsonschema docs/
-	touch docs/.nojekyll
-	echo 'sdk.clams.ai' > docs/CNAME
+docs:
+	@echo "WARNING: The 'docs' target is deprecated and will be removed."
+	@echo "The 'docs' directory is no longer used. Documentation is now hosted in the central CLAMS documentation hub."
+	@echo "Use 'make doc' for local builds."
+	@echo "Nothing is done."
+
+doc: VERSION
+	python3 build-tools/docs.py
 
 package: VERSION
 	pip install --upgrade -r requirements.dev
