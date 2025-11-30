@@ -1,0 +1,4 @@
+sphinx>=7.0,<8.0
+furo
+m2r2
+sphinx-jsonschema

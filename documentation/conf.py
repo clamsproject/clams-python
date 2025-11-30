@@ -14,6 +14,8 @@ import datetime
 from pathlib import Path
 import shutil
 import sys
+import inspect
+import os
 
 import mmif
 
@@ -24,9 +26,14 @@ sys.path.insert(0, str(proj_root_dir))
 # -- Project information -----------------------------------------------------
 
 project = proj_root_dir.name
+blob_base_url = f'https://github.com/clamsproject/{project}/blob'
 copyright = f'{datetime.date.today().year}, Brandeis LLC'
 author = 'Brandeis LLC'
-version = open(proj_root_dir / 'VERSION').read().strip()
+try:
+    version = open(proj_root_dir / 'VERSION').read().strip()
+except FileNotFoundError:
+    print("WARNING: VERSION file not found, using 'dev' as version.")
+    version = 'dev'
 root_doc = 'index'
 
 
@@ -39,7 +46,6 @@ extensions = [
         'sphinx.ext.autodoc',
         'sphinx.ext.linkcode',
         'sphinx.ext.intersphinx',
-        'sphinx_rtd_theme',
         'sphinx-jsonschema',
         'm2r2'
 ]
@@ -53,13 +59,10 @@ intersphinx_mapping = {
         }
 
 
-# Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+# dynamically generated files
+exclude_patterns.extend(['cli_help.rst', 'whatsnew.md'])
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -67,30 +70,127 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'furo'
+html_extra_path = ['appmetadata.jsonschema']
+html_static_path = []  # No static path for now, can be created if needed
+html_show_sourcelink = True  # Furo handles this well, no need to hide
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-#  html_static_path = ['_static']
+# Theme options for visual consistency with CLAMS branding
+html_theme_options = {
+    # "light_logo": "logo.png", # TODO: Add logo files if available
+    # "dark_logo": "logo.png",
+    "sidebar_hide_name": False,
+    "navigation_with_keys": True,
+    "source_repository": "https://github.com/clamsproject/clams-python",
+    "source_branch": "main", # Default branch for "Edit on GitHub" links
+    "source_directory": "documentation/",
 
-# hide document source view link at the top 
-html_show_sourcelink = False
+    # CLAMS brand colors
+    "light_css_variables": {
+        "color-brand-primary": "#008AFF",
+        "color-brand-content": "#0085A1",
+        "color-link": "#008AFF",
+        "color-link-hover": "#0085A1",
+    },
+    # Dark mode variables can be added here if needed
+}
 
 
 # function used by `linkcode` extension
 def linkcode_resolve(domain, info):
-    if domain != 'py':
+    if domain != 'py' or not info.get('module'):
         return None
-    if not info['module']:
+
+    try:
+        # Find the Python object
+        obj = sys.modules.get(info['module'])
+        if obj is None: return None
+        for part in info['fullname'].split('.'):
+            obj = getattr(obj, part)
+
+        # Get the source file and line numbers
+        # Use inspect.unwrap to handle decorated objects
+        unwrapped_obj = inspect.unwrap(obj)
+        filename = inspect.getsourcefile(unwrapped_obj)
+        if not filename: return None
+
+        lines, start_lineno = inspect.getsourcelines(unwrapped_obj)
+        end_lineno = start_lineno + len(lines) - 1
+
+        # clams-python docs are single-version, always pointing to main
+        git_ref = 'main'
+
+        # Get file path relative to repository root
+        repo_root = Path(__file__).parent.parent
+        rel_path = Path(filename).relative_to(repo_root)
+
+        return f"{blob_base_url}/{git_ref}/{rel_path}#L{start_lineno}-L{end_lineno}"
+
+    except Exception:
+        # Don't fail the entire build if one link fails, just return None
         return None
-    filename = info['module'].replace('.', '/')
-    return f"https://github.com/clamsproject/clams-python/tree/main/{filename}/__init__.py"
 
 
-def update_target_spec():
+def generate_whatsnew_rst(app):
+    changelog_path = proj_root_dir / 'CHANGELOG.md'
+    output_path = proj_root_dir / 'documentation' / 'whatsnew.md'
+    if not changelog_path.exists():
+        print(f"WARNING: CHANGELOG.md not found at {changelog_path}")
+        with open(output_path, 'w') as f:
+            f.write("")
+        return
+
+    import re
+
+    content = []
+    found_version = False
+    version_header_re = re.compile(r'^## releasing\s+([^\s]+)\s*(\(.*\))?')
+
+    print(f"DEBUG: Looking for version '{version}' in CHANGELOG.md")
+
+    with open(changelog_path, 'r') as f:
+        lines = f.readlines()
+
+    for line in lines:
+        match = version_header_re.match(line)
+        if match:
+            header_version = match.group(1)
+            if header_version == version:
+                found_version = True
+                # We don't include the header line itself in the content we want to wrap
+                continue
+            elif found_version:
+                break
+
+        if found_version:
+            content.append(line)
+
+    if not found_version:
+        print(f"NOTE: No changelog entry found for version {version}")
+        with open(output_path, 'w') as f:
+            f.write("")
+    else:
+        # Dump matched markdown content directly to whatsnew.md
+        with open(output_path, 'w') as f:
+            f.write(f"## What's New in {version}\n\n(Full changelog available in the [CHANGELOG.md]({blob_base_url}/main/CHANGELOG.md))\n")
+            f.writelines(content)
+
+
+def generate_jsonschema(app):
+    import json
+    from clams.appmetadata import AppMetadata
+
+    # Generate schema using Pydantic v2 API
+    schema_dict = AppMetadata.model_json_schema()
+    
+    output_path = Path(app.srcdir) / 'appmetadata.jsonschema'
+    with open(output_path, 'w') as f:
+        json.dump(schema_dict, f, indent=2)
+
+
+def update_target_spec(app):
     target_vers_csv = Path(__file__).parent / 'target-versions.csv'
-    with open("../VERSION", 'r') as version_f:
+    with open(proj_root_dir / "VERSION", 'r') as version_f:
         version = version_f.read().strip()
     mmifver = mmif.__version__
     specver = mmif.__specver__
@@ -102,4 +202,8 @@ def update_target_spec():
             out_f.write(line)
         shutil.move(out_f.name, in_f.name)
 
-update_target_spec()
+
+def setup(app):
+    app.connect('builder-inited', generate_whatsnew_rst)
+    app.connect('builder-inited', generate_jsonschema)
+    app.connect('builder-inited', update_target_spec)
