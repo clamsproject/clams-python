@@ -1,4 +1,21 @@
 
+## releasing 1.4.0 (2025-11-30)
+### Overview
+This release introduces three new fields to the app metadata to improve the orchestration and handling of large models within apps.
+
+### Additions
+* `analyzer_versions`: A new app metadata field (complementing the existing `analyzer_version`) designed to store version strings for multiple models wrapped in a single CLAMS app (see https://github.com/clamsproject/clams-python/issues/251#issuecomment-3566771680 for discussion).
+* `est_gpu_mem_min` and `est_gpu_mem_typ`: New app metadata fields that allow developers to specify estimated GPU memory usage (minimum and typical) for better resource management.
+
+### Changes
+* Updated to the latest `mmif-python` SDK (1.2.1)
+* Profiling storage: Runtime profiling results (CPU/CUDA architecture, running time) are now stored under a new `appProfiling` field in the output view metadata (https://github.com/clamsproject/clams-python/pull/261). 
+    * *Note: This is an experimental field intended primarily for human inspection; its internal structure may change without notice.*
+* View timestamps: The `timestamp` property of views is now updated based on the time when the `_annotate()` call completes. This ensures all views from a single app execution share a consistent "marker" for easier identification (https://github.com/clamsproject/clams-python/issues/269).
+* Running an app that declares an `est_gpu_mem_min` value in production mode (`--production`) will now automatically limit the number of Gunicorn workers spawned to prevent GPU out-of-memory (OOM) errors.
+*  VRAM usage record: Apps running on CUDA and `torch` now cache VRAM usage statistics in the local disk cache (typically in `$XDG_CACHE_HOME`) (https://github.com/clamsproject/clams-python/issues/243). Currently, this information is for logging only, and we plan to add a retrieval API in the future. 
+    * See current _private_ implementation at https://github.com/clamsproject/clams-python/blob/671560b184a3b73bf417db753d0fa8f1c73d3bda/clams/app/__init__.py#L348-L361
+
 ## releasing 1.3.3 (2025-07-28)
 ### Overview
 Updated `mmif-python` version that includes a hotfix for reading 1.0.x MMIF
