@@ -28,8 +28,7 @@ RUN cmake \
       -D BUILD_PERF_TESTS=OFF \
       -D BUILD_TESTS=OFF \
       -D CMAKE_INSTALL_PREFIX=/usr/local \
-      -D OPENCV_EXTRA_MODULES_PATH=${OPENCV_EXTRA_MODULES_PATH} \
-      -D BUILD_opencv_python3=ON \
+      -D OPENCV_EXTRA_MODULES_PATH=${OPENCV_EXTRA_PATH}/modules \
       -D BUILD_opencv_python3=OFF \
       -D PYTHON3_EXECUTABLE=$(which python3) \
       -D PYTHON_DEFAULT_EXECUTABLE=$(which python3) \
