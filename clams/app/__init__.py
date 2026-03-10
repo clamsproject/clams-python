@@ -59,6 +59,12 @@ class ClamsApp(ABC):
             'name': 'hwFetch', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
             'description': 'The hardware information (architecture, GPU and vRAM) will be recorded in the view metadata',
         },
+        # tfSamplingMode is universal (not per-app) because it controls
+        # how vdh.extract_frames_by_mode() selects frames from TimeFrames.
+        # The value is intercepted in annotate() and pushed into a
+        # contextvars.ContextVar so that any vdh call inside _annotate()
+        # picks it up automatically — app developers never need to handle
+        # this parameter themselves.
         {
             'name': 'tfSamplingMode', 'type': 'string',
             'choices': [m.value for m in SamplingMode],

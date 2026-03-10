@@ -14,11 +14,13 @@ def run_command(command, cwd=None, check=True, env=None):
         sys.exit(result.returncode)
     return result
 
-def build_docs_local(source_dir: Path):
+def build_docs_local(source_dir: Path, output_dir: Path = None):
     """
     Builds documentation for the provided source directory.
     Assumes it's running in an environment with necessary tools.
     """
+    if output_dir is None:
+        output_dir = source_dir / "docs-test"
     print("--- Running in Local Build Mode ---")
     
     # 1. Generate source code and install in editable mode.
@@ -49,7 +51,7 @@ def build_docs_local(source_dir: Path):
     # 3. Build the documentation using Sphinx.
     print("\n--- Step 3: Building Sphinx documentation ---")
     docs_source_dir = source_dir / "documentation"
-    docs_build_dir = source_dir / "docs-test"
+    docs_build_dir = output_dir
     
     # Schema generation is now handled in conf.py
     # schema_src = source_dir / "clams" / "appmetadata.jsonschema"
@@ -74,9 +76,12 @@ def main():
     parser = argparse.ArgumentParser(
         description="Build documentation for the clams-python project."
     )
+    parser.add_argument(
+        '--output-dir', type=Path, default=None,
+        help='Output directory for built docs (default: docs-test)')
     args = parser.parse_args()
-    
-    build_docs_local(Path.cwd())
+
+    build_docs_local(Path.cwd(), output_dir=args.output_dir)
 
 if __name__ == "__main__":
     main()
