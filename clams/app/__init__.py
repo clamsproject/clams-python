@@ -17,7 +17,7 @@ from mmif.utils.video_document_helper import (
     SamplingMode, SAMPLING_MODE_DESCRIPTIONS, SAMPLING_MODE_DEFAULT,
     _sampling_mode,
 )
-from mmif.utils.cli.describe import generate_param_hash  # pytype: disable=import-error
+from mmif.utils.workflow_helper import generate_param_hash  # pytype: disable=import-error
 from clams.appmetadata import AppMetadata, real_valued_primitives, python_type, map_param_kv_delimiter
 
 logging.basicConfig(
