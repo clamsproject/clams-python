@@ -26,6 +26,16 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S")
 
 
+_sampling_mode_choices = [m.value for m in SamplingMode]
+_sampling_mode_description = (
+    'Sampling mode for TimeFrame annotations. '
+    'Has no effect when the app does not process TimeFrames. '
+    + ' '.join(
+        f'"{m.value}" {SAMPLING_MODE_DESCRIPTIONS[m]}'
+        for m in SamplingMode
+    )
+)
+
 falsy_values = [
     'False', 
     'false', 
@@ -67,15 +77,10 @@ class ClamsApp(ABC):
         # this parameter themselves.
         {
             'name': 'tfSamplingMode', 'type': 'string',
-            'choices': [m.value for m in SamplingMode],
+            'choices': _sampling_mode_choices,
             'default': SAMPLING_MODE_DEFAULT.value,
             'multivalued': False,
-            'description': 'Sampling mode for TimeFrame annotations. '
-                'Has no effect when the app does not process TimeFrames. '
-                + ' '.join(
-                    f'"{m.value}" {SAMPLING_MODE_DESCRIPTIONS[m]}'
-                    for m in SamplingMode
-                ),
+            'description': _sampling_mode_description,
         },
     ]
     
