@@ -1,13 +1,54 @@
-name: "📦 Publish (docs, PyPI)"
+name: "📦 Publish (PyPI + docs)"
 
-on: 
-  push: 
-    tags: 
+on:
+  push:
+    tags:
       - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 3.2.0)'
+        required: true
 
 jobs:
-  packge-and-upload:
-    name: "🤙 Call SDK publish workflow"
+  check-pypi:
+    name: "🔍 Check PyPI for existing package"
+    runs-on: ubuntu-latest
+    outputs:
+      exists: ${{ steps.check.outputs.exists }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - id: check
+        run: |
+          PACKAGE=$(echo "${{ github.repository }}" | cut -d/ -f2 | tr '-' '_')
+          VERSION=${{ inputs.version || github.ref_name }}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/$PACKAGE/$VERSION/json")
+          if [ "$STATUS" = "200" ]; then
+            echo "Package $PACKAGE $VERSION already exists on PyPI, skipping upload"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Package $PACKAGE $VERSION not found on PyPI, proceeding with upload"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+  publish-pypi:
+    name: "📦 Build and upload to PyPI"
+    needs: check-pypi
+    if: needs.check-pypi.outputs.exists == 'false'
     uses: clamsproject/.github/.github/workflows/sdk-publish.yml@main
     secrets: inherit
 
+  publish-docs:
+    name: "📖 Build and publish docs"
+    needs: [check-pypi, publish-pypi]
+    if: always() && needs.check-pypi.result == 'success' && needs.publish-pypi.result != 'failure'
+    uses: clamsproject/clamsproject.github.io/.github/workflows/sdk-docs.yml@main
+    with:
+      source_repo: clamsproject/clams-python
+      source_ref: ${{ needs.check-pypi.outputs.version }}
+      project_name: clams-python
+      build_command: 'python3 build-tools/docs.py --output-dir docs'
+      docs_output_dir: 'docs'
+      python_version: '3.11'
+    secrets: inherit

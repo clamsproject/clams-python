@@ -13,7 +13,11 @@ __all__ = ['ClamsApp']
 from typing import Union, Any, Optional, Dict, List, Tuple
 
 from mmif import Mmif, Document, DocumentTypes, View
-from mmif.utils.cli.describe import generate_param_hash  # pytype: disable=import-error
+from mmif.utils.video_document_helper import (
+    SamplingMode, SAMPLING_MODE_DESCRIPTIONS, SAMPLING_MODE_DEFAULT,
+    _sampling_mode,
+)
+from mmif.utils.workflow_helper import generate_param_hash  # pytype: disable=import-error
 from clams.appmetadata import AppMetadata, real_valued_primitives, python_type, map_param_kv_delimiter
 
 logging.basicConfig(
@@ -21,6 +25,16 @@ logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)-8s %(thread)d %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S")
 
+
+_sampling_mode_choices = [m.value for m in SamplingMode]
+_sampling_mode_description = (
+    'Sampling mode for TimeFrame annotations. '
+    'Has no effect when the app does not process TimeFrames. '
+    + ' '.join(
+        f'"{m.value}" {SAMPLING_MODE_DESCRIPTIONS[m]}'
+        for m in SamplingMode
+    )
+)
 
 falsy_values = [
     'False', 
@@ -54,6 +68,19 @@ class ClamsApp(ABC):
         {
             'name': 'hwFetch', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
             'description': 'The hardware information (architecture, GPU and vRAM) will be recorded in the view metadata',
+        },
+        # tfSamplingMode is universal (not per-app) because it controls
+        # how vdh.extract_frames_by_mode() selects frames from TimeFrames.
+        # The value is intercepted in annotate() and pushed into a
+        # contextvars.ContextVar so that any vdh call inside _annotate()
+        # picks it up automatically — app developers never need to handle
+        # this parameter themselves.
+        {
+            'name': 'tfSamplingMode', 'type': 'string',
+            'choices': _sampling_mode_choices,
+            'default': SAMPLING_MODE_DEFAULT.value,
+            'multivalued': False,
+            'description': _sampling_mode_description,
         },
     ]
     
@@ -148,6 +175,9 @@ class ClamsApp(ABC):
         refined = self._refine_params(**runtime_params)
         self.logger.debug(f"Refined parameters: {refined}")
         pretty = refined.get('pretty', False)
+        sampling_mode_str = refined.pop('tfSamplingMode', None)
+        if sampling_mode_str is not None:
+            _sampling_mode.set(SamplingMode(sampling_mode_str))
         t = datetime.now()
         with warnings.catch_warnings(record=True) as ws:
             annotated, cuda_profiler = self._profile_cuda_memory(self._annotate)(mmif, **refined)
