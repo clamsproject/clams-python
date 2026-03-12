@@ -228,9 +228,11 @@ Metadata Schema
 The schema for app metadata is as follows. 
 (You can also download the schema in `JSON Schema <https://json-schema.org/>`_ format from `here <appmetadata.jsonschema>`_.)
 
-.. jsonschema:: appmetadata.jsonschema 
+.. jsonschema:: appmetadata.jsonschema
    :lift_description: True
    :lift_title: True
    :lift_definitions: True
+   :auto_target: True
+   :auto_reference: True
 
 
