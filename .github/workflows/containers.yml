@@ -116,6 +116,15 @@ jobs:
       buildfilename: './container/opencv4.containerfile'
       version: ${{ needs.set-version.outputs.version }}
 
+  call-build-hf:
+    name: "🤙 Call container workflow with `hf`"
+    needs: ['set-version', 'call-build-hf5']
+    uses: ./.github/workflows/container.yml
+    secrets: inherit
+    with:
+      buildfilename: './container/hf.containerfile'
+      version: ${{ needs.set-version.outputs.version }}
+
   call-build-opencv4-tf2:
     name: "🤙 Call container workflow with `opencv4-tf2`"
     needs: ['set-version', 'call-build-opencv4']
@@ -134,56 +143,74 @@ jobs:
       buildfilename: './container/opencv4-torch2.containerfile'
       version: ${{ needs.set-version.outputs.version }}
 
-  call-build-tf2-hf:
-    name: "🤙 Call container workflow with `tf2-hf`"
-    needs: ['set-version', 'call-build-tf2']
-    uses: ./.github/workflows/container.yml
-    secrets: inherit
-    with:
-      buildfilename: './container/tf2-hf.containerfile'
-      version: ${{ needs.set-version.outputs.version }}
-
-  call-build-hf:
-    name: "🤙 Call container workflow with `hf`"
+  call-build-hf4:
+    name: "🤙 Call container workflow with `hf4`"
     needs: ['set-version', 'call-build-torch2']
     uses: ./.github/workflows/container.yml
     secrets: inherit
     with:
-      buildfilename: './container/hf.containerfile'
+      buildfilename: './container/hf4.containerfile'
       version: ${{ needs.set-version.outputs.version }}
 
-  call-build-ffmpeg-tf2-hf:
-    name: "🤙 Call container workflow with `ffmpeg-tf2-hf`"
-    needs: ['set-version', 'call-build-ffmpeg-tf2']
+  call-build-hf5:
+    name: "🤙 Call container workflow with `hf5`"
+    needs: ['set-version', 'call-build-torch2']
     uses: ./.github/workflows/container.yml
     secrets: inherit
     with:
-      buildfilename: './container/ffmpeg-tf2-hf.containerfile'
+      buildfilename: './container/hf5.containerfile'
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-ffmpeg-hf:
     name: "🤙 Call container workflow with `ffmpeg-hf`"
-    needs: ['set-version', 'call-build-ffmpeg-torch2']
+    needs: ['set-version', 'call-build-ffmpeg-hf5']
     uses: ./.github/workflows/container.yml
     secrets: inherit
     with:
       buildfilename: './container/ffmpeg-hf.containerfile'
       version: ${{ needs.set-version.outputs.version }}
 
-  call-build-opencv4-tf2-hf:
-    name: "🤙 Call container workflow with `opencv4-tf2-hf`"
-    needs: ['set-version', 'call-build-opencv4-tf2']
+  call-build-ffmpeg-hf4:
+    name: "🤙 Call container workflow with `ffmpeg-hf4`"
+    needs: ['set-version', 'call-build-ffmpeg-torch2']
     uses: ./.github/workflows/container.yml
     secrets: inherit
     with:
-      buildfilename: './container/opencv4-tf2-hf.containerfile'
+      buildfilename: './container/ffmpeg-hf4.containerfile'
+      version: ${{ needs.set-version.outputs.version }}
+
+  call-build-ffmpeg-hf5:
+    name: "🤙 Call container workflow with `ffmpeg-hf5`"
+    needs: ['set-version', 'call-build-ffmpeg-torch2']
+    uses: ./.github/workflows/container.yml
+    secrets: inherit
+    with:
+      buildfilename: './container/ffmpeg-hf5.containerfile'
       version: ${{ needs.set-version.outputs.version }}
 
   call-build-opencv4-hf:
     name: "🤙 Call container workflow with `opencv4-hf`"
-    needs: ['set-version', 'call-build-opencv4-torch2']
+    needs: ['set-version', 'call-build-opencv4-hf5']
     uses: ./.github/workflows/container.yml
     secrets: inherit
     with:
       buildfilename: './container/opencv4-hf.containerfile'
+      version: ${{ needs.set-version.outputs.version }}
+
+  call-build-opencv4-hf4:
+    name: "🤙 Call container workflow with `opencv4-hf4`"
+    needs: ['set-version', 'call-build-opencv4-torch2']
+    uses: ./.github/workflows/container.yml
+    secrets: inherit
+    with:
+      buildfilename: './container/opencv4-hf4.containerfile'
+      version: ${{ needs.set-version.outputs.version }}
+
+  call-build-opencv4-hf5:
+    name: "🤙 Call container workflow with `opencv4-hf5`"
+    needs: ['set-version', 'call-build-opencv4-torch2']
+    uses: ./.github/workflows/container.yml
+    secrets: inherit
+    with:
+      buildfilename: './container/opencv4-hf5.containerfile'
       version: ${{ needs.set-version.outputs.version }}
