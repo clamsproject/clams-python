@@ -48,7 +48,7 @@ jobs:
       source_repo: clamsproject/clams-python
       source_ref: ${{ needs.check-pypi.outputs.version }}
       project_name: clams-python
-      build_command: 'python3 build-tools/docs.py --output-dir docs'
+      build_command: 'echo "${{ needs.check-pypi.outputs.version }}" > VERSION && python3 build-tools/docs.py --output-dir docs'
       docs_output_dir: 'docs'
       python_version: '3.11'
     secrets: inherit
