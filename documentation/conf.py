@@ -134,48 +134,40 @@ def linkcode_resolve(domain, info):
 
 
 def generate_whatsnew_rst(app):
-    changelog_path = proj_root_dir / 'CHANGELOG.md'
-    output_path = proj_root_dir / 'documentation' / 'whatsnew.md'
-    if not changelog_path.exists():
-        print(f"WARNING: CHANGELOG.md not found at {changelog_path}")
-        with open(output_path, 'w') as f:
-            f.write("")
-        return
+    import subprocess
+    output_path = (proj_root_dir / 'documentation'
+                   / 'whatsnew.md')
+    content = None
+    try:
+        jq_expr = (
+            'sort_by(.mergedAt)'
+            ' | if length > 0 then .[-1].body'
+            ' else "" end'
+        )
+        result = subprocess.run(
+            ['gh', 'pr', 'list',
+             '-R', f'clamsproject/{project}',
+             '-s', 'merged',
+             '--search',
+             f'releasing {version} in:title',
+             '--json', 'body,mergedAt',
+             '--jq', jq_expr],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0:
+            content = result.stdout.strip() or None
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
 
-    import re
-
-    content = []
-    found_version = False
-    version_header_re = re.compile(r'^## releasing\s+([^\s]+)\s*(\(.*\))?')
-
-    print(f"DEBUG: Looking for version '{version}' in CHANGELOG.md")
-
-    with open(changelog_path, 'r') as f:
-        lines = f.readlines()
-
-    for line in lines:
-        match = version_header_re.match(line)
-        if match:
-            header_version = match.group(1)
-            if header_version == version:
-                found_version = True
-                # We don't include the header line itself in the content we want to wrap
-                continue
-            elif found_version:
-                break
-
-        if found_version:
-            content.append(line)
-
-    if not found_version:
-        print(f"NOTE: No changelog entry found for version {version}")
-        with open(output_path, 'w') as f:
-            f.write("")
-    else:
-        # Dump matched markdown content directly to whatsnew.md
-        with open(output_path, 'w') as f:
-            f.write(f"## What's New in {version}\n\n(Full changelog available in the [CHANGELOG.md]({blob_base_url}/main/CHANGELOG.md))\n")
-            f.writelines(content)
+    with open(output_path, 'w') as f:
+        if content:
+            f.write(
+                f"## What's New in {version}\n\n"
+                f"(Full changelog available in the "
+                f"[CHANGELOG.md]({blob_base_url}"
+                f"/main/CHANGELOG.md))\n"
+            )
+            f.write(content)
 
 
 def generate_jsonschema(app):
