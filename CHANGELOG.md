@@ -1,4 +1,20 @@
 
+## releasing 1.5.0 (2026-03-12)
+### Overview
+
+Adds `tfSamplingMode` as a universal runtime parameter and overhauls container image builds with arm64 support and split HuggingFace/transformers versioning.
+
+### Additions
+
+* Add `tfSamplingMode` universal parameter for controlling frame selection from TimeFrame annotations, integrated with mmif-python's new sampling API (https://github.com/clamsproject/clams-python/pull/278, https://github.com/clamsproject/clams-python/pull/280)
+
+### Changes
+
+* Fix arm64 container builds and split `-hf` images into `-hf4`/`-hf5` with `-hf` as alias to `-hf5` for backward compat; dropped `-tf2-hf` combined images (https://github.com/clamsproject/clams-python/pull/276, https://github.com/clamsproject/clams-python/pull/281)
+
+> [!NOTE]
+> This release requires `mmif-python >= 1.3.0` for the sampling mode API.
+
 ## releasing 1.4.0 (2025-11-30)
 ### Overview
 This release introduces three new fields to the app metadata to improve the orchestration and handling of large models within apps.
