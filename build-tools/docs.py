@@ -77,6 +77,13 @@ def main():
         description="Build documentation for the clams-python project."
     )
     parser.add_argument(
+        '--build-ver',
+        metavar='<version>',
+        default=None,
+        help='Accepted for CLI compatibility with other SDK repos. '
+             'Ignored by this script (clams-python uses '
+             'unversioned documentation).')
+    parser.add_argument(
         '--output-dir', type=Path, default=None,
         help='Output directory for built docs (default: docs-test)')
     args = parser.parse_args()

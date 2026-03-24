@@ -438,6 +438,18 @@ class AppMetadata(pydantic.BaseModel):
         return new
 
     def add_input_oneof(self, *inputs: Union[str, Input, vocabulary.ThingTypesBase]):
+        """
+        Helper method to add a ``oneOf`` (disjunctive) group to
+        the ``input`` list. When a single type is given, it is
+        added as a regular (conjunctive) input. When multiple
+        types are given, they are wrapped in a nested list to
+        indicate that exactly one of them is required.
+
+        :param inputs: one or more input types (as URI strings,
+            :class:`Input` objects, or vocabulary types)
+        :raises ValueError: if any input in a ``oneOf`` group is
+            optional, or if a duplicate input is detected
+        """
         newinputs = []
         if len(inputs) == 1:
             if isinstance(inputs[0], Input):
@@ -520,6 +532,13 @@ class AppMetadata(pydantic.BaseModel):
             raise ValueError("Key and value should not be empty!")
         
     def jsonify(self, pretty=False):
+        """
+        Serialize the app metadata to a JSON string.
+
+        :param pretty: if True, indent the output with 2 spaces
+        :returns: JSON string of the metadata
+        :rtype: str
+        """
         return self.model_dump_json(exclude_defaults=True, by_alias=True, indent=2 if pretty else None)
 
 
