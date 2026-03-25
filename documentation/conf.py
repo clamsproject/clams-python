@@ -33,9 +33,10 @@ blob_base_url = f'https://github.com/clamsproject/{project}/blob'
 copyright = f'{datetime.date.today().year}, Brandeis LLC'
 author = 'Brandeis LLC'
 try:
-    version = open(proj_root_dir / 'VERSION').read().strip()
-except FileNotFoundError:
-    print("WARNING: VERSION file not found, using 'dev' as version.")
+    from importlib.metadata import version as _get_version
+    version = _get_version('clams-python')
+except Exception:
+    print("WARNING: could not read package version, using 'dev'.")
     version = 'dev'
 root_doc = 'index'
 
@@ -197,8 +198,7 @@ def generate_jsonschema(app):
 
 def update_target_spec(app):
     target_vers_csv = Path(__file__).parent / 'target-versions.csv'
-    with open(proj_root_dir / "VERSION", 'r') as version_f:
-        version = version_f.read().strip()
+    version = _get_version('clams-python')
     # Skip dev/dummy versions to avoid dirtying the git-tracked CSV
     if 'dev' in version or not re.match(r'^\d+\.\d+\.\d+$', version):
         return

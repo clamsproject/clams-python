@@ -4,7 +4,6 @@
 
 # build time temp files
 VERSION*
-clams/ver
 
 # linux
 .*.sw?
@@ -67,6 +66,7 @@ hs_err_pid* # virtual machine crash logs, see http://www.java.com/en/download/he
 build/
 dist/
 *.egg-info
+clams_python-*/
 coverage.xml
 
 # shared folders
@@ -84,3 +84,5 @@ tags
 
 # sphinx
 docs-test/
+documentation/appmetadata.jsonschema
+documentation/whatsnew.md

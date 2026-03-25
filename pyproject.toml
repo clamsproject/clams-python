@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+
+[project]
+name = "clams-python"
+dynamic = ["version"]
+description = "A collection of APIs to develop CLAMS app for python"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Flask",
+    "Framework :: Pytest",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = [
+    "mmif-python==1.3.1",
+    "Flask>=2",
+    "Flask-RESTful>=0.3.9",
+    "gunicorn>=20",
+    "lapps>=0.0.2",
+    "pydantic>=2",
+    "jsonschema>=3",
+]
+
+[project.scripts]
+clams = "clams:cli"
+
+[project.urls]
+homepage = "https://clams.ai"
+source = "https://github.com/clamsproject/clams-python"
+
+[project.optional-dependencies]
+dev = ["pytype", "pytest", "pytest-cov", "setuptools"]
+docs = ["sphinx>=7.0,<8.0", "furo", "m2r2", "sphinx-jsonschema"]
+test = ["pytest", "pytest-cov"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["clams*"]
+
+[tool.setuptools.package-data]
+clams = ["develop/templates/**/*", "develop/templates/**/.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=clams --cov-report=xml"

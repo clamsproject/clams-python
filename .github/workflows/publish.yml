@@ -36,7 +36,7 @@ jobs:
     name: "📦 Build and upload to PyPI"
     needs: check-pypi
     if: needs.check-pypi.outputs.exists == 'false'
-    uses: clamsproject/.github/.github/workflows/sdk-publish.yml@main
+    uses: clamsproject/.github/.github/workflows/sdk-publish-pyproj.yml@main
     secrets: inherit
 
   publish-docs:
