@@ -11,7 +11,7 @@ Welcome to CLAMS Python SDK documentation!
 
 .. toctree::
   :maxdepth: 2
-  :caption: Contents
+  :caption: For CLAMS App Developers
 
   introduction
   input-output
@@ -27,6 +27,12 @@ Welcome to CLAMS Python SDK documentation!
   :caption: API documentation:
 
   modules
+
+.. toctree::
+  :maxdepth: 2
+  :caption: For CLAMS App Users
+
+  clamsapp
 
 Indices and tables
 ==================
