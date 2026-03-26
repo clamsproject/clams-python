@@ -216,6 +216,9 @@ For example, appending ``?pretty=True`` to the URL will result in a JSON output 
 
 Different apps have different configurability. For configuration parameters of an app, please refer to ``parameter`` section of the app metadata. In addition to app-specific parameters, all apps support universal parameters (e.g., ``pretty`` for formatted output). Check the app metadata for the complete and up-to-date list.
 
+For detailed documentation of parameter types including map-type and multivalued
+parameters, see :ref:`runtime-params-detailed`.
+
 .. _clamsapp-cli:
 
 Using CLAMS App as a CLI program
