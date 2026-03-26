@@ -596,7 +596,23 @@ class TestParameterCaster(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             caster.cast(params)
-        
+
+    def test_kv_param_simple(self):
+        result = ParameterCaster.kv_param('key:value')
+        self.assertEqual(result, {'key': 'value'})
+        # no warning for a single colon
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            ParameterCaster.kv_param('key:value')
+
+    def test_kv_param_colon_in_value_warns(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = ParameterCaster.kv_param('a:b:c')
+            self.assertEqual(result, {'a': 'b:c'})
+            self.assertEqual(len(w), 1)
+            self.assertIn('multiple', str(w[0].message).lower())
+
 
 if __name__ == '__main__':
     unittest.main()

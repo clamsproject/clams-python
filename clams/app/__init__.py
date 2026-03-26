@@ -739,6 +739,22 @@ class ParameterCaster(object):
     @staticmethod
     def kv_param(value) -> Dict[str, str]:
         """
-        Helper function to convert string values to key-value pair type.
+        Helper function to convert a colon-separated string into a
+        single-entry dictionary. The first colon is used as the
+        key-value delimiter; colons are not allowed in keys.
+
+        :param value: a colon-separated key-value string (e.g. ``key:value``)
+        :type value: str
+        :returns: a single-entry dict parsed from the input
+        :rtype: Dict[str, str]
         """
-        return dict([value.split(map_param_kv_delimiter, 1)])
+        k, v = value.split(map_param_kv_delimiter, 1)
+        if map_param_kv_delimiter in v:
+            warnings.warn(
+                f"The map parameter value {value!r} contains "
+                f"multiple '{map_param_kv_delimiter}' characters. "
+                f"Only the first one is used as the delimiter "
+                f"(key={k!r}, value={v!r}). "
+                f"Colons are not allowed in map parameter keys."
+            )
+        return {k: v}
