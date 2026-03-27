@@ -36,9 +36,9 @@ homepage = "https://clams.ai"
 source = "https://github.com/clamsproject/clams-python"
 
 [project.optional-dependencies]
-dev = ["pytype", "pytest", "pytest-cov", "setuptools"]
+dev = ["pytype", "pytest", "pytest-cov", "pillow", "setuptools"]
 docs = ["sphinx>=7.0,<8.0", "furo", "m2r2", "sphinx-jsonschema"]
-test = ["pytest", "pytest-cov"]
+test = ["pytype", "pytest", "pytest-cov", "pillow"]
 
 [tool.setuptools.packages.find]
 where = ["."]
