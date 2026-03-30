@@ -11,11 +11,14 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 import datetime
-from pathlib import Path
-import shutil
-import sys
 import inspect
+import json
 import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
 
 import mmif
 
@@ -30,9 +33,10 @@ blob_base_url = f'https://github.com/clamsproject/{project}/blob'
 copyright = f'{datetime.date.today().year}, Brandeis LLC'
 author = 'Brandeis LLC'
 try:
-    version = open(proj_root_dir / 'VERSION').read().strip()
-except FileNotFoundError:
-    print("WARNING: VERSION file not found, using 'dev' as version.")
+    from importlib.metadata import version as _get_version
+    version = _get_version('clams-python')
+except Exception:
+    print("WARNING: could not read package version, using 'dev'.")
     version = 'dev'
 root_doc = 'index'
 
@@ -134,40 +138,50 @@ def linkcode_resolve(domain, info):
 
 
 def generate_whatsnew_rst(app):
-    import subprocess
+    """
+    Generate whatsnew.md by fetching the latest release PR body
+    from GitHub via ``gh pr list``.
+
+    Falls back gracefully if ``gh`` is unavailable (local builds).
+    """
     output_path = (proj_root_dir / 'documentation'
                    / 'whatsnew.md')
-    content = None
+    repo = f'clamsproject/{project}'
+
     try:
-        jq_expr = (
-            'sort_by(.mergedAt)'
-            ' | if length > 0 then .[-1].body'
-            ' else "" end'
-        )
         result = subprocess.run(
             ['gh', 'pr', 'list',
-             '-R', f'clamsproject/{project}',
-             '-s', 'merged',
-             '--search',
-             f'releasing {version} in:title',
-             '--json', 'body,mergedAt',
-             '--jq', jq_expr],
-            capture_output=True, text=True, timeout=10
+             '-s', 'merged', '-B', 'main',
+             '-L', '100',
+             '--json', 'title,body',
+             '--repo', repo],
+            capture_output=True, text=True, timeout=15,
         )
-        if result.returncode == 0:
-            content = result.stdout.strip() or None
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr)
 
-    with open(output_path, 'w') as f:
-        if content:
-            f.write(
-                f"## What's New in {version}\n\n"
-                f"(Full changelog available in the "
-                f"[CHANGELOG.md]({blob_base_url}"
-                f"/main/CHANGELOG.md))\n"
-            )
-            f.write(content)
+        prs = json.loads(result.stdout)
+        pr = next(
+            (p for p in prs
+             if p['title'].startswith('releasing ')),
+            None,
+        )
+        if pr is None:
+            raise RuntimeError("No release PR found")
+        title = pr['title']
+        body = pr.get('body', '')
+
+        with open(output_path, 'w') as f:
+            f.write(f"## {title}\n\n")
+            f.write(f"(Full changelog: "
+                    f"[CHANGELOG.md]"
+                    f"({blob_base_url}/main/CHANGELOG.md))\n\n")
+            if body:
+                f.write(body)
+
+    except Exception as e:
+        with open(output_path, 'w') as f:
+            f.write("")
 
 
 def generate_jsonschema(app):
@@ -184,8 +198,10 @@ def generate_jsonschema(app):
 
 def update_target_spec(app):
     target_vers_csv = Path(__file__).parent / 'target-versions.csv'
-    with open(proj_root_dir / "VERSION", 'r') as version_f:
-        version = version_f.read().strip()
+    version = _get_version('clams-python')
+    # Skip dev/dummy versions to avoid dirtying the git-tracked CSV
+    if 'dev' in version or not re.match(r'^\d+\.\d+\.\d+$', version):
+        return
     mmifver = mmif.__version__
     specver = mmif.__specver__
     with open(target_vers_csv) as in_f, open(f'{target_vers_csv}.new', 'w') as out_f:

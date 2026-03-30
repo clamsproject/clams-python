@@ -1,5 +1,5 @@
-Welcome to CLAMS Python SDK documentation!
-==========================================
+CLAMS Python SDK
+================
 
 .. mdinclude:: ../README.md
 
@@ -28,9 +28,8 @@ Welcome to CLAMS Python SDK documentation!
 
   modules
 
-Indices and tables
+Indices and Tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
