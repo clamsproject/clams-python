@@ -13,7 +13,7 @@ Format
 
 A CLAMS App Metadata should be able to be serialized into a JSON string. 
 
-Input/Output type specification
+Input/Output Type Specification
 ===============================
 
 Essentially, all CLAMS apps are designed to take one MMIF file as input and produce another MMIF file as output. In this 
@@ -29,7 +29,7 @@ how that information should be formatted in terms of the App Metadata syntax, co
    additional information about submission. Visit the `CLAMS app directory <https://apps.clams.ai>`_ to see how the app 
    metadata is rendered.
 
-Annotation types in MMIF
+Annotation Types in MMIF
 ------------------------
 
 As described in the `MMIF documentation <https://mmif.clams.ai>`_, MMIF files can contain annotations of various types. 
@@ -56,8 +56,8 @@ needs to add additional information to the type definition, they can do so by ad
 definition in action. In such a case, the app developer is expected to provide the explanation of the extended type in
 the app metadata. See below for the syntax of I/O specification in the app metadata. 
 
-Syntax for I/O specification in App Metadata
---------------------------------------------
+Syntax for I/O Specification in App Metadata
+---------------------------------------------
 
 In the App Metadata, the input and output types are specified as lists of objects. Each object in the list should have
 the following fields:
@@ -69,7 +69,7 @@ the following fields:
   defaults to ``true``. Not applicable for output types.
 
 
-Simple case - using types as defined in the vocabularies
+Simple Case - Using Types as Defined in the Vocabularies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the simplest case, where a developer merely re-uses an annotation type definition and pre-defined properties, an 
@@ -195,14 +195,14 @@ Note that in the actual output MMIF, more properties can be stored in the ``Time
 specification in the app metadata is a subset of the properties to be produced that are useful for type checking
 in the downstream apps, as well as for human readers to understand the output.
 
-Extended case - adding custom properties to the type definition
+Extended Case - Adding Custom Properties to the Type Definition
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When the type definition is extended on the fly, developers are expected to provide the extended specification in the 
 form of key-value pairs in the ``properties`` field. The grammar of the JSON object does not change, but developers are
 expected to provide a verbose description of the type extension in the ``description`` field. 
 
-Runtime parameter specification
+Runtime Parameter Specification
 ===============================
 
 CLAMS apps designed to be run as HTTP servers, preferably as `stateless <https://en.wikipedia.org/wiki/Stateless_protocol>`_.
@@ -219,7 +219,7 @@ can be specified as ``multivalued=True`` to accept multiple values as a list. Fo
 parameter value parsing works, please refer to the App Metadata json scheme (in the `below <#clams-app-runtime-parameter>`_ 
 section). 
 
-Syntax for parameter specification in App Metadata
+Syntax for Parameter Specification in App Metadata
 --------------------------------------------------
 
 Metadata Schema
