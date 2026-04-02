@@ -11,7 +11,7 @@ CLAMS Python SDK
 
 .. toctree::
   :maxdepth: 2
-  :caption: Contents
+  :caption: For CLAMS App Developers
 
   introduction
   input-output
@@ -28,8 +28,14 @@ CLAMS Python SDK
 
   modules
 
-Indices and Tables
-==================
+.. toctree::
+  :maxdepth: 2
+  :caption: For CLAMS App Users
+
+  clamsapp
+
+Indices
+=======
 
 * :ref:`genindex`
 * :ref:`modindex`
