@@ -73,9 +73,8 @@ class ExampleClamsApp(clams.app.ClamsApp):
         new_view.new_contain(AnnotationTypes.TimeFrame, **{"producer": "dummy-producer"})
         ann = new_view.new_annotation(AnnotationTypes.TimeFrame, 'a1', start=10, end=99)
         ann.add_property("f1", "hello_world")
-        d1 = DocumentTypes.VideoDocument
-        d2 = DocumentTypes.from_str(f'{str(d1)[:-1]}99')
-        if mmif.get_documents_by_type(d2):
+        # forcing a version mismatch warning for testing "warning view" generation in Restifier
+        if mmif.get_documents_by_type(DocumentTypes.VideoDocument_v1):
             new_view.new_annotation(AnnotationTypes.TimePoint, 'tp1')
         if 'raise_error' in kwargs and kwargs['raise_error']:
             raise ValueError
