@@ -41,10 +41,12 @@ As HTTP Server
 When running as a HTTP server, a CLAMS app should be stateless (or always set to 
 default states), and all the state should be "configured" by the client for each 
 request, via the runtime configuration parameters we described above if necessary.
-For HTTP interface, users can enter configuration values via 
-`query strings <https://en.wikipedia.org/wiki/Query_string>`_ as part of the 
-request URL. For example, if the user wants to use the above app as a server 
-with the `labels` parameter only set to ``PERSON`` and ``ORG``, then the user 
+For HTTP interface, users can enter configuration values via
+`query strings <https://en.wikipedia.org/wiki/Query_string>`_ as part of the
+request URL, or via a JSON envelope in the POST body (see :ref:`clamsapp-configuring`
+for user-facing details on all three parameter-passing methods).
+For example, if the user wants to use the above app as a server
+with the `labels` parameter only set to ``PERSON`` and ``ORG``, then the user
 can send a ``POST`` request to the server with the following URL:
 
 .. code-block:: bash
@@ -187,3 +189,16 @@ Default values must be a list of colon-separated strings::
 For more complex value structures (e.g., comma-separated lists within values),
 the app developer is responsible for further parsing and should document the
 expected format in the parameter's ``description`` field.
+
+.. _runtime-params-envelope-note:
+
+Note on JSON envelope input
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Users may also pass parameters via a JSON envelope in the POST body
+(see :ref:`clamsapp-configuring` for user-facing documentation).
+App developers do **not** need to handle this case specially.
+The SDK normalizes envelope parameters to the same ``Dict[str, List[str]]``
+format as query strings before they reach ``_annotate()``, so all type casting,
+default filling, and view signing work identically regardless of how parameters
+were provided.

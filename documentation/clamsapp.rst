@@ -206,18 +206,140 @@ This can be resolved for the duration of the current session by using the comman
 Configuring the app
 ^^^^^^^^^^^^^^^^^^^
 
-Running as an HTTP server, CLAMS Apps are stateless, but can be configured for each HTTP request by providing configuration parameters as `query string <https://en.wikipedia.org/wiki/Query_string>`_.
+CLAMS Apps are stateless, but can be configured per-request via runtime parameters.
+Different apps have different configurability.
+For configuration parameters of an app, please refer to the ``parameter`` section of the app metadata.
+In addition to app-specific parameters, all apps support universal parameters (e.g., ``pretty`` for formatted output).
+Check the app metadata for the complete and up-to-date list.
+
+For detailed documentation of parameter types including map-type and multivalued
+parameters, see :ref:`runtime-params-detailed`.
+
+There are three ways to pass runtime parameters, depending on your execution mode.
+
+Via query string (HTTP)
+"""""""""""""""""""""""
+
+When running an app as an HTTP server, you can pass simple parameters as
+`query strings <https://en.wikipedia.org/wiki/Query_string>`_ appended to the request URL.
 
 For example, appending ``?pretty=True`` to the URL will result in a JSON output with indentation for better readability.
+
+.. code-block:: bash
+
+   $ curl -X POST -d@input.mmif "http://app-server:5000\?pretty=True"
+
+For multivalued parameters, repeat the parameter name:
+
+.. code-block:: bash
+
+   $ curl -X POST -d@input.mmif "http://app-server:5000\?labels=PERSON\&labels=ORG"
 
 .. note::
 
    When you're using ``curl`` from a shell session, you need to escape the ``?`` or ``&`` characters with ``\`` to prevent the shell from interpreting it as a special character.
 
-Different apps have different configurability. For configuration parameters of an app, please refer to ``parameter`` section of the app metadata. In addition to app-specific parameters, all apps support universal parameters (e.g., ``pretty`` for formatted output). Check the app metadata for the complete and up-to-date list.
+Via CLI flags
+"""""""""""""
 
-For detailed documentation of parameter types including map-type and multivalued
-parameters, see :ref:`runtime-params-detailed`.
+When running an app via ``cli.py`` (see :ref:`clamsapp-cli` below), parameters
+are passed as ``--``-prefixed flags.
+
+.. code-block:: bash
+
+   $ python cli.py --pretty True input.mmif output.mmif
+
+For multivalued parameters, list the values after the flag, then use a
+``--`` separator before the positional arguments:
+
+.. code-block:: bash
+
+   $ python cli.py --labels PERSON ORG -- input.mmif output.mmif
+
+.. warning::
+
+   A multivalued flag greedily consumes every following token, so without
+   the ``--`` separator the positional ``INPUT_MMIF`` (and ``OUTPUT_MMIF``)
+   would be swallowed as additional ``--labels`` values, and the command
+   would fail with a missing-argument error. Always place ``--`` between the
+   last value of a multivalued flag and the positional file arguments.
+
+.. _clamsapp-envelope:
+
+Via JSON envelope
+"""""""""""""""""
+
+For complex or lengthy parameter values (e.g., long prompts for LLM-based apps,
+large map parameters), query strings and CLI flags can be impractical.
+The JSON envelope format wraps both the MMIF input and the parameters in a
+single JSON object.
+It works the same way in both execution modes: the input (the POST body in
+HTTP mode, or the ``INPUT_MMIF`` argument read from stdin or a positional
+file path in CLI mode) can be either pure MMIF or a MMIF wrapped in a
+parameter envelope, and the app detects and unwraps the envelope
+automatically (see :ref:`clamsapp-cli`).
+The envelope looks like this:
+
+.. code-block:: json
+
+   {
+     "parameters": {
+       "prompt": "A very long prompt that would not fit in a query string...",
+       "labelMap": {"B": "bars", "S": "slate"},
+       "temperature": 0.7,
+       "pretty": true
+     },
+     "mmif": {
+       "metadata": { "mmif": "..." },
+       "documents": [ "..." ],
+       "views": []
+     }
+   }
+
+The output is always raw MMIF, regardless of input format, so downstream
+pipeline steps are unaffected.
+
+You can still combine the envelope with query string parameters.
+When the same parameter appears in both, the **query string takes priority**,
+which allows quick overrides without editing the parameter file:
+
+.. code-block:: bash
+
+   $ curl -X POST -d@envelope.json "http://app-server:5000\?temperature=0.3"
+
+The ``clams envelop`` CLI tool helps construct envelope JSON from a parameter
+file and an MMIF file:
+
+.. note::
+
+   The subcommand is spelled ``envelop`` (no trailing ``e``) -- it is the
+   *verb* "to envelop" (to wrap/enclose), consistent with the other
+   action-named subcommands (``describe``, ``rewind``, ``summarize``). The
+   *noun* "envelope" still refers to the JSON object it produces. The
+   missing ``e`` is intentional, not a typo.
+
+.. code-block:: bash
+
+   # from files
+   $ clams envelop params.json input.mmif > envelope.json
+
+   # pipe-friendly: read MMIF from stdin
+   $ cat input.mmif | clams envelop params.json | curl -d@- http://app-server:5000
+
+   # chain apps: first app uses query string, second uses envelope
+   $ cat input.mmif \
+       | curl -d@- -s "http://app1:5000\?simple_param=value" \
+       | clams envelop params.json \
+       | curl -d@- -s http://app2:5000 > output.mmif
+
+For programmatic use in Python:
+
+.. code-block:: python
+
+   from clams import create_envelope
+
+   body = create_envelope(mmif_obj, parameters={"prompt": "...", "labelMap": {"B": "bars"}})
+   requests.post("http://app-server:5000", data=body)
 
 .. _clamsapp-cli:
 
@@ -310,6 +432,16 @@ All parameter names are the same as the HTTP query parameters, but you need to u
 .. code-block:: bash
 
    $ python cli.py --pretty True input.mmif output.mmif
+
+.. note::
+
+   For complex parameters that are difficult to express as CLI flags (e.g., long
+   prompts, large map parameters), consider using the JSON envelope approach
+   instead. You can pipe ``clams envelop`` output into ``cli.py``'s stdin::
+
+      cat input.mmif | clams envelop params.json | python cli.py
+
+   See :ref:`clamsapp-envelope` for details.
 
 Finally, when running the app as a container, you can override the default ``CMD`` (``app.py``) by passing a ``cli.py`` command to the ``docker run`` command.
 
