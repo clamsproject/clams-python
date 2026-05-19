@@ -12,8 +12,9 @@ import clams
 import clams.app
 from clams.appmetadata import AppMetadata
 from clams.envelop import (
-    create_envelope, is_envelope, main as envelope_cli_main,
-    normalize_params, prep_argparser, unwrap_envelope,
+    EnvelopeError, create_envelope, is_envelope,
+    main as envelope_cli_main, normalize_params, prep_argparser,
+    unwrap_envelope, unwrap_if_envelope,
 )
 from tests.test_clamsapp import ExampleInputMMIF
 
@@ -38,6 +39,8 @@ class EnvelopeTestApp(clams.app.ClamsApp):
         self.sign_view(new_view, kwargs)
         new_view.new_contain(AnnotationTypes.TimeFrame,
                              producer='envelope-test')
+        if kwargs.get('raise_error'):
+            raise ValueError('boom')
         return mmif
 
 
@@ -108,14 +111,16 @@ class TestEnvelopeDetection(unittest.TestCase):
 
     def test_is_envelope_non_dict(self):
         self.assertFalse(is_envelope('not a dict'))
+        self.assertFalse(is_envelope(None))
+        self.assertFalse(is_envelope([]))
 
     def test_unwrap_missing_mmif(self):
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(EnvelopeError) as ctx:
             unwrap_envelope({'parameters': {}})
         self.assertIn('mmif', str(ctx.exception).lower())
 
     def test_unwrap_non_dict_parameters(self):
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(EnvelopeError) as ctx:
             unwrap_envelope({'parameters': 'bad', 'mmif': {}})
         self.assertIn('object', str(ctx.exception).lower())
 
@@ -141,6 +146,14 @@ class TestEnvelopeCreation(unittest.TestCase):
         self.assertIn('parameters', result)
         self.assertIn('mmif', result)
 
+    def test_from_dict(self):
+        mmif_dict = json.loads(self.mmif_str)
+        result = json.loads(
+            create_envelope(mmif_dict, {'pretty': True})
+        )
+        self.assertEqual(result['mmif'], mmif_dict)
+        self.assertEqual(result['parameters']['pretty'], True)
+
     def test_no_params(self):
         result = json.loads(create_envelope(self.mmif_str))
         self.assertEqual(result['parameters'], {})
@@ -156,6 +169,49 @@ class TestEnvelopeCreation(unittest.TestCase):
         Mmif(mmif_str)
         self.assertEqual(normalized['prompt'], ['describe'])
         self.assertEqual(normalized['labels'], ['a', 'b'])
+
+
+class TestUnwrapIfEnvelope(unittest.TestCase):
+    """
+    Direct tests for the shared helper used by every entry point.
+    """
+
+    def setUp(self):
+        self.mmif_str = ExampleInputMMIF.get_mmif()
+
+    def test_str_envelope(self):
+        env = create_envelope(self.mmif_str, {'prompt': 'x'})
+        data, params = unwrap_if_envelope(env, {})
+        Mmif(data)  # inner MMIF extracted and valid
+        self.assertEqual(params, {'prompt': ['x']})
+
+    def test_bytes_envelope(self):
+        env = create_envelope(
+            self.mmif_str, {'prompt': 'x'}).encode('utf-8')
+        data, params = unwrap_if_envelope(env, {})
+        Mmif(data)
+        self.assertEqual(params, {'prompt': ['x']})
+
+    def test_dict_envelope(self):
+        env = json.loads(create_envelope(self.mmif_str, {'prompt': 'x'}))
+        data, params = unwrap_if_envelope(env, {})
+        Mmif(data)
+        self.assertEqual(params, {'prompt': ['x']})
+
+    def test_explicit_params_win(self):
+        env = create_envelope(self.mmif_str, {'prompt': 'env'})
+        data, params = unwrap_if_envelope(env, {'prompt': ['cli']})
+        self.assertEqual(params['prompt'], ['cli'])
+
+    def test_non_envelope_str_passthrough(self):
+        data, params = unwrap_if_envelope(self.mmif_str, {'a': ['1']})
+        self.assertEqual(data, self.mmif_str)
+        self.assertEqual(params, {'a': ['1']})
+
+    def test_valid_json_non_dict_passthrough(self):
+        data, params = unwrap_if_envelope('123', {})
+        self.assertEqual(data, '123')
+        self.assertEqual(params, {})
 
 
 class TestRestifierEnvelope(unittest.TestCase):
@@ -180,25 +236,18 @@ class TestRestifierEnvelope(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         Mmif(res.get_data(as_text=True))
 
-    def test_query_string_overrides_envelope(self):
-        envelope_str = create_envelope(
-            self.mmif_str, {'pretty': False}
-        )
-        # query string says pretty=true, should override envelope
-        res = self.client.post(
-            '/', data=envelope_str,
-            query_string={'pretty': 'true'},
-        )
-        self.assertEqual(res.status_code, 200)
-        # indented JSON indicates pretty=true was honored
-        output = res.get_data(as_text=True)
-        self.assertIn('\n', output)
+    PREFIX = "Invalid input data. See below for validation error."
 
     def test_envelope_missing_mmif(self):
         bad = json.dumps({'parameters': {'pretty': True}})
         res = self.client.post('/', data=bad)
         self.assertEqual(res.status_code, 500)
         self.assertEqual(res.mimetype, 'text/plain')
+        body = res.get_data(as_text=True)
+        # EnvelopeError 500 uses the same payload format as the
+        # MMIF-validation 500
+        self.assertTrue(body.startswith(self.PREFIX))
+        self.assertIn('mmif', body)
 
     def test_envelope_invalid_mmif(self):
         bad = json.dumps({
@@ -208,6 +257,11 @@ class TestRestifierEnvelope(unittest.TestCase):
         res = self.client.post('/', data=bad)
         self.assertEqual(res.status_code, 500)
         self.assertEqual(res.mimetype, 'text/plain')
+        body = res.get_data(as_text=True)
+        # trimmed: concise jsonschema message, NOT the full schema dump
+        self.assertTrue(body.startswith(self.PREFIX))
+        self.assertNotIn('$schema', body)
+        self.assertLess(len(body), 500)
 
     def test_raw_mmif_still_works(self):
         res = self.client.post('/', data=self.mmif_str)
@@ -218,6 +272,23 @@ class TestRestifierEnvelope(unittest.TestCase):
         res = self.client.post('/', data='this is not json')
         self.assertEqual(res.status_code, 500)
         self.assertEqual(res.mimetype, 'text/plain')
+
+    def test_envelope_app_error_returns_error_view(self):
+        # app raises during _annotate with envelope input: the error
+        # must come back as an error-view MMIF (application/json),
+        # NOT a text/plain input error, and set_error_view must have
+        # unwrapped the envelope to record the params.
+        envelope_str = create_envelope(
+            self.mmif_str, {'prompt': 'p', 'raise_error': True}
+        )
+        res = self.client.post('/', data=envelope_str)
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.mimetype, 'application/json')
+        out = Mmif(res.get_data(as_text=True))
+        err_meta = json.loads(list(out.views)[-1].metadata.serialize())
+        self.assertIn('error', err_meta)
+        self.assertEqual(
+            err_meta.get('parameters', {}).get('prompt'), 'p')
 
 
 class TestEnvelopeReproducibility(unittest.TestCase):
@@ -318,6 +389,52 @@ class TestEnvelopeCLI(unittest.TestCase):
         res = client.post('/', data=output)
         self.assertEqual(res.status_code, 200)
         Mmif(res.get_data(as_text=True))
+
+
+class TestEnvelopeNonHTTPEntrypoints(unittest.TestCase):
+    """
+    Envelope handling lives in ClamsApp.annotate(), so it must work
+    when annotate() is called directly -- i.e. the path used by the
+    cli.py entry point and any programmatic use -- not just over HTTP.
+    """
+
+    def setUp(self):
+        self.app = EnvelopeTestApp()
+        self.mmif_str = ExampleInputMMIF.get_mmif()
+
+    def _signed_params(self, out_mmif_str):
+        out = Mmif(out_mmif_str)
+        signed = list(out.views)[-1]
+        return json.loads(signed.metadata.serialize()).get(
+            'parameters', {})
+
+    def test_annotate_accepts_envelope_string(self):
+        # exactly what cli.py does: clamsapp.annotate(in_data, **params)
+        envelope_str = create_envelope(
+            self.mmif_str, {'prompt': 'from cli'}
+        )
+        out = self.app.annotate(envelope_str)
+        params = self._signed_params(out)
+        self.assertEqual(params.get('prompt'), 'from cli')
+
+    def test_annotate_raw_mmif_still_works(self):
+        # raw MMIF (no envelope) passes through; app adds one view
+        out = Mmif(self.app.annotate(self.mmif_str))
+        self.assertEqual(len(list(out.views)), 1)
+
+    def test_explicit_params_override_envelope(self):
+        envelope_str = create_envelope(
+            self.mmif_str, {'prompt': 'envelope value'}
+        )
+        # CLI flags / kwargs arrive as lists, like argparse produces
+        out = self.app.annotate(envelope_str, prompt=['kwarg value'])
+        params = self._signed_params(out)
+        self.assertEqual(params.get('prompt'), 'kwarg value')
+
+    def test_malformed_envelope_raises_envelope_error(self):
+        bad = json.dumps({'parameters': {'p': 1}})  # missing "mmif"
+        with self.assertRaises(EnvelopeError):
+            self.app.annotate(bad)
 
 
 class TestEnvelopePythonAPI(unittest.TestCase):

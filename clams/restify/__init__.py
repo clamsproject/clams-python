@@ -3,10 +3,9 @@ import json
 import jsonschema
 from flask import Flask, request, Response
 from flask_restful import Resource, Api
-from mmif import Mmif
 
 from clams.app import ClamsApp
-from clams.envelop import is_envelope, unwrap_envelope
+from clams.envelop import EnvelopeError
 
 
 class Restifier(object):
@@ -191,50 +190,33 @@ class ClamsHTTPApi(Resource):
         Maps HTTP POST verb to :meth:`~clams.app.ClamsApp.annotate`.
         Note that for now HTTP PUT verbs is also mapped to :meth:`~clams.app.ClamsApp.annotate`.
 
-        The request body can be either raw MMIF JSON or a JSON envelope
-        containing both ``"parameters"`` and ``"mmif"`` keys.  When an
-        envelope is detected, parameters are normalized and merged with
-        any query-string parameters (query string takes priority).
-
         :return: Returns MMIF output from a ClamsApp in a HTTP response.
         """
         raw_data = request.get_data().decode('utf-8')
         # this will catch duplicate arguments with different values into a list under the key
         raw_params = request.args.to_dict(flat=False)
         try:
-            body = json.loads(raw_data)
-        except (json.JSONDecodeError, ValueError):
-            return Response(
-                response="Invalid JSON in request body.",
-                status=500, mimetype='text/plain')
-        if is_envelope(body):
-            try:
-                mmif_data, envelope_params = unwrap_envelope(body)
-            except ValueError as e:
-                return Response(
-                    response=f"Invalid envelope format: {e}",
-                    status=500, mimetype='text/plain')
-            # query string overrides envelope parameters
-            params = {**envelope_params, **raw_params}
-        else:
-            mmif_data = raw_data
-            params = raw_params
-        try:
-            _ = Mmif(mmif_data)
-        except jsonschema.exceptions.ValidationError as e:
+            return self.json_to_response(
+                self.cla.annotate(raw_data, **raw_params))
+        except (jsonschema.exceptions.ValidationError,
+                json.JSONDecodeError, EnvelopeError) as e:
+            # jsonschema's str(e) dumps the entire MMIF schema; use its
+            # concise .message instead so envelope and MMIF input
+            # errors share the same compact payload format.
+            detail = (
+                e.message
+                if isinstance(e, jsonschema.exceptions.ValidationError)
+                else str(e))
             return Response(
                 response="Invalid input data. "
                          "See below for validation error.\n\n"
-                         + str(e),
+                         + detail,
                 status=500, mimetype='text/plain')
-        try:
-            return self.json_to_response(
-                self.cla.annotate(mmif_data, **params))
         except Exception:
             self.cla.logger.exception("Error in annotation")
             return self.json_to_response(
                 self.cla.record_error(
-                    mmif_data, **params
+                    raw_data, **raw_params
                 ).serialize(pretty=True),
                 status=500)
 
