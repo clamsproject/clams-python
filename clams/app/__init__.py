@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import pathlib
@@ -19,6 +20,7 @@ from mmif.utils.video_document_helper import (
 )
 from mmif.utils.workflow_helper import generate_param_hash  # pytype: disable=import-error
 from clams.appmetadata import AppMetadata, real_valued_primitives, python_type, map_param_kv_delimiter
+from clams.envelop import unwrap_if_envelope
 
 logging.basicConfig(
     level=getattr(logging, os.environ.get('CLAMS_LOGLEVEL', 'WARNING').upper(), logging.WARNING),
@@ -159,11 +161,19 @@ class ClamsApp(ABC):
         wrapper around :meth:`~clams.app.ClamsApp._annotate` method where some common operations
         (that are invoked by keyword arguments) are implemented.
 
-        :param mmif: An input MMIF object to annotate
+        The input may be a raw MMIF (str, dict, or :class:`~mmif.serialize.mmif.Mmif`)
+        or a JSON envelope wrapping both ``"parameters"`` and ``"mmif"``.
+        Envelope detection and unwrapping happen here so every execution
+        path (HTTP, CLI, direct Python API) is envelope-aware. When an
+        envelope is given, its parameters are merged under ``runtime_params``
+        (explicitly-passed parameters take priority on key collision).
+
+        :param mmif: An input MMIF object, or a JSON envelope, to annotate
         :param runtime_params: An arbitrary set of k-v pairs to configure the app at runtime
         :return: Serialized JSON string of the output of the app
         """
         if not isinstance(mmif, Mmif):
+            mmif, runtime_params = unwrap_if_envelope(mmif, runtime_params)
             mmif = Mmif(mmif)
         existing_view_ids = {view.id for view in mmif.views}
         issued_warnings = []
@@ -329,7 +339,8 @@ class ClamsApp(ABC):
         :return: An output MMIF with a new view with the error encoded in the view metadata
         """
         import traceback
-        if isinstance(mmif, bytes) or isinstance(mmif, str) or isinstance(mmif, dict):
+        if isinstance(mmif, (bytes, str, dict)):
+            mmif, runtime_conf = unwrap_if_envelope(mmif, runtime_conf)
             mmif = Mmif(mmif)
         error_view: Optional[View] = None
         for view in reversed(mmif.views):

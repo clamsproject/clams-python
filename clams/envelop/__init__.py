@@ -11,6 +11,16 @@ ENVELOPE_KEY = 'parameters'
 MMIF_KEY = 'mmif'
 
 
+class EnvelopeError(ValueError):
+    """
+    Raised when an input body is detected as an envelope (has a
+    ``"parameters"`` key) but is otherwise malformed. Subclasses
+    ``ValueError`` so existing ``except ValueError`` handlers keep
+    working, while still being distinguishable from unrelated
+    ``ValueError``\\ s raised by app code.
+    """
+
+
 def normalize_params(params: dict) -> Dict[str, List[str]]:
     """
     Normalize JSON-native parameter values to the
@@ -56,21 +66,51 @@ def unwrap_envelope(body: dict) -> Tuple[str, Dict[str, List[str]]]:
     :param body: parsed JSON dict with ``"parameters"`` and ``"mmif"``
     :returns: tuple of (mmif_json_string, normalized_params)
     :rtype: Tuple[str, Dict[str, List[str]]]
-    :raises ValueError: if ``"mmif"`` key is missing or
+    :raises EnvelopeError: if ``"mmif"`` key is missing or
         ``"parameters"`` is not a dict
     """
     params = body.get(ENVELOPE_KEY)
     if not isinstance(params, dict):
-        raise ValueError(
+        raise EnvelopeError(
             f'"{ENVELOPE_KEY}" must be a JSON object, '
             f'got {type(params).__name__}'
         )
     if MMIF_KEY not in body:
-        raise ValueError(
+        raise EnvelopeError(
             f'Envelope is missing required "{MMIF_KEY}" key'
         )
     mmif_str = json.dumps(body[MMIF_KEY])
     return mmif_str, normalize_params(params)
+
+
+def unwrap_if_envelope(data, runtime_params):
+    """
+    If ``data`` is (or decodes to) an envelope, return the inner MMIF
+    together with envelope parameters merged under the explicitly-passed
+    ``runtime_params`` (so query-string / CLI flags take priority). If
+    ``data`` is not an envelope, return it unchanged.
+
+    This is the single entry point used by every execution path
+    (HTTP, CLI, direct Python API) so envelope handling is uniform
+    regardless of how the app is invoked.
+
+    :param data: raw input -- ``bytes``, ``str``, or ``dict``
+    :param runtime_params: explicitly-passed parameters that override
+        envelope parameters on key collision
+    :returns: tuple of (mmif_or_original_data, effective_params)
+    :raises EnvelopeError: if ``data`` is a malformed envelope
+    """
+    raw = data.decode('utf-8') if isinstance(data, bytes) else data
+    body = raw
+    if isinstance(raw, str):
+        try:
+            body = json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            return data, runtime_params
+    if is_envelope(body):
+        inner_mmif, envelope_params = unwrap_envelope(body)
+        return inner_mmif, {**envelope_params, **runtime_params}
+    return data, runtime_params
 
 
 def create_envelope(
