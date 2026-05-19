@@ -8,12 +8,12 @@ Package providing classes for representing metadata of CLAMS apps.
 
 .. autoclass:: clams.appmetadata.Input
    :members:
-   :inherited-members:
+   :inherited-members: BaseModel
 
 .. autoclass:: clams.appmetadata.Output
    :members:
-   :inherited-members:
+   :inherited-members: BaseModel
 
 .. autoclass:: clams.appmetadata.RuntimeParameter
    :members:
-   :inherited-members:
+   :inherited-members: BaseModel

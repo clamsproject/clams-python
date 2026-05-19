@@ -1,5 +1,5 @@
-Welcome to CLAMS Python SDK documentation!
-==========================================
+CLAMS Python SDK
+================
 
 .. mdinclude:: ../README.md
 
@@ -11,7 +11,7 @@ Welcome to CLAMS Python SDK documentation!
 
 .. toctree::
   :maxdepth: 2
-  :caption: Contents
+  :caption: For CLAMS App Developers
 
   introduction
   input-output
@@ -28,9 +28,14 @@ Welcome to CLAMS Python SDK documentation!
 
   modules
 
-Indices and tables
-==================
+.. toctree::
+  :maxdepth: 2
+  :caption: For CLAMS App Users
+
+  clamsapp
+
+Indices
+=======
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

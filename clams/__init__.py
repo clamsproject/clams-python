@@ -3,9 +3,11 @@ import sys
 
 import mmif
 from clams import develop
+from clams import envelop
 from clams.app import *
 from clams.app import __all__ as app_all
 from clams.appmetadata import AppMetadata
+from clams.envelop import create_envelope
 from clams.restify import Restifier
 from clams.ver import __version__
 
@@ -32,6 +34,7 @@ def cli():
     to_register = list(mmif.find_all_modules('mmif.utils.cli'))
     # then add my own subcommands
     to_register.append(develop)
+    to_register.append(envelop)
     for cli_module in to_register:
         cli_module_name = cli_module.__name__.rsplit('.')[-1]
         cli_modules[cli_module_name] = cli_module

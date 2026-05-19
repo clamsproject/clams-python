@@ -3,13 +3,12 @@
 ``clams`` shell command
 =======================
 
-``clams-python`` comes with a command line interface (CLI) that allows you to
+``clams-python`` comes with a command line interface (CLI) for creating a new CLAMS app from a template (``develop`` subcommand).
 
-#. create a new CLAMS app from a template
-#. create a new MMIF file with selected source documents and an empty view
+The CLI is installed as the ``clams`` shell command. For backward compatibility, it also exposes all ``mmif`` subcommands (``source``, ``rewind``, ``describe``, ``summarize``). See the `mmif-python CLI documentation <https://clams.ai/mmif-python/cli>`_ for details on those commands.
 
-The CLI is installed as ``clams`` shell command. To see the available commands, run
+To see the available commands, run
 
-.. code-block:: bash 
+.. code-block:: bash
 
     clams --help

@@ -1,9 +1,11 @@
+import json
+
 import jsonschema
 from flask import Flask, request, Response
 from flask_restful import Resource, Api
-from mmif import Mmif
 
 from clams.app import ClamsApp
+from clams.envelop import EnvelopeError
 
 
 class Restifier(object):
@@ -194,13 +196,28 @@ class ClamsHTTPApi(Resource):
         # this will catch duplicate arguments with different values into a list under the key
         raw_params = request.args.to_dict(flat=False)
         try:
-            _ = Mmif(raw_data)
-        except jsonschema.exceptions.ValidationError as e:
-            return Response(response="Invalid input data. See below for validation error.\n\n" + str(e), status=500, mimetype='text/plain')
-        try:
-            return self.json_to_response(self.cla.annotate(raw_data, **raw_params))
+            return self.json_to_response(
+                self.cla.annotate(raw_data, **raw_params))
+        except (jsonschema.exceptions.ValidationError,
+                json.JSONDecodeError, EnvelopeError) as e:
+            # jsonschema's str(e) dumps the entire MMIF schema; use its
+            # concise .message instead so envelope and MMIF input
+            # errors share the same compact payload format.
+            detail = (
+                e.message
+                if isinstance(e, jsonschema.exceptions.ValidationError)
+                else str(e))
+            return Response(
+                response="Invalid input data. "
+                         "See below for validation error.\n\n"
+                         + detail,
+                status=500, mimetype='text/plain')
         except Exception:
             self.cla.logger.exception("Error in annotation")
-            return self.json_to_response(self.cla.record_error(raw_data, **raw_params).serialize(pretty=True), status=500)
+            return self.json_to_response(
+                self.cla.record_error(
+                    raw_data, **raw_params
+                ).serialize(pretty=True),
+                status=500)
 
     put = post

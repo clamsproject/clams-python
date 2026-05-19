@@ -203,11 +203,13 @@ class RuntimeParameter(_BaseModel):
                     "forced. \n\n"
                     "Notes for developers: \n\n"
                     "When the type is ``map``, the parameter value (still a single string from the users' perspective) "
-                    "must be formatted as a ``KEY:VALUE`` pair, namely a colon-separated string. To pass multiple "
-                    "key-value pairs, users need to pass the parameter multiple times (remember ``type=map`` implies "
-                    "``multivalued=true``) with pairs in the colon-separated format. \n\n"
-                    "Also, the `VALUE` part of the user input is always expected and handled as a string. If a "
-                    "developers wants to do more text processing on the passed value to accept more complex data types "
+                    "must be formatted as a ``KEY:VALUE`` pair, namely a colon-separated string. The first colon is "
+                    "always used as the delimiter, so **colons are not allowed in keys**. Colons may appear in "
+                    "values (everything after the first colon becomes the value), but a warning will be emitted. "
+                    "To pass multiple key-value pairs, users need to pass the parameter multiple times (remember "
+                    "``type=map`` implies ``multivalued=true``) with pairs in the colon-separated format. \n\n"
+                    "Also, the ``VALUE`` part of the user input is always expected and handled as a string. If a "
+                    "developer wants to do more text processing on the passed value to accept more complex data types "
                     "or structures (e.g., map from a string to a list of strings), it is up to the developer. However, "
                     "any additional form requirements should be precisely described in the ``description`` field for "
                     "users. \n\n"
@@ -438,6 +440,18 @@ class AppMetadata(pydantic.BaseModel):
         return new
 
     def add_input_oneof(self, *inputs: Union[str, Input, vocabulary.ThingTypesBase]):
+        """
+        Helper method to add a ``oneOf`` (disjunctive) group to
+        the ``input`` list. When a single type is given, it is
+        added as a regular (conjunctive) input. When multiple
+        types are given, they are wrapped in a nested list to
+        indicate that exactly one of them is required.
+
+        :param inputs: one or more input types (as URI strings,
+            :class:`Input` objects, or vocabulary types)
+        :raises ValueError: if any input in a ``oneOf`` group is
+            optional, or if a duplicate input is detected
+        """
         newinputs = []
         if len(inputs) == 1:
             if isinstance(inputs[0], Input):
@@ -520,6 +534,13 @@ class AppMetadata(pydantic.BaseModel):
             raise ValueError("Key and value should not be empty!")
         
     def jsonify(self, pretty=False):
+        """
+        Serialize the app metadata to a JSON string.
+
+        :param pretty: if True, indent the output with 2 spaces
+        :returns: JSON string of the metadata
+        :rtype: str
+        """
         return self.model_dump_json(exclude_defaults=True, by_alias=True, indent=2 if pretty else None)
 
 

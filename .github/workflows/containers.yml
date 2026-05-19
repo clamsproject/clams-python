@@ -39,7 +39,7 @@ jobs:
     - name: "⏱️ Wait up to 20 minutes for the new clams-python is deployed on PyPI"
       uses: nev7n/wait_for_response@v1
       with:
-        url: "https://pypi.org/project/clams-python/${{ needs.set-version.outputs.version }}/"
+        url: "https://pypi.org/pypi/clams-python/${{ needs.set-version.outputs.version }}/json"
         responseCode: 200
         timeout: 1200000
         interval: 5000

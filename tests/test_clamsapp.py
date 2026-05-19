@@ -73,9 +73,8 @@ class ExampleClamsApp(clams.app.ClamsApp):
         new_view.new_contain(AnnotationTypes.TimeFrame, **{"producer": "dummy-producer"})
         ann = new_view.new_annotation(AnnotationTypes.TimeFrame, 'a1', start=10, end=99)
         ann.add_property("f1", "hello_world")
-        d1 = DocumentTypes.VideoDocument
-        d2 = DocumentTypes.from_str(f'{str(d1)[:-1]}99')
-        if mmif.get_documents_by_type(d2):
+        # forcing a version mismatch warning for testing "warning view" generation in Restifier
+        if mmif.get_documents_by_type(DocumentTypes.VideoDocument_v1):
             new_view.new_annotation(AnnotationTypes.TimePoint, 'tp1')
         if 'raise_error' in kwargs and kwargs['raise_error']:
             raise ValueError
@@ -596,7 +595,23 @@ class TestParameterCaster(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             caster.cast(params)
-        
+
+    def test_kv_param_simple(self):
+        result = ParameterCaster.kv_param('key:value')
+        self.assertEqual(result, {'key': 'value'})
+        # no warning for a single colon
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            ParameterCaster.kv_param('key:value')
+
+    def test_kv_param_colon_in_value_warns(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = ParameterCaster.kv_param('a:b:c')
+            self.assertEqual(result, {'a': 'b:c'})
+            self.assertEqual(len(w), 1)
+            self.assertIn('multiple', str(w[0].message).lower())
+
 
 if __name__ == '__main__':
     unittest.main()

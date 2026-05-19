@@ -63,7 +63,7 @@ def generate_workflow(container_files, dependencies, output_file):
         f.write("    - name: \"⏱️ Wait up to 20 minutes for the new clams-python is deployed on PyPI\"\n")
         f.write("      uses: nev7n/wait_for_response@v1\n")
         f.write("      with:\n")
-        f.write("        url: \"https://pypi.org/project/clams-python/${{ needs.set-version.outputs.version }}/\"\n")
+        f.write("        url: \"https://pypi.org/pypi/clams-python/${{ needs.set-version.outputs.version }}/json\"\n")
         f.write("        responseCode: 200\n")
         f.write("        timeout: 1200000\n")
         f.write("        interval: 5000\n")

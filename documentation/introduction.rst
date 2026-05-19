@@ -1,6 +1,6 @@
 .. _introduction: 
 
-Getting started
+Getting Started
 ===============
 
 Overview
