@@ -146,7 +146,7 @@ This means that if the user doesn't specify the value for these parameters at th
 If you want to make a parameter "optional" by providing a default value, you can do so by adding a `default` argument to the `add_parameter()` method.
 
 > **Note**
-> Also refer to [CLAMS App Metadata](https://sdk.clams.ai/appmetadata.html) for more details regarding what fields need to be specified.
+> Also refer to [CLAMS App Metadata](https://clams.ai/clams-python/appmetadata.html) for more details regarding what fields need to be specified.
 
 #### `_annotate()`
 The `_annotate()` method should accept a MMIF file/string/object as its first parameter and always returns a `MMIF` object with an additional `view` containing annotation results. This is where the bulk of your logic will go. For a text processing app, it is mostly concerned with finding text documents, calling the code that runs over the text, creating new views and inserting the results. 

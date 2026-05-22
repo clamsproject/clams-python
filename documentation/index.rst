@@ -16,6 +16,7 @@ CLAMS Python SDK
   introduction
   input-output
   runtime-params
+  app-baseclasses
   gpu-apps
   appmetadata
   appdirectory

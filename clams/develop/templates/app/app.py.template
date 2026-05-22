@@ -24,19 +24,26 @@ from mmif import Mmif, View, Annotation, Document, AnnotationTypes, DocumentType
 from lapps.discriminators import Uri
 
 
+# If your app is a prompt-driven LLM/VLM/audio-LM app, change the base class
+# below from ``ClamsApp`` to ``ClamsPromptableApp`` (import via
+# ``from clams import ClamsPromptableApp``) and implement ``generate()``
+# instead of (or in addition to) ``_annotate()``. Don't forget to also
+# uncomment the matching helper call in ``metadata.py``. See
+# https://clams.ai/clams-python/app-baseclasses.html#promptable for the
+# developer guide.
 class $APP_CLASS_NAME(ClamsApp):
 
     def __init__(self):
         super().__init__()
 
     def _appmetadata(self):
-        # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata
+        # see https://clams.ai/clams-python/autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata
         # Also check out ``metadata.py`` in this directory.
         # When using the ``metadata.py`` leave this do-nothing "pass" method here.
         pass
 
     def _annotate(self, mmif: Mmif, **parameters) -> Mmif:
-        # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._annotate
+        # see https://clams.ai/clams-python/autodoc/clams.app.html#clams.app.ClamsApp._annotate
         raise NotImplementedError
 
 def get_app():

@@ -190,6 +190,24 @@ For more complex value structures (e.g., comma-separated lists within values),
 the app developer is responsible for further parsing and should document the
 expected format in the parameter's ``description`` field.
 
+.. _runtime-params-promptable-note:
+
+Promptable apps: an extra SDK-managed parameter set
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For apps that wrap an **instruction- or chat-tuned** promptable model — an
+LLM or other multimodal model, local or remote — we recommend inheriting
+from :class:`~clams.app.ClamsPromptableApp` instead of
+:class:`~clams.app.ClamsApp`. The promptable base class adds a standardized,
+SDK-managed set of runtime parameters (``prompt``, ``systemPrompt``,
+``temperature``, ``maxNewTokens``, ``topP``, ``topK``, ``promptMode``,
+``batchSize``) on top of the universal parameters. If you use this base
+class, these names are reserved — your app's ``metadata.py`` must not
+redeclare them — and are added via a single helper call inside
+``appmetadata()``.
+
+See :ref:`promptable` for the full developer guide.
+
 .. _runtime-params-envelope-note:
 
 Note on JSON envelope input

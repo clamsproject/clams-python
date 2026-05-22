@@ -9,11 +9,11 @@ from contextlib import contextmanager
 from datetime import datetime
 from urllib import parse as urlparser
 
-__all__ = ['ClamsApp']
+__all__ = ['ClamsApp', 'ClamsPromptableApp']
 
 from typing import Union, Any, Optional, Dict, List, Tuple
 
-from mmif import Mmif, Document, DocumentTypes, View
+from mmif import Mmif, Document, DocumentTypes, View, AnnotationTypes
 from mmif.utils.video_document_helper import (
     SamplingMode, SAMPLING_MODE_DESCRIPTIONS, SAMPLING_MODE_DEFAULT,
     _sampling_mode,
@@ -131,7 +131,7 @@ class ClamsApp(ABC):
         In any case, :class:`~clams.appmetadata.AppMetadata` class must be useful.
         
         For metadata specification, 
-        see `https://sdk.clams.ai/appmetadata.jsonschema <../appmetadata.jsonschema>`_. 
+        see `https://clams.ai/clams-python/appmetadata.jsonschema <../appmetadata.jsonschema>`_. 
         """
         cwd = pathlib.Path(sys.modules[self.__module__].__file__).parent
         
@@ -637,6 +637,249 @@ class ClamsApp(ABC):
                         document_file.close()
                 else:
                     raise FileNotFoundError(p.path)
+
+
+class ClamsPromptableApp(ClamsApp):
+    """
+    Base class for CLAMS apps that wrap a promptable model (an LLM or
+    other multimodal model, local or remote). Standardizes the runtime
+    parameter surface
+    (prompt, generation hyperparameters, batch size) and provides
+    helpers for building chat conversations and persisting model
+    responses into MMIF.
+
+    The standardized parameters are listed in
+    :py:attr:`promptable_parameters` and added to an app's metadata via
+    :py:meth:`inject_promptable_parameters`. Promptable-app developers
+    MUST call that helper at the end of their ``appmetadata()`` function
+    in ``metadata.py``. The reservation rule (these parameter names are
+    SDK-managed and apps cannot redeclare them) is enforced implicitly
+    via :py:meth:`AppMetadata.add_parameter`'s existing duplicate-name
+    check.
+
+    Inference is performed by :py:meth:`generate`, which subclasses MUST
+    implement. The base class provides:
+
+    * :py:meth:`inject_promptable_parameters` — add the SDK-managed
+      parameter set to ``AppMetadata``
+    * :py:meth:`build_conversation` — assemble a chat-template-compatible
+      message list (stub in this release)
+    * :py:meth:`store_response` — persist a generated response into a
+      view as ``TextDocument`` + ``Alignment``
+    """
+
+    #: SDK-managed runtime parameters injected into every promptable app.
+    #: These names are reserved — apps cannot redeclare them with
+    #: customized specs.
+    promptable_parameters = [
+        {
+            'name': 'prompt', 'type': 'string', 'multivalued': True,
+            'description':
+                'User prompt(s) sent to the model. A single value runs as a '
+                'one-shot generation. A multi-value list is interpreted as a '
+                'multi-turn static prompt; see ``promptMode`` for how turns '
+                'are assembled.',
+        },
+        {
+            'name': 'systemPrompt', 'type': 'string', 'default': '',
+            'description':
+                'Optional system-role text prepended to the conversation. '
+                'Empty by default.',
+        },
+        {
+            'name': 'promptMode', 'type': 'string',
+            'choices': ['user-only', 'turn-taking'],
+            'default': 'turn-taking',
+            'description':
+                'How to interpret a multi-value ``prompt`` list. '
+                'Has no effect when ``prompt`` has a single value. '
+                'For semantics of each choice and worked examples, see '
+                'https://clams.ai/clams-python/app-baseclasses.html#promptable-multiturn',
+        },
+        {
+            'name': 'maxNewTokens', 'type': 'integer', 'default': 512,
+            'description':
+                'Maximum number of new tokens generated per inference call. '
+                'Forwarded to the backend\'s ``generate``-equivalent. Larger '
+                'values grow the KV cache linearly and increase GPU memory '
+                'usage; reduce if VRAM is constrained.',
+        },
+        {
+            'name': 'temperature', 'type': 'number', 'default': 0.0,
+            'description':
+                'Sampling temperature. The default ``0.0`` selects '
+                'deterministic / greedy decoding for maximum reproducibility; '
+                'override for sampled generation.',
+        },
+        {
+            'name': 'topP', 'type': 'number', 'default': 1.0,
+            'description':
+                'Nucleus-sampling cumulative probability cutoff. Only '
+                'meaningful when ``temperature`` is greater than 0.',
+        },
+        {
+            'name': 'topK', 'type': 'integer', 'default': 50,
+            'description':
+                'Top-K sampling cutoff. Only meaningful when ``temperature`` '
+                'is greater than 0.',
+        },
+        {
+            'name': 'batchSize', 'type': 'integer', 'default': 1,
+            'description':
+                'How many input items the app groups per ``generate`` call. '
+                'GPU memory scales roughly linearly with batch size; raise '
+                'for throughput on GPUs with headroom, keep at ``1`` on '
+                'memory-tight setups.',
+        },
+    ]
+
+    @staticmethod
+    def inject_promptable_parameters(metadata: AppMetadata) -> None:
+        """
+        Add the SDK-managed promptable parameters to ``metadata``. Call
+        this at the end of your app's ``appmetadata()`` function in
+        ``metadata.py`` if your app subclasses
+        :py:class:`ClamsPromptableApp`.
+
+        The reservation rule is enforced implicitly: if the app had
+        already called ``metadata.add_parameter('prompt', ...)`` (or
+        any other promptable name) before this helper, the helper's own
+        ``add_parameter`` call will trip the existing duplicate-name
+        ``ValueError`` in :py:meth:`AppMetadata.add_parameter`.
+
+        :param metadata: the :class:`AppMetadata` instance being built
+        """
+        for param in ClamsPromptableApp.promptable_parameters:
+            metadata.add_parameter(**param)
+
+    def __init__(self):
+        # ``ClamsApp.__init__`` loads the app's ``metadata.py``, which
+        # is expected to have already called
+        # ``inject_promptable_parameters()`` from inside
+        # ``appmetadata()``. The parent ``__init__`` then iterates
+        # ``self.metadata.parameters`` to populate
+        # ``annotate_param_spec`` and build the caster — so the
+        # promptable parameters are already covered by the time we land
+        # here. We only validate that the helper was actually called.
+        super().__init__()
+        declared = {p.name for p in self.metadata.parameters}
+        expected = {p['name'] for p in ClamsPromptableApp.promptable_parameters}
+        missing = expected - declared
+        if missing:
+            raise ValueError(
+                f"Promptable parameters {sorted(missing)} are missing "
+                f"from the app metadata. Promptable apps must call "
+                f"``ClamsPromptableApp.inject_promptable_parameters("
+                f"metadata)`` inside their ``appmetadata()`` function "
+                f"in ``metadata.py``."
+            )
+
+    @abstractmethod
+    def generate(
+            self,
+            prompt: List[str],
+            system_prompt: str = '',
+            images: Optional[List[Any]] = None,
+            audio: Optional[List[Any]] = None,
+            prompt_mode: str = 'turn-taking',
+            batch_size: int = 1,
+            **generation_params,
+    ) -> List[str]:
+        """
+        Run inference on the given prompt against the given inputs.
+        Subclasses MUST implement this.
+
+        The return value is a flat list of strings: one entry per input
+        item (one per image when ``images`` is given, one per audio clip
+        when ``audio`` is given, or a singleton for text-only
+        single-shot generation).
+
+        :param prompt: a ``List[str]`` of prompt turns. A single-element
+            list is one-shot. A multi-element list is multi-turn and is
+            assembled according to ``prompt_mode``.
+        :param system_prompt: optional system-role text prepended to the
+            conversation
+        :param images: optional list of input images to broadcast across
+            the prompt (one generation per image)
+        :param audio: optional list of input audio clips
+        :param prompt_mode: ``"turn-taking"`` (default) or ``"user-only"``;
+            see :py:attr:`promptable_parameters`
+        :param batch_size: max number of items per underlying
+            ``generate`` call
+        :param generation_params: any additional backend-specific
+            generation kwargs (``maxNewTokens``, ``temperature``,
+            ``topP``, ``topK``, etc.)
+        :return: one generated string per input item
+        :rtype: List[str]
+        """
+        raise NotImplementedError
+
+    def build_conversation(
+            self,
+            prompt: Union[str, List[str]],
+            system_prompt: str = '',
+            images: Optional[List[Any]] = None,
+            audio: Optional[List[Any]] = None,
+            prompt_mode: str = 'turn-taking',
+    ) -> Union[List[dict], List[List[dict]]]:
+        """
+        Build a chat-template-compatible message list (or a list of
+        message lists for ``user-only`` mode).
+
+        Defined as an instance method so subclasses can override and
+        access model-specific state (``self.processor``,
+        ``self.tokenizer``, etc.) when formatting messages.
+
+        .. note::
+           The base implementation is a stub in this release and raises
+           :py:class:`NotImplementedError`. Subclasses must override.
+           A default implementation will be added in a follow-up.
+        """
+        raise NotImplementedError(
+            "ClamsPromptableApp.build_conversation() is a stub in this "
+            "release. Override it in your subclass, or wait for the base "
+            "implementation in a follow-up."
+        )
+
+    def store_response(
+            self,
+            view: View,
+            source: str,
+            answer: str,
+            trace: Optional[str] = None,
+    ) -> Tuple[Any, Any]:
+        """
+        Persist a generated response into a view as a
+        ``TextDocument`` (containing ``answer``) plus an
+        ``Alignment`` linking ``source`` to the new TextDocument.
+
+        :param view: the :class:`View` to write into. The caller is
+            responsible for having called
+            :meth:`View.new_contain` for ``TextDocument`` and
+            ``Alignment`` first if needed.
+        :param source: ``long_id`` of the source annotation that
+            produced the response (e.g. a ``TimePoint`` or
+            ``ImageDocument``)
+        :param answer: the text generated by the model
+        :param trace: optional reasoning trace. NOT YET SUPPORTED —
+            passing a non-``None`` value raises
+            :py:class:`NotImplementedError`. Storage convention is
+            still being decided at
+            clamsproject/clams-python#263.
+        :return: ``(TextDocument, Alignment)`` tuple of the new
+            annotations
+        """
+        td = view.new_textdocument(text=answer)
+        align = view.new_annotation(
+            AnnotationTypes.Alignment,
+            properties={'source': source, 'target': td.long_id},
+        )
+        if trace is not None:
+            raise NotImplementedError(
+                "Reasoning-trace storage convention is not yet defined; "
+                "tracked at clamsproject/clams-python#263."
+            )
+        return td, align
 
 
 class ParameterCaster(object):
