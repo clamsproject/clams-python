@@ -50,7 +50,7 @@ and by the standard ``metadata.py`` template's ``__main__`` block at
      - no
      - When ``true``, the response MMIF JSON is re-formatted with
        2-space indentation.
-   * - ``runningTime
+   * - ``runningTime``
      - boolean
      - ``true``
      - no
@@ -346,7 +346,82 @@ Helpers
 Backend helpers
 ^^^^^^^^^^^^^^^
 
-For apps wrapping a local HuggingFace transformers model, the SDK provides
-a loading helper in ``clams.backends.hf``. *Documentation for the HF
-backend helper will be added in a follow-up release; see
-clamsproject/clams-python#263 for status.*
+The SDK provides optional helper utilities for loading common
+inference backends, so apps don't have to write model-loading
+boilerplate themselves. Backends are kept as separate subpackages
+under ``clams.backends`` and their heavy dependencies are NOT pulled
+in by the base ``clams-python`` install; you opt in via a pip extra
+when your app needs the backend.
+
+.. _backends-hf:
+
+HuggingFace transformers (``clams.backends.hf``)
+""""""""""""""""""""""""""""""""""""""""""""""""
+
+:func:`clams.backends.hf.load_hf_model` loads any local HuggingFace
+``transformers`` model via ``from_pretrained()`` and returns it ready
+for inference. It encapsulates the device, processor/tokenizer, and
+inference-mode boilerplate that every HF-backed app needs to do
+identically:
+
+- detects an available CUDA device and falls back to CPU when none is
+  present
+- loads the caller-supplied ``processor_cls`` (defaults to
+  :class:`~transformers.AutoProcessor`; pass
+  :class:`~transformers.AutoTokenizer`,
+  :class:`~transformers.AutoImageProcessor`, etc. for narrower or
+  more specific cases)
+- loads the model via the caller-supplied ``model_cls``
+- moves the model to the resolved device and switches it to ``eval()``
+  mode
+- when ``padding_side`` is given (decoder-only / batched-generation
+  case), configures the tokenizer's padding side and uses the EOS
+  token as the pad token; left as the model's own default otherwise
+
+The function signature is::
+
+    load_hf_model(
+        model_id: str,
+        model_cls,                              # e.g. AutoModelForCausalLM, AutoModelForImageTextToText, ConvNextV2Model, ViTModel, ...
+        processor_cls = None,                   # default AutoProcessor; pass AutoTokenizer / AutoImageProcessor / ... for narrower cases, or None to skip processor loading
+        dtype = None,                           # None leaves the model's own default (typically float32); set explicitly (e.g., torch.bfloat16) for LLMs
+        device: Optional[str] = None,           # auto-detected when None
+        padding_side: Optional[str] = None,     # set to 'left' for decoder-only batched generation; leave None for encoder / non-batched cases
+        model_kwargs: Optional[dict] = None,    # extra kwargs forwarded to model_cls.from_pretrained()
+        processor_kwargs: Optional[dict] = None,  # extra kwargs forwarded to processor_cls.from_pretrained()
+    ) -> Tuple[processor, model, device_str]
+
+The ``model_kwargs`` and ``processor_kwargs`` pass-throughs cover the
+common ``from_pretrained()`` options that vary between model classes
+and use cases: ``use_safetensors``, ``use_fast``,
+``add_pooling_layer``, ``trust_remote_code``, ``revision``, etc.
+
+An app's ``__init__`` typically calls this helper once and stores the
+returned ``processor`` (or ``tokenizer`` / ``image_processor``),
+``model``, and ``device`` on ``self`` for use inside its inference
+method (e.g., :meth:`~clams.app.ClamsPromptableApp.generate`). See the
+function's docstring for the full parameter reference and return
+value.
+
+Promptable apps wrapping a decoder-only / chat-tuned model typically
+pass ``padding_side='left'`` and an explicit dtype like
+``torch.bfloat16``; encoder-side HF apps (e.g., a vision feature
+extractor + classifier head) leave both at the defaults and pass any
+class-specific kwargs through ``model_kwargs`` /
+``processor_kwargs``.
+
+Installation
+~~~~~~~~~~~~
+
+``torch`` and ``transformers`` are NOT included in the base
+``clams-python`` install (to keep the SDK lightweight for apps that
+don't need them). When your app uses the HF backend, install with the
+``hf`` extra::
+
+    pip install clams-python[hf]
+
+The helper module imports ``torch`` and ``transformers`` lazily, so a
+plain ``clams-python`` install can still import :mod:`clams.app` and
+:class:`~clams.app.ClamsPromptableApp` without those dependencies; the
+``ImportError`` only fires when an app actually calls
+:func:`clams.backends.hf.load_hf_model`.

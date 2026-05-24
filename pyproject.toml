@@ -39,6 +39,9 @@ source = "https://github.com/clamsproject/clams-python"
 dev = ["pytype", "pytest", "pytest-cov", "pillow", "setuptools"]
 docs = ["sphinx>=7.0,<8.0", "furo", "m2r2", "sphinx-jsonschema"]
 test = ["pytype", "pytest", "pytest-cov", "pillow"]
+# Required for apps using the HuggingFace transformers backend
+# (clams.backends.hf). Heavy deps; opt-in only.
+hf = ["torch", "transformers", "pillow"]
 
 [tool.setuptools.packages.find]
 where = ["."]
