@@ -309,6 +309,8 @@ class ClamsApp(ABC):
         :param runtime_conf: runtime configuration of the app as k-v pairs
         """
         view.metadata.app = str(self.metadata.identifier)
+        if self.metadata.app_tags:
+            view.metadata.set_additional_property('appTags', list(self.metadata.app_tags))
         params_map = {p.name: p for p in self.metadata.parameters}
         if self._RAW_PARAMS_KEY in runtime_conf:
             for k, v in runtime_conf.items():
