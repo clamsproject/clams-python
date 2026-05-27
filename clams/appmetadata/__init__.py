@@ -357,6 +357,14 @@ class AppMetadata(pydantic.BaseModel):
         None,
         description="(optional) A string-to-string map that can be used to store any additional metadata of the app."
     )
+    app_tags: List[str] = pydantic.Field(
+        [],
+        description="(optional) A list of short string labels that classify what kind of work this app does "
+                    "(e.g. task name, output profile family). Used by downstream consumers as a first-pass filter "
+                    "for selecting views; not a substitute for inspecting actual output types and properties. "
+                    "The values declared here are propagated by the SDK into the ``appTags`` field of every view "
+                    "the app signs."
+    )
     est_gpu_mem_min: int = pydantic.Field(
         0,
         description="(optional) Minimum GPU memory required to run the app, in megabytes (MB). "
@@ -471,6 +479,19 @@ class AppMetadata(pydantic.BaseModel):
                 else:
                     newinputs.append(i)
             self.input.append(newinputs)
+
+    def add_app_tag(self, *tags: str) -> None:
+        """
+        Helper method to add one or more strings to the ``app_tags`` list,
+        skipping any value that is already present.
+
+        :param tags: one or more tag strings to add
+        """
+        for tag in tags:
+            if not isinstance(tag, str) or not tag:
+                raise ValueError(f"app tag must be a non-empty string: {tag!r}")
+            if tag not in self.app_tags:
+                self.app_tags.append(tag)
 
     def add_output(self, at_type: Union[str, vocabulary.ThingTypesBase], **properties) -> Output:
         """
