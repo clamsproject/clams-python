@@ -816,30 +816,151 @@ class ClamsPromptableApp(ClamsApp):
 
     def build_conversation(
             self,
-            prompt: Union[str, List[str]],
+            prompt: Union[str, List[str], List[dict]],
             system_prompt: str = '',
             images: Optional[List[Any]] = None,
             audio: Optional[List[Any]] = None,
             prompt_mode: str = 'turn-taking',
     ) -> Union[List[dict], List[List[dict]]]:
         """
-        Build a chat-template-compatible message list (or a list of
-        message lists for ``user-only`` mode).
+        Build a chat-template-compatible message list.
 
-        Defined as an instance method so subclasses can override and
-        access model-specific state (``self.processor``,
-        ``self.tokenizer``, etc.) when formatting messages.
+        :param prompt: a plain string, a ``List[str]`` of prompt turns,
+            or a pre-built ``List[dict]`` of role/content message
+            objects (returned as-is — pass-through for advanced
+            callers that constructed the conversation themselves).
+        :param system_prompt: if non-empty, prepended as a
+            system-role message.
+        :param images: optional list of image inputs to include in the
+            (final) user turn's content. Each appears as a
+            ``{'type': 'image', 'image': <input>}`` entry.
+        :param audio: optional list of audio inputs to include in the
+            (final) user turn's content. Each appears as a
+            ``{'type': 'audio', 'audio': <input>}`` entry.
+        :param prompt_mode: ``"turn-taking"`` (default) or
+            ``"user-only"``. Only meaningful when ``prompt`` is a
+            multi-element list; ignored otherwise. See
+            :py:attr:`promptable_parameters` for semantics.
 
-        .. note::
-           The base implementation is a stub in this release and raises
-           :py:class:`NotImplementedError`. Subclasses must override.
-           A default implementation will be added in a follow-up.
+        :returns:
+            * For single-shot prompts (string or single-element list)
+              and for multi-element ``turn-taking`` mode: a single
+              ``List[dict]`` of role/content messages, ready to feed
+              to a chat-template applier (e.g.,
+              ``processor.apply_chat_template``).
+            * For multi-element ``user-only`` mode: a
+              ``List[List[dict]]`` of N progressively-extending
+              conversation prefixes, one per user turn. Each prefix
+              ends in a user turn; assistant turns between users are
+              stored with ``content=None`` as placeholders for the
+              caller to fill in with successive generation results.
+
+        Subclasses may override to access model-specific state
+        (``self.processor``, ``self.tokenizer``, etc.) during
+        formatting; the base implementation is back-end-agnostic.
         """
-        raise NotImplementedError(
-            "ClamsPromptableApp.build_conversation() is a stub in this "
-            "release. Override it in your subclass, or wait for the base "
-            "implementation in a follow-up."
-        )
+        # Pass-through for pre-built message lists.
+        if isinstance(prompt, list) and prompt and all(
+                isinstance(p, dict) for p in prompt):
+            return prompt
+
+        # Normalize to List[str].
+        if isinstance(prompt, str):
+            prompts = [prompt]
+        else:
+            prompts = list(prompt)
+
+        if len(prompts) == 1:
+            return self._build_single_turn(
+                prompts[0], system_prompt, images, audio)
+
+        if prompt_mode == 'turn-taking':
+            return self._build_turn_taking(
+                prompts, system_prompt, images, audio)
+        if prompt_mode == 'user-only':
+            return self._build_user_only(
+                prompts, system_prompt, images, audio)
+        raise ValueError(
+            f"Unknown prompt_mode: {prompt_mode!r}. "
+            f"Expected 'turn-taking' or 'user-only'.")
+
+    @staticmethod
+    def _make_user_content(text, images=None, audio=None):
+        """Build the content list for a user-role message."""
+        content = []
+        if images:
+            for img in images:
+                content.append({'type': 'image', 'image': img})
+        if audio:
+            for au in audio:
+                content.append({'type': 'audio', 'audio': au})
+        content.append({'type': 'text', 'text': text})
+        return content
+
+    def _build_single_turn(self, text, system_prompt, images, audio):
+        messages = []
+        if system_prompt:
+            messages.append({'role': 'system', 'content': system_prompt})
+        messages.append({
+            'role': 'user',
+            'content': self._make_user_content(text, images, audio),
+        })
+        return messages
+
+    def _build_turn_taking(self, prompts, system_prompt, images, audio):
+        """
+        Alternating user/assistant turns; one inference call.
+        Even indices in ``prompts`` are user turns, odd indices are
+        pre-written assistant exemplars. Images/audio (if any) are
+        attached to the final user turn (the actual query).
+        """
+        messages = []
+        if system_prompt:
+            messages.append({'role': 'system', 'content': system_prompt})
+        # index of the final user turn (the last even index)
+        last_user_idx = (len(prompts) - 1) - ((len(prompts) - 1) % 2)
+        for i, text in enumerate(prompts):
+            role = 'user' if i % 2 == 0 else 'assistant'
+            if role == 'user':
+                attach_media = (i == last_user_idx)
+                content = self._make_user_content(
+                    text,
+                    images if attach_media else None,
+                    audio if attach_media else None,
+                )
+                messages.append({'role': 'user', 'content': content})
+            else:
+                messages.append({'role': 'assistant', 'content': text})
+        return messages
+
+    def _build_user_only(self, prompts, system_prompt, images, audio):
+        """
+        N progressively-extending conversation prefixes, one per user
+        turn. Assistant slots between users have ``content=None`` as
+        placeholders for the caller's successive generation results.
+        """
+        convs: List[List[dict]] = []
+        base: List[dict] = []
+        if system_prompt:
+            base.append({'role': 'system', 'content': system_prompt})
+        for i, text in enumerate(prompts):
+            # First user turn carries the images/audio (the initial query);
+            # subsequent user turns are text-only.
+            user_content = self._make_user_content(
+                text,
+                images if i == 0 else None,
+                audio if i == 0 else None,
+            )
+            base.append({'role': 'user', 'content': user_content})
+            # Snapshot the conversation as it stands at the start of
+            # the i-th generation call. Shallow-copy each message so
+            # later in-place edits (e.g., filling in the assistant
+            # placeholder) don't retroactively mutate earlier
+            # snapshots.
+            convs.append([dict(m) for m in base])
+            if i < len(prompts) - 1:
+                base.append({'role': 'assistant', 'content': None})
+        return convs
 
     def store_response(
             self,
@@ -872,7 +993,8 @@ class ClamsPromptableApp(ClamsApp):
         td = view.new_textdocument(text=answer)
         align = view.new_annotation(
             AnnotationTypes.Alignment,
-            properties={'source': source, 'target': td.long_id},
+            source=source,
+            target=td.id,
         )
         if trace is not None:
             raise NotImplementedError(

@@ -327,15 +327,18 @@ Helpers
     ``metadata.py``) to add the SDK-managed promptable parameters.
 
 :meth:`~clams.app.ClamsPromptableApp.build_conversation`
-    Instance method that constructs a chat-template-compatible message list
-    (or list of message lists for ``user-only`` mode). Subclasses may
-    override to access model-specific state (e.g. ``self.processor``).
-    Currently a stub; a default implementation is planned for a follow-up
-    release.
+    Instance method that constructs a chat-template-compatible message
+    list (or a ``List[List[dict]]`` of progressively-extending prefixes
+    for ``user-only`` mode). Handles string and list prompt forms, the
+    two ``promptMode`` semantics, the optional ``systemPrompt``, and
+    inlines ``images`` / ``audio`` into the (final) user turn. Accepts
+    a pre-built ``List[dict]`` and returns it unchanged. Subclasses
+    may override to access model-specific state (e.g.
+    ``self.processor``) when formatting messages.
 
 :meth:`~clams.app.ClamsPromptableApp.store_response`
     Helper for the common annotation-creation pattern: given a view, a
-    source annotation's ``long_id``, and a generated string, creates a
+    source annotation's identifier, and a generated string, creates a
     ``TextDocument`` containing the text plus an ``Alignment`` linking
     source to TextDocument; returns the ``(text_document, alignment)``
     pair. The optional ``trace`` parameter is reserved for
