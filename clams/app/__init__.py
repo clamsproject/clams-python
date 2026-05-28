@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from urllib import parse as urlparser
 
-__all__ = ['ClamsApp', 'ClamsPromptableApp']
+__all__ = ['ClamsApp', 'ClamsPromptableApp', 'ClamsHFPromptableApp']
 
 from typing import Union, Any, Optional, Dict, List, Tuple, cast
 
@@ -795,37 +795,51 @@ class ClamsPromptableApp(ClamsApp):
             self,
             prompt: List[str],
             system_prompt: str = '',
-            images: Optional[List[Any]] = None,
-            audio: Optional[List[Any]] = None,
+            images: Optional[List[List[Any]]] = None,
+            audios: Optional[List[List[Any]]] = None,
             prompt_mode: str = 'turn-taking',
-            parallel_prompts: int = 1,
             **generation_params,
     ) -> List[str]:
         """
-        Run inference on the given prompt against the given inputs.
-        Subclasses MUST implement this.
+        Run N independent prompts in one inference call and return N
+        outputs. Subclasses MUST implement this.
 
-        The return value is a flat list of strings: one entry per input
-        item (one per image when ``images`` is given, one per audio clip
-        when ``audio`` is given, or a singleton for text-only
-        single-shot generation).
+        Each inner list of ``images`` / ``audios`` is the bundled
+        multimodal content for ONE prompt -- the model sees those
+        items as one composite input and produces one output. The
+        outer list spans N prompts processed in parallel (when the
+        backend supports it; sequentially otherwise).
 
-        :param prompt: a ``List[str]`` of prompt turns. A single-element
-            list is one-shot. A multi-element list is multi-turn and is
-            assembled according to ``prompt_mode``.
-        :param system_prompt: optional system-role text prepended to the
-            conversation
-        :param images: optional list of input images to broadcast across
-            the prompt (one generation per image)
-        :param audio: optional list of input audio clips
-        :param prompt_mode: ``"turn-taking"`` (default) or ``"user-only"``;
-            see :py:attr:`promptable_parameters`
-        :param parallel_prompts: max number of independent prompts the
-            underlying call stacks into one forward pass
+        * Single-prompt call: ``images=[[img1, img2]]`` -> one output
+          (composite over the two bundled images).
+        * Per-input broadcast: ``images=[[img1], [img2], [img3]]`` ->
+          three outputs (one per image). Caller assembles the
+          singleton-wrap shape.
+        * Multimodal pair: ``images=[[img1]], audios=[[au1]]`` -> one
+          output. When both ``images`` and ``audios`` are given they
+          must have the same outer length; index ``i`` of each pairs
+          into prompt ``i``.
+
+        :param prompt: a ``List[str]`` of prompt turns. A
+            single-element list is one-shot. A multi-element list is
+            multi-turn and is assembled according to ``prompt_mode``.
+        :param system_prompt: optional system-role text prepended to
+            the conversation. Applies to every prompt in the batch.
+        :param images: optional ``List[List[Any]]`` -- N groups, one
+            per prompt; each inner list is the bundled images for that
+            prompt.
+        :param audios: optional ``List[List[Any]]`` -- N groups, one
+            per prompt; each inner list is the bundled audio clips
+            for that prompt.
+        :param prompt_mode: ``"turn-taking"`` (default) or
+            ``"user-only"``; see :py:attr:`promptable_parameters`.
         :param generation_params: any additional backend-specific
             generation kwargs (``maxNewTokens``, ``temperature``,
-            ``topP``, ``topK``, etc.)
-        :return: one generated string per input item
+            ``topP``, ``topK``, etc.).
+        :return: a ``List[str]`` with one entry per prompt in the
+            batch. For ``prompt_mode='user-only'`` multi-turn, each
+            prompt's entry is the assistant's final reply across its
+            N user turns.
         :rtype: List[str]
         """
         raise NotImplementedError
@@ -835,7 +849,7 @@ class ClamsPromptableApp(ClamsApp):
             prompt: Union[str, List[str], List[dict]],
             system_prompt: str = '',
             images: Optional[List[Any]] = None,
-            audio: Optional[List[Any]] = None,
+            audios: Optional[List[Any]] = None,
             prompt_mode: str = 'turn-taking',
     ) -> Union[List[dict], List[List[dict]]]:
         """
@@ -850,7 +864,7 @@ class ClamsPromptableApp(ClamsApp):
         :param images: optional list of image inputs to include in the
             (final) user turn's content. Each appears as a
             ``{'type': 'image', 'image': <input>}`` entry.
-        :param audio: optional list of audio inputs to include in the
+        :param audios: optional list of audio inputs to include in the
             (final) user turn's content. Each appears as a
             ``{'type': 'audio', 'audio': <input>}`` entry.
         :param prompt_mode: ``"turn-taking"`` (default) or
@@ -888,46 +902,46 @@ class ClamsPromptableApp(ClamsApp):
 
         if len(prompts) == 1:
             return self._build_single_turn(
-                prompts[0], system_prompt, images, audio)
+                prompts[0], system_prompt, images, audios)
 
         if prompt_mode == 'turn-taking':
             return self._build_turn_taking(
-                prompts, system_prompt, images, audio)
+                prompts, system_prompt, images, audios)
         if prompt_mode == 'user-only':
             return self._build_user_only(
-                prompts, system_prompt, images, audio)
+                prompts, system_prompt, images, audios)
         raise ValueError(
             f"Unknown prompt_mode: {prompt_mode!r}. "
             f"Expected 'turn-taking' or 'user-only'.")
 
     @staticmethod
-    def _make_user_content(text, images=None, audio=None):
+    def _make_user_content(text, images=None, audios=None):
         """Build the content list for a user-role message."""
         content = []
         if images:
             for img in images:
                 content.append({'type': 'image', 'image': img})
-        if audio:
-            for au in audio:
+        if audios:
+            for au in audios:
                 content.append({'type': 'audio', 'audio': au})
         content.append({'type': 'text', 'text': text})
         return content
 
-    def _build_single_turn(self, text, system_prompt, images, audio):
+    def _build_single_turn(self, text, system_prompt, images, audios):
         messages = []
         if system_prompt:
             messages.append({'role': 'system', 'content': system_prompt})
         messages.append({
             'role': 'user',
-            'content': self._make_user_content(text, images, audio),
+            'content': self._make_user_content(text, images, audios),
         })
         return messages
 
-    def _build_turn_taking(self, prompts, system_prompt, images, audio):
+    def _build_turn_taking(self, prompts, system_prompt, images, audios):
         """
         Alternating user/assistant turns; one inference call.
         Even indices in ``prompts`` are user turns, odd indices are
-        pre-written assistant exemplars. Images/audio (if any) are
+        pre-written assistant exemplars. Images/audios (if any) are
         attached to the final user turn (the actual query).
         """
         messages = []
@@ -942,14 +956,14 @@ class ClamsPromptableApp(ClamsApp):
                 content = self._make_user_content(
                     text,
                     images if attach_media else None,
-                    audio if attach_media else None,
+                    audios if attach_media else None,
                 )
                 messages.append({'role': 'user', 'content': content})
             else:
                 messages.append({'role': 'assistant', 'content': text})
         return messages
 
-    def _build_user_only(self, prompts, system_prompt, images, audio):
+    def _build_user_only(self, prompts, system_prompt, images, audios):
         """
         N progressively-extending conversation prefixes, one per user
         turn. Assistant slots between users have ``content=None`` as
@@ -960,12 +974,12 @@ class ClamsPromptableApp(ClamsApp):
         if system_prompt:
             base.append({'role': 'system', 'content': system_prompt})
         for i, text in enumerate(prompts):
-            # First user turn carries the images/audio (the initial query);
+            # First user turn carries the images/audios (the initial query);
             # subsequent user turns are text-only.
             user_content = self._make_user_content(
                 text,
                 images if i == 0 else None,
-                audio if i == 0 else None,
+                audios if i == 0 else None,
             )
             base.append({'role': 'user', 'content': user_content})
             # Snapshot the conversation as it stands at the start of
@@ -1055,6 +1069,197 @@ class ClamsPromptableApp(ClamsApp):
                 "tracked at clamsproject/clams-python#263."
             )
         return td, align
+
+
+class ClamsHFPromptableApp(ClamsPromptableApp):
+    """
+    Base class for promptable CLAMS apps backed by a local
+    HuggingFace ``transformers`` model. Layers HF-specific inference
+    plumbing on top of :class:`ClamsPromptableApp`: model loading
+    via :func:`clams.backends.hf.load_hf_model`, and a concrete
+    :py:meth:`generate` implementation that runs N independent
+    prompts in one HF forward pass via the standard
+    chat-template -> ``model.generate`` -> ``batch_decode`` pipeline.
+
+    Concrete subclasses declare the model via class attributes
+    (:py:attr:`MODEL_ID`, :py:attr:`MODEL_CLS`, etc.) and typically
+    only need to implement :py:meth:`_annotate` -- the per-app MMIF
+    I/O. Example::
+
+        class MyVLMCaptioner(ClamsHFPromptableApp):
+            MODEL_ID = "HuggingFaceTB/SmolVLM2-2.2B-Instruct"
+            MODEL_CLS = AutoModelForImageTextToText
+            DTYPE = torch.bfloat16
+            PADDING_SIDE = 'left'
+
+            def _annotate(self, mmif, **parameters):
+                # collect tasks from MMIF, build image groups, then
+                #   texts = self.generate(prompt, images=image_groups, ...)
+                # store responses via self.response_to_grounded_textdocument
+                ...
+
+    Requires the ``[hf]`` extra (``pip install clams-python[hf]``).
+    """
+
+    #: HuggingFace model identifier (Hub repo name or local path).
+    #: Subclasses MUST set this.
+    MODEL_ID: Optional[str] = None
+    #: ``transformers`` model class (e.g.
+    #: :class:`~transformers.AutoModelForImageTextToText`,
+    #: :class:`~transformers.AutoModelForCausalLM`). Subclasses MUST
+    #: set this.
+    MODEL_CLS: Optional[Any] = None
+    #: ``transformers`` processor / tokenizer / feature-extractor
+    #: class. Defaults to :class:`~transformers.AutoProcessor` (set
+    #: by :func:`clams.backends.hf.load_hf_model` when ``None``).
+    PROCESSOR_CLS: Optional[Any] = None
+    #: Torch dtype for the model (e.g. ``torch.bfloat16``). When
+    #: ``None``, the model class's own default is used (typically
+    #: float32). Also used to cast ``pixel_values`` in
+    #: :py:meth:`generate`.
+    DTYPE: Optional[Any] = None
+    #: Tokenizer padding side. Set to ``'left'`` for decoder-only
+    #: batched generation; leave ``None`` otherwise.
+    PADDING_SIDE: Optional[str] = None
+    #: Extra kwargs forwarded to ``MODEL_CLS.from_pretrained()``.
+    MODEL_KWARGS: Optional[dict] = None
+    #: Extra kwargs forwarded to ``PROCESSOR_CLS.from_pretrained()``.
+    PROCESSOR_KWARGS: Optional[dict] = None
+
+    def __init__(self):
+        super().__init__()
+        cls_name = type(self).__name__
+        if self.MODEL_ID is None:
+            raise ValueError(
+                f"{cls_name} must set the ``MODEL_ID`` class attribute "
+                f"(a HuggingFace model identifier).")
+        if self.MODEL_CLS is None:
+            raise ValueError(
+                f"{cls_name} must set the ``MODEL_CLS`` class attribute "
+                f"(a ``transformers`` model class).")
+        # Lazy import: avoids pulling torch/transformers into the base
+        # clams-python install. Apps using this class must have the
+        # ``[hf]`` extra installed.
+        from clams.backends.hf import load_hf_model
+        self.logger.info(f"Loading HF model from {self.MODEL_ID}")
+        self.processor, self.model, self.device = load_hf_model(
+            self.MODEL_ID,
+            self.MODEL_CLS,
+            processor_cls=self.PROCESSOR_CLS,
+            dtype=self.DTYPE,
+            padding_side=self.PADDING_SIDE,
+            model_kwargs=self.MODEL_KWARGS,
+            processor_kwargs=self.PROCESSOR_KWARGS,
+        )
+        self.logger.info(f"HF model loaded on {self.device}")
+
+    def generate(
+            self,
+            prompt: List[str],
+            system_prompt: str = '',
+            images: Optional[List[List[Any]]] = None,
+            audios: Optional[List[List[Any]]] = None,
+            prompt_mode: str = 'turn-taking',
+            **generation_params,
+    ) -> List[str]:
+        """
+        Default implementation of the
+        :py:meth:`ClamsPromptableApp.generate` contract for
+        HuggingFace ``transformers`` models. Runs N prompts in one
+        forward pass; returns N decoded strings.
+
+        Each inner list of ``images`` / ``audios`` is the bundled
+        content for one prompt. When both ``images`` and ``audios``
+        are given they must have the same outer length (multimodal
+        pairs are stitched by index). When both are ``None``, runs as
+        a single text-only prompt.
+
+        The default body is the canonical HF chat-model pipeline:
+        :py:meth:`build_conversation` -> ``apply_chat_template`` ->
+        ``model.generate`` -> ``batch_decode``. Subclasses can
+        customize finer-grained pieces via
+        :py:meth:`build_conversation` (model-specific message shape)
+        and :py:meth:`build_gen_kwargs` (model-specific generation
+        kwargs) without touching this method.
+        """
+        if images is not None and audios is not None:
+            if len(images) != len(audios):
+                raise ValueError(
+                    f"images and audios must have the same outer length "
+                    f"when both are given; got "
+                    f"{len(images)} vs {len(audios)}.")
+        if images is not None:
+            n = len(images)
+        elif audios is not None:
+            n = len(audios)
+        else:
+            n = 1  # text-only single prompt
+        if n == 0:
+            return []
+        gen_kwargs = self.build_gen_kwargs(**generation_params)
+        try:
+            conversations = [
+                self.build_conversation(
+                    prompt, system_prompt=system_prompt,
+                    images=images[i] if images is not None else None,
+                    audios=audios[i] if audios is not None else None,
+                    prompt_mode=prompt_mode)
+                for i in range(n)
+            ]
+            inputs = self.processor.apply_chat_template(
+                conversations,
+                add_generation_prompt=True,
+                tokenize=True,
+                return_dict=True,
+                padding=True,
+                return_tensors="pt",
+            )
+            inputs = inputs.to(self.device)
+            if (self.DTYPE is not None
+                    and 'pixel_values' in inputs
+                    and inputs['pixel_values'] is not None):
+                inputs['pixel_values'] = inputs['pixel_values'].to(
+                    dtype=self.DTYPE)
+            generated_ids = self.model.generate(**inputs, **gen_kwargs)
+            input_len = inputs.input_ids.shape[1]
+            new_tokens = generated_ids[:, input_len:]
+            return self.processor.batch_decode(
+                new_tokens, skip_special_tokens=True)
+        except Exception as e:
+            self.logger.error(
+                f"Error processing batch: {e}", exc_info=True)
+            return [''] * n
+
+    @staticmethod
+    def build_gen_kwargs(
+            max_new_tokens: int = 512,
+            temperature: float = 0.0,
+            top_p: float = 1.0,
+            top_k: int = 50,
+            **_unused,
+    ) -> dict:
+        """
+        Translate the SDK's promptable-parameter values into
+        HuggingFace ``model.generate()`` kwargs. Greedy decoding
+        (``do_sample=False``) when ``temperature == 0.0``; sampled
+        decoding with the given ``top_p`` / ``top_k`` otherwise.
+
+        Subclasses MAY override to add model-specific generation
+        kwargs (``num_beams``, ``repetition_penalty``, custom
+        stopping criteria, ``do_sample`` overrides, etc.). The base
+        implementation accepts any extra keyword args and silently
+        ignores them, so subclasses can pass through the full
+        ``**parameters`` dict from ``_annotate`` without filtering.
+        """
+        gen_kwargs = {'max_new_tokens': max_new_tokens}
+        if temperature > 0:
+            gen_kwargs.update({
+                'do_sample': True,
+                'temperature': temperature,
+                'top_p': top_p,
+                'top_k': top_k,
+            })
+        return gen_kwargs
 
 
 class ParameterCaster(object):

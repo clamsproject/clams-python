@@ -41,7 +41,7 @@ docs = ["sphinx>=7.0,<8.0", "furo", "m2r2", "sphinx-jsonschema"]
 test = ["pytype", "pytest", "pytest-cov", "pillow"]
 # Required for apps using the HuggingFace transformers backend
 # (clams.backends.hf). Heavy deps; opt-in only.
-hf = ["torch", "transformers", "pillow"]
+hf = ["torch", "transformers", "pillow", "tqdm"]
 
 [tool.setuptools.packages.find]
 where = ["."]

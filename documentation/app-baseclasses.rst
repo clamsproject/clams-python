@@ -278,10 +278,11 @@ The ``generate()`` contract
 Subclasses MUST implement :meth:`~clams.app.ClamsPromptableApp.generate`.
 See the method's docstring for the full signature and parameter semantics.
 
-The return value is a flat ``List[str]``: one entry per input item (one per
-image when ``images`` is given, one per audio clip when ``audio`` is given,
-or a single-element list for text-only single-shot generation). Keep
-inference logic inside ``generate()`` distinct from MMIF I/O; the latter
+The return value is a flat ``List[str]`` with one entry per prompt in the
+batch: the outer length of ``images`` (and/or ``audios``) determines N;
+``generate()`` returns ``N`` strings. For text-only single-shot calls
+(both ``images`` and ``audios`` ``None``), the return is a singleton list.
+Keep inference logic inside ``generate()`` distinct from MMIF I/O; the latter
 belongs in ``_annotate()`` (which calls ``self.generate()``).
 
 This separation is intentional: future SDK releases may provide default
@@ -340,7 +341,7 @@ Helpers
     list (or a ``List[List[dict]]`` of progressively-extending prefixes
     for ``user-only`` mode). Handles string and list prompt forms, the
     two ``promptMode`` semantics, the optional ``systemPrompt``, and
-    inlines ``images`` / ``audio`` into the (final) user turn. Accepts
+    inlines ``images`` / ``audios`` into the (final) user turn. Accepts
     a pre-built ``List[dict]`` and returns it unchanged. Subclasses
     may override to access model-specific state (e.g.
     ``self.processor``) when formatting messages.
@@ -420,6 +421,12 @@ extractor + classifier head) leave both at the defaults and pass any
 class-specific kwargs through ``model_kwargs`` /
 ``processor_kwargs``.
 
+For promptable apps specifically, the
+:class:`~clams.app.ClamsHFPromptableApp` base class (see
+:ref:`hf-promptable`) wraps this helper plus the standard inference
+loop, so most HF-backed VLM/LLM apps don't need to call
+:func:`load_hf_model` directly.
+
 Installation
 ~~~~~~~~~~~~
 
@@ -435,3 +442,129 @@ plain ``clams-python`` install can still import :mod:`clams.app` and
 :class:`~clams.app.ClamsPromptableApp` without those dependencies; the
 ``ImportError`` only fires when an app actually calls
 :func:`clams.backends.hf.load_hf_model`.
+
+.. _hf-promptable:
+
+HuggingFace Promptable Apps
+---------------------------
+
+For the very common case of "promptable CLAMS app + local HuggingFace
+``transformers`` model," the SDK provides
+:class:`~clams.app.ClamsHFPromptableApp`, a specialized subclass of
+:class:`~clams.app.ClamsPromptableApp` that absorbs all HF-specific
+inference boilerplate. Concrete apps inheriting from it declare the
+model via a few class attributes and typically only need to implement
+``_annotate()`` for their MMIF I/O.
+
+When to use
+^^^^^^^^^^^
+
+Choose :class:`~clams.app.ClamsHFPromptableApp` over plain
+:class:`~clams.app.ClamsPromptableApp` when your app:
+
+- wraps a local HuggingFace ``transformers`` model loadable via
+  ``from_pretrained()``, AND
+- runs the standard chat-template -> ``model.generate`` ->
+  ``batch_decode`` inference pipeline (every modern instruct-tuned
+  VLM/LLM in HF), AND
+- doesn't need bespoke pixel-value preprocessing or vision-token
+  stitching at inference time.
+
+If your app uses a remote API instead (OpenAI, Anthropic, etc.), or a
+non-HF local backend, inherit from
+:class:`~clams.app.ClamsPromptableApp` directly and implement
+:meth:`~clams.app.ClamsPromptableApp.generate` yourself.
+
+Class-attribute hooks
+^^^^^^^^^^^^^^^^^^^^^
+
+Concrete subclasses declare the model declaratively via class
+attributes; the base ``__init__`` reads them, calls
+:func:`load_hf_model`, and stores ``self.processor``, ``self.model``,
+``self.device``:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 22 60 18
+
+   * - Attribute
+     - Meaning
+     - Required
+   * - ``MODEL_ID``
+     - HuggingFace model identifier (Hub repo name or local path).
+     - yes
+   * - ``MODEL_CLS``
+     - ``transformers`` model class (e.g.
+       :class:`~transformers.AutoModelForImageTextToText`,
+       :class:`~transformers.AutoModelForCausalLM`).
+     - yes
+   * - ``PROCESSOR_CLS``
+     - Processor / tokenizer / feature-extractor class. Defaults to
+       :class:`~transformers.AutoProcessor`.
+     - no
+   * - ``DTYPE``
+     - Torch dtype for the model and for ``pixel_values`` casting in
+       :py:meth:`~clams.app.ClamsHFPromptableApp.generate`. E.g.
+       ``torch.bfloat16`` for low-precision LLM inference.
+     - no
+   * - ``PADDING_SIDE``
+     - Tokenizer padding side. ``'left'`` for decoder-only batched
+       generation; leave unset otherwise.
+     - no
+   * - ``MODEL_KWARGS`` / ``PROCESSOR_KWARGS``
+     - Extra kwargs forwarded to the respective
+       ``from_pretrained()`` calls (e.g.
+       ``trust_remote_code=True``).
+     - no
+
+What the base class provides
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- A default :py:meth:`~clams.app.ClamsHFPromptableApp.__init__` that
+  loads the model from the class attributes via
+  :func:`load_hf_model`.
+- A concrete :py:meth:`~clams.app.ClamsHFPromptableApp.generate` that
+  satisfies the :class:`~clams.app.ClamsPromptableApp` abstract
+  contract. Takes ``images`` / ``audios`` as ``List[List[Any]]``
+  (N groups, one per prompt) and runs all N prompts in one HF
+  forward pass; returns one decoded string per group. Apps call
+  this from ``_annotate`` to run their inference; per-image
+  broadcast is a singleton-wrap (``images=[[img] for img in
+  images]``), per-TF composite is one group of N images per TF.
+- A default
+  :py:meth:`~clams.app.ClamsHFPromptableApp.build_gen_kwargs` that
+  maps SDK promptable parameters (``maxNewTokens``, ``temperature``,
+  ``topP``, ``topK``) into HF ``model.generate()`` kwargs.
+  Subclasses may override to add model-specific kwargs
+  (``num_beams``, ``repetition_penalty``, custom stopping criteria,
+  etc.).
+
+Minimal subclass example
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+    from transformers import AutoModelForImageTextToText
+    import torch
+
+    from clams.app import ClamsHFPromptableApp
+
+
+    class MyVLMCaptioner(ClamsHFPromptableApp):
+        MODEL_ID = "HuggingFaceTB/SmolVLM2-2.2B-Instruct"
+        MODEL_CLS = AutoModelForImageTextToText
+        DTYPE = torch.bfloat16
+        PADDING_SIDE = 'left'
+
+        def _appmetadata(self):
+            pass  # defined in metadata.py
+
+        def _annotate(self, mmif, **parameters):
+            ...  # collect tasks from MMIF, build image groups, call
+                 # self.generate(prompt, images=image_groups, ...), then
+                 # store responses via self.response_to_grounded_textdocument
+
+The ``metadata.py`` for an :class:`~clams.app.ClamsHFPromptableApp`
+subclass is identical to a plain
+:class:`~clams.app.ClamsPromptableApp` -- the helper-call requirement
+and the parameter table are unchanged.

@@ -386,5 +386,79 @@ class TestTransportNeutralCasting(unittest.TestCase):
         self.assertEqual(refined['prompt'], ['only'])
 
 
+# ---------------------------------------------------------------------------
+# ClamsHFPromptableApp class-attribute validation
+# ---------------------------------------------------------------------------
+
+class TestHFPromptableAppClassAttrs(unittest.TestCase):
+    """
+    Exercises the class-attribute validation in
+    :class:`ClamsHFPromptableApp.__init__`. The actual model loading
+    is patched out so these tests don't require torch/transformers.
+    End-to-end inference tests live separately.
+    """
+
+    def _make_subclass(self, *, model_id=None, model_cls=None, **extra_attrs):
+        attrs = {
+            '_load_appmetadata': lambda self: make_metadata(call_helper=True),
+            '_appmetadata': lambda self: None,
+            '_annotate': lambda self, mmif, **kw: mmif,
+            'MODEL_ID': model_id,
+            'MODEL_CLS': model_cls,
+        }
+        attrs.update(extra_attrs)
+        from clams.app import ClamsHFPromptableApp
+        return type('TestHFApp', (ClamsHFPromptableApp,), attrs)
+
+    def test_missing_model_id_raises(self):
+        cls = self._make_subclass(model_id=None, model_cls=object)
+        with self.assertRaises(ValueError) as ctx:
+            cls()
+        self.assertIn('MODEL_ID', str(ctx.exception))
+
+    def test_missing_model_cls_raises(self):
+        cls = self._make_subclass(model_id='fake-id', model_cls=None)
+        with self.assertRaises(ValueError) as ctx:
+            cls()
+        self.assertIn('MODEL_CLS', str(ctx.exception))
+
+    def test_loads_via_load_hf_model_with_class_attrs(self):
+        """
+        Patches ``clams.backends.hf.load_hf_model`` and verifies the
+        base ``__init__`` forwards the declared class attributes to it.
+        """
+        import clams.backends.hf as hf_module
+        original = hf_module.load_hf_model
+        captured = {}
+
+        def fake_load(model_id, model_cls, **kwargs):
+            captured['model_id'] = model_id
+            captured['model_cls'] = model_cls
+            captured.update(kwargs)
+            return ('FAKE_PROCESSOR', 'FAKE_MODEL', 'cpu')
+
+        try:
+            hf_module.load_hf_model = fake_load
+            cls = self._make_subclass(
+                model_id='org/fake-model',
+                model_cls=object,
+                DTYPE='FAKE_DTYPE',
+                PADDING_SIDE='left',
+                MODEL_KWARGS={'trust_remote_code': True},
+            )
+            app = cls()
+            self.assertEqual(app.processor, 'FAKE_PROCESSOR')
+            self.assertEqual(app.model, 'FAKE_MODEL')
+            self.assertEqual(app.device, 'cpu')
+            self.assertEqual(captured['model_id'], 'org/fake-model')
+            self.assertIs(captured['model_cls'], object)
+            self.assertEqual(captured['dtype'], 'FAKE_DTYPE')
+            self.assertEqual(captured['padding_side'], 'left')
+            self.assertEqual(
+                captured['model_kwargs'], {'trust_remote_code': True})
+        finally:
+            hf_module.load_hf_model = original
+
+
 if __name__ == '__main__':
     unittest.main()

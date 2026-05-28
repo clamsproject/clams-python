@@ -24,13 +24,46 @@ from mmif import Mmif, View, Annotation, Document, AnnotationTypes, DocumentType
 from lapps.discriminators import Uri
 
 
-# If your app is a prompt-driven LLM/VLM/audio-LM app, change the base class
-# below from ``ClamsApp`` to ``ClamsPromptableApp`` (import via
-# ``from clams import ClamsPromptableApp``) and implement ``generate()``
-# instead of (or in addition to) ``_annotate()``. Don't forget to also
-# uncomment the matching helper call in ``metadata.py``. See
-# https://clams.ai/clams-python/app-baseclasses.html#promptable for the
+# =============================================================================
+# Pick a base class for your app:
+#
+#   ClamsApp ............ default; the rest of this scaffold inherits from it.
+#                         Implement ``_annotate()``. That's it.
+#                         Choose for any non-LLM/VLM app: classical OCR /
+#                         ASR engines, classifiers, rule-based tools, etc.
+#
+#   ClamsPromptableApp .. for prompt-driven LLM/VLM/ALM/LMM apps wrapping a
+#                         non-HF backend (remote APIs like OpenAI/Anthropic,
+#                         vLLM, custom inference servers).
+#                         Implement: ``_annotate()`` + ``generate()``.
+#                         Import:
+#                             from clams import ClamsPromptableApp
+#                         Also: uncomment ``inject_promptable_parameters``
+#                         block in ``metadata.py``.
+#
+#   ClamsHFPromptableApp  for prompt-driven apps wrapping a local HuggingFace
+#                         ``transformers`` model (the typical VLM/LLM case).
+#                         Implement: ``_annotate()`` + declare class
+#                         attributes:
+#                             MODEL_ID = "<hf-model-id>"
+#                             MODEL_CLS = <transformers.AutoModelFor...>
+#                             DTYPE = torch.bfloat16        # optional
+#                             PADDING_SIDE = 'left'          # optional
+#                         Import:
+#                             from clams.app import ClamsHFPromptableApp
+#                         Also: uncomment ``inject_promptable_parameters``
+#                         block in ``metadata.py``. Requires the ``[hf]``
+#                         extra: ``pip install clams-python[hf]``.
+#                         The base class provides ``__init__`` (loads the
+#                         model), ``generate()`` (HF batched inference),
+#                         ``build_conversation`` (chat-template message
+#                         list), and ``build_gen_kwargs`` (HF
+#                         ``model.generate()`` kwargs); override the latter
+#                         two only for model-specific quirks.
+#
+# See https://clams.ai/clams-python/app-baseclasses.html for the full
 # developer guide.
+# =============================================================================
 class $APP_CLASS_NAME(ClamsApp):
 
     def __init__(self):
