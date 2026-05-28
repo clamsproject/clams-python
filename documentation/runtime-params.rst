@@ -201,7 +201,7 @@ from :class:`~clams.app.ClamsPromptableApp` instead of
 :class:`~clams.app.ClamsApp`. The promptable base class adds a standardized,
 SDK-managed set of runtime parameters (``prompt``, ``systemPrompt``,
 ``temperature``, ``maxNewTokens``, ``topP``, ``topK``, ``promptMode``,
-``batchSize``) on top of the universal parameters. If you use this base
+``parallelPrompts``) on top of the universal parameters. If you use this base
 class, these names are reserved — your app's ``metadata.py`` must not
 redeclare them — and are added via a single helper call inside
 ``appmetadata()``.

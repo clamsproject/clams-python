@@ -303,7 +303,7 @@ class TestBuildConversation(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# store_response
+# response_to_grounded_textdocument
 # ---------------------------------------------------------------------------
 
 class TestStoreResponse(unittest.TestCase):
@@ -317,22 +317,49 @@ class TestStoreResponse(unittest.TestCase):
         self.view.new_contain(AnnotationTypes.Alignment)
 
     def test_happy_path_creates_textdocument_and_alignment(self):
-        td, align = self.app.store_response(
-            self.view, source='src1', answer='generated text')
+        td, align = self.app.response_to_grounded_textdocument(
+            self.view, source='src1', response='generated text')
         self.assertEqual(td.text_value, 'generated text')
         self.assertEqual(align.get_property('source'), 'src1')
         self.assertEqual(align.get_property('target'), td.id)
 
-    def test_trace_none_does_not_raise(self):
+    def test_reasoning_trace_none_does_not_raise(self):
         # no exception
-        self.app.store_response(
-            self.view, source='src1', answer='text', trace=None)
+        self.app.response_to_grounded_textdocument(
+            self.view, source='src1', response='text',
+            reasoning_trace=None)
 
-    def test_trace_not_none_raises_not_implemented(self):
+    def test_reasoning_trace_not_none_raises_not_implemented(self):
         with self.assertRaises(NotImplementedError):
-            self.app.store_response(
-                self.view, source='src1', answer='text',
-                trace='intermediate reasoning')
+            self.app.response_to_grounded_textdocument(
+                self.view, source='src1', response='text',
+                reasoning_trace='intermediate reasoning')
+
+    # TODO (krim @ 05/28/26): this test case belongs upstream in the
+    # vocabulary type definition (the `origins`/`origination` pairing
+    # is a property of the `Document` type, per clams-vocabulary#18,
+    # not a behavior of the SDK app layer). Move once clams-vocabulary
+    # supports conditional prop validation. For now, this is a sanity
+    # check that the SDK correctly forwards both kwargs through to the
+    # underlying TD.
+    def test_origins_and_origination_written_together(self):
+        td, align = self.app.response_to_grounded_textdocument(
+            self.view, source='tf1', response='caption text',
+            origins=['tp1'], origination='derived')
+        self.assertEqual(td.get_property('origins'), ['tp1'])
+        self.assertEqual(td.get_property('origination'), 'derived')
+        self.assertEqual(align.get_property('source'), 'tf1')
+        self.assertEqual(align.get_property('target'), td.id)
+
+    def test_unpaired_origins_or_origination_raises(self):
+        unpaired = [
+            {'origins': ['tp1']},
+            {'origination': 'derived'},
+        ]
+        for kwargs in unpaired:
+            with self.subTest(**kwargs), self.assertRaises(ValueError):
+                self.app.response_to_grounded_textdocument(
+                    self.view, source='src1', response='text', **kwargs)
 
 
 # ---------------------------------------------------------------------------

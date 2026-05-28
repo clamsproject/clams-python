@@ -196,13 +196,22 @@ from :class:`~clams.app.ClamsApp`. These names are reserved; see
      - ``50``
      - no
      - Top-K sampling cutoff. Only meaningful when ``temperature`` > 0.
-   * - ``batchSize``
+   * - ``parallelPrompts``
      - integer
      - ``1``
      - no
-     - How many input items the app groups per ``generate`` call. GPU memory
-       scales roughly linearly with batch size; raise for throughput on
-       GPUs with headroom, keep at ``1`` on memory-tight setups.
+     - Number of independent prompts the app runs in parallel (stacks
+       into a single forward pass). The *size* of each prompt (how many
+       images, how long the system/user text is, etc.) is NOT regulated
+       by this parameter; that is each app's responsibility. Prompt
+       count and per-prompt content size combine multiplicatively for
+       GPU memory, so the two can blow up together. Catastrophic
+       example: ``tfSamplingMode=all`` on a TimeFrame without
+       ``targets`` expands that TF into one image per native-FPS frame
+       (300 images for a 10-second TF at 30fps); ``parallelPrompts=4``
+       then runs 4 such prompts in one forward pass (~1200 images),
+       guaranteed OOM. Keep at ``1`` on memory-tight setups; raise only
+       when per-prompt content is small and bounded.
 
 .. _promptable-customizing-defaults:
 
@@ -214,7 +223,7 @@ deliberately leaves ``prompt`` **without** a default; prompts are
 inherently app-specific and no single value is right for all apps.
 Beyond ``prompt``, other defaults may also be inappropriate for a given
 app: a model that needs longer outputs wants a higher ``maxNewTokens``,
-a small-VRAM deployment wants ``batchSize`` pinned at ``1``, etc.
+a small-VRAM deployment wants ``parallelPrompts`` pinned at ``1``, etc.
 
 Because the reservation rule prevents calling
 ``metadata.add_parameter('prompt', ...)`` (or any other promptable name)
@@ -336,15 +345,13 @@ Helpers
     may override to access model-specific state (e.g.
     ``self.processor``) when formatting messages.
 
-:meth:`~clams.app.ClamsPromptableApp.store_response`
-    Helper for the common annotation-creation pattern: given a view, a
-    source annotation's identifier, and a generated string, creates a
-    ``TextDocument`` containing the text plus an ``Alignment`` linking
-    source to TextDocument; returns the ``(text_document, alignment)``
-    pair. The optional ``trace`` parameter is reserved for
-    reasoning-trace storage; passing a non-``None`` value currently
-    raises :class:`NotImplementedError` (storage convention tracked in
-    clamsproject/clams-python#263).
+:meth:`~clams.app.ClamsPromptableApp.response_to_grounded_textdocument`
+    Writes a ``TextDocument`` plus an ``Alignment`` (``source -> TD``)
+    into a view. ``source`` is the coarse cross-modal anchor; the
+    optional ``origins`` (paired with ``origination``) is the finer
+    derivation list, written to the TD's ``origins`` / ``origination``
+    properties. See https://clams.ai/clams-vocabulary/Document for
+    vocabulary semantics.
 
 Backend helpers
 ^^^^^^^^^^^^^^^

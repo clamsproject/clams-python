@@ -11,7 +11,7 @@ from urllib import parse as urlparser
 
 __all__ = ['ClamsApp', 'ClamsPromptableApp']
 
-from typing import Union, Any, Optional, Dict, List, Tuple
+from typing import Union, Any, Optional, Dict, List, Tuple, cast
 
 from mmif import Mmif, Document, DocumentTypes, View, AnnotationTypes
 from mmif.utils.video_document_helper import (
@@ -116,7 +116,7 @@ class ClamsApp(ABC):
         """
         # cast only, no refinement
         casted = self.metadata_param_caster.cast(kwargs)
-        pretty = casted.pop('pretty') if 'pretty' in casted else False
+        pretty = casted.get('pretty', False)
         return self.metadata.jsonify(pretty)
     
     def _load_appmetadata(self) -> AppMetadata:
@@ -185,7 +185,7 @@ class ClamsApp(ABC):
         refined = self._refine_params(**runtime_params)
         self.logger.debug(f"Refined parameters: {refined}")
         pretty = refined.get('pretty', False)
-        sampling_mode_str = refined.pop('tfSamplingMode', None)
+        sampling_mode_str = refined.get('tfSamplingMode', None)
         if sampling_mode_str is not None:
             _sampling_mode.set(SamplingMode(sampling_mode_str))
         t = datetime.now()
@@ -639,6 +639,11 @@ class ClamsApp(ABC):
                     raise FileNotFoundError(p.path)
 
 
+# TODO (krim @ 05/28/26): maybe we should consider implementing
+# autodoc-based auto documentation export (e.g., ``automethod`` for
+# methods and a small Sphinx extension to render
+# ``promptable_parameters`` into the parameter table), instead of the
+# current hand-authored ``documentation/app-baseclasses.rst``. 
 class ClamsPromptableApp(ClamsApp):
     """
     Base class for CLAMS apps that wrap a promptable model (an LLM or
@@ -664,8 +669,9 @@ class ClamsPromptableApp(ClamsApp):
       parameter set to ``AppMetadata``
     * :py:meth:`build_conversation` — assemble a chat-template-compatible
       message list (stub in this release)
-    * :py:meth:`store_response` — persist a generated response into a
-      view as ``TextDocument`` + ``Alignment``
+    * :py:meth:`response_to_grounded_textdocument` — persist a
+      generated response into a view as ``TextDocument`` +
+      ``Alignment`` (+ optional ``origins`` / ``origination``)
     """
 
     #: SDK-managed runtime parameters injected into every promptable app.
@@ -724,12 +730,22 @@ class ClamsPromptableApp(ClamsApp):
                 'is greater than 0.',
         },
         {
-            'name': 'batchSize', 'type': 'integer', 'default': 1,
+            'name': 'parallelPrompts', 'type': 'integer', 'default': 1,
             'description':
-                'How many input items the app groups per ``generate`` call. '
-                'GPU memory scales roughly linearly with batch size; raise '
-                'for throughput on GPUs with headroom, keep at ``1`` on '
-                'memory-tight setups.',
+                'Number of independent prompts the app runs in parallel '
+                '(stacks into a single forward pass). The *size* of each '
+                'prompt (how many images, how long the system/user text '
+                'is, etc.) is NOT regulated by this parameter; that is '
+                'each app\'s responsibility. Prompt count and per-prompt '
+                'content size combine multiplicatively for GPU memory, '
+                'so the two can blow up together. Catastrophic example: '
+                '``tfSamplingMode=all`` on a TimeFrame without '
+                '``targets`` expands that TF into one image per '
+                'native-FPS frame (300 images for a 10-second TF at '
+                '30fps); ``parallelPrompts=4`` then runs 4 such prompts '
+                'in one forward pass (~1200 images), guaranteed OOM. '
+                'Keep at ``1`` on memory-tight setups; raise only when '
+                'per-prompt content is small and bounded.',
         },
     ]
 
@@ -782,7 +798,7 @@ class ClamsPromptableApp(ClamsApp):
             images: Optional[List[Any]] = None,
             audio: Optional[List[Any]] = None,
             prompt_mode: str = 'turn-taking',
-            batch_size: int = 1,
+            parallel_prompts: int = 1,
             **generation_params,
     ) -> List[str]:
         """
@@ -804,8 +820,8 @@ class ClamsPromptableApp(ClamsApp):
         :param audio: optional list of input audio clips
         :param prompt_mode: ``"turn-taking"`` (default) or ``"user-only"``;
             see :py:attr:`promptable_parameters`
-        :param batch_size: max number of items per underlying
-            ``generate`` call
+        :param parallel_prompts: max number of independent prompts the
+            underlying call stacks into one forward pass
         :param generation_params: any additional backend-specific
             generation kwargs (``maxNewTokens``, ``temperature``,
             ``topP``, ``topK``, etc.)
@@ -862,7 +878,7 @@ class ClamsPromptableApp(ClamsApp):
         # Pass-through for pre-built message lists.
         if isinstance(prompt, list) and prompt and all(
                 isinstance(p, dict) for p in prompt):
-            return prompt
+            return cast(List[dict], prompt)
 
         # Normalize to List[str].
         if isinstance(prompt, str):
@@ -962,41 +978,78 @@ class ClamsPromptableApp(ClamsApp):
                 base.append({'role': 'assistant', 'content': None})
         return convs
 
-    def store_response(
+    def response_to_grounded_textdocument(
             self,
             view: View,
             source: str,
-            answer: str,
-            trace: Optional[str] = None,
+            response: str,
+            origins: Optional[List[str]] = None,
+            origination: Optional[str] = None,
+            reasoning_trace: Optional[str] = None,
     ) -> Tuple[Any, Any]:
         """
-        Persist a generated response into a view as a
-        ``TextDocument`` (containing ``answer``) plus an
-        ``Alignment`` linking ``source`` to the new TextDocument.
+        Persist a single LLM text response into a view. Writes one
+        ``TextDocument`` (containing the response) plus possible
+        grounding via an ``Alignment`` annotation and ``origins`` / 
+        ``origination`` properties on the TD.
+
+        The two grounding link kinds are semantically distinct:
+
+        * ``source`` is the *coarse* cross-modal grounding -- the
+          single annotation id that the response is anchored to.
+          Written into the new ``Alignment`` (``source -> td``).
+          Typical value: the parent ``TimeFrame`` for a
+          captioning/OCR app.
+        * ``origins`` are the *finer* derivation grounding -- a list
+          of annotation ids the response was specifically derived
+          from (e.g. the ``TimePoint``\\s whose frames were fed to
+          the model). Written into ``TextDocument.origins``. See
+          https://clams.ai/clams-vocabulary/Document for vocabulary
+          semantics.
 
         :param view: the :class:`View` to write into. The caller is
             responsible for having called
             :meth:`View.new_contain` for ``TextDocument`` and
             ``Alignment`` first if needed.
-        :param source: ``long_id`` of the source annotation that
-            produced the response (e.g. a ``TimePoint`` or
-            ``ImageDocument``)
-        :param answer: the text generated by the model
-        :param trace: optional reasoning trace. NOT YET SUPPORTED —
-            passing a non-``None`` value raises
-            :py:class:`NotImplementedError`. Storage convention is
-            still being decided at
+        :param source: ``id`` of the annotation to record as the
+            cross-modal anchor of the response (see above).
+        :param response: the text generated by the model.
+        :param origins: optional list of ``id``\\s of annotations the
+            response was *derived* from. Must be paired with
+            ``origination``.
+        :param origination: nature of the derivation, written to
+            ``TextDocument.origination``. Accepted values per the
+            vocabulary include ``'derived'``, ``'transcription'``,
+            ``'topologically-identical'``. Must be paired with
+            ``origins``.
+        :param reasoning_trace: optional model-side reasoning trace
+            (a chain-of-thought / scratchpad string, NOT a Python
+            traceback). NOT YET SUPPORTED -- passing a non-``None``
+            value raises :py:class:`NotImplementedError`. Storage
+            convention is still being decided at
             clamsproject/clams-python#263.
         :return: ``(TextDocument, Alignment)`` tuple of the new
-            annotations
+            annotations.
+        :raises ValueError: if exactly one of ``origins`` /
+            ``origination`` is set; they must be supplied together
+            or both omitted.
         """
-        td = view.new_textdocument(text=answer)
+        if bool(origins) != bool(origination):
+            raise ValueError(
+                "`origins` and `origination` must be supplied together "
+                "or both omitted; got "
+                f"origins={origins!r}, origination={origination!r}."
+            )
+        td = view.new_textdocument(text=response)
+        if origins:
+            td.add_property('origins', origins)
+            td.add_property('origination', origination)
         align = view.new_annotation(
             AnnotationTypes.Alignment,
             source=source,
             target=td.id,
         )
-        if trace is not None:
+        if reasoning_trace is not None:
             raise NotImplementedError(
                 "Reasoning-trace storage convention is not yet defined; "
                 "tracked at clamsproject/clams-python#263."
