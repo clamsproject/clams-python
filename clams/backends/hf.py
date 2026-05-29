@@ -1,11 +1,16 @@
 """
-HuggingFace transformers backend helper.
+HuggingFace transformers backend helpers.
 
-Provides :func:`load_hf_model`, a general loader that wraps the device,
-processor, dtype, and inference-mode boilerplate every HF-backed CLAMS
-app does identically. Usable for any model class that supports
-``from_pretrained()``: instruction-tuned LLMs/VLMs, encoder-only
-classifiers, vision/audio feature extractors, etc.
+Two general loaders that wrap the device / kwargs / inference-mode
+boilerplate every HF-backed CLAMS app does identically:
+
+* :func:`load_hf_model` -- ``from_pretrained()`` flow for any model
+  class (instruction-tuned LLMs/VLMs, encoder-only classifiers,
+  vision/audio feature extractors, etc.). Use when the app needs raw
+  access to the underlying model and processor.
+* :func:`load_hf_pipeline` -- task-level :func:`transformers.pipeline`
+  flow (ASR, NER, text classification, zero-shot, etc.). Use when
+  pipeline-level inference is sufficient.
 
 ``torch`` and ``transformers`` are optional dependencies. Install them
 via the ``[hf]`` extra::
@@ -14,10 +19,10 @@ via the ``[hf]`` extra::
 
 Imports are lazy: this module can be referenced from
 :mod:`clams.app` without triggering an ``ImportError`` on a base
-``clams-python`` install. The :class:`ImportError` only fires when
-:func:`load_hf_model` is actually called without the extras.
+``clams-python`` install. The :class:`ImportError` only fires when a
+loader is actually called without the extras.
 """
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Union
 
 
 def load_hf_model(
@@ -140,3 +145,88 @@ def load_hf_model(
     model.eval()
 
     return processor, model, resolved_device
+
+
+def load_hf_pipeline(
+        task: str,
+        model_id: str,
+        device: Optional[Union[str, int]] = None,
+        revision: Optional[str] = None,
+        model_kwargs: Optional[dict] = None,
+        pipeline_kwargs: Optional[dict] = None,
+) -> Tuple[Any, Union[str, int]]:
+    """
+    Load a HuggingFace :func:`transformers.pipeline` for ``task`` and
+    return it ready for inference. Wraps the device / revision /
+    kwargs-forwarding boilerplate that every pipeline-backed CLAMS
+    app does identically. Use this for apps wrapping a task-level
+    pipeline (ASR via ``"automatic-speech-recognition"``, NER via
+    ``"token-classification"``, text classification, zero-shot, etc.);
+    use :func:`load_hf_model` instead when the app needs raw access
+    to the underlying model / processor (e.g., for custom chat-template
+    formatting or batched ``generate`` calls).
+
+    :param task: pipeline task string forwarded to
+        :func:`transformers.pipeline` (e.g.,
+        ``"automatic-speech-recognition"``, ``"token-classification"``).
+    :param model_id: HuggingFace model identifier (Hub repo name or
+        local path) forwarded to ``pipeline(model=...)``.
+    :param device: target device. Accepts the string form
+        (``'cuda'``, ``'cpu'``, ``'cuda:0'``) for parity with
+        :func:`load_hf_model`, or the integer form accepted natively
+        by ``pipeline`` (``-1`` for CPU, ``0+`` for GPU index). When
+        ``None`` (default), auto-detects cuda availability and falls
+        back to cpu (string form).
+    :param revision: optional Git revision (commit hash, branch, or
+        tag) on the Hub to pin the download to. Strongly recommended
+        for production; see :func:`load_hf_model` for rationale.
+    :param model_kwargs: extra kwargs forwarded to the underlying
+        ``model.from_pretrained()`` via the
+        ``pipeline(model_kwargs={...})`` channel.
+    :param pipeline_kwargs: extra kwargs forwarded directly to
+        :func:`transformers.pipeline` (e.g. ``generate_kwargs``,
+        ``tokenizer``, ``feature_extractor``, ``batch_size``,
+        ``framework``). ``model``, ``task``, ``device``, ``revision``,
+        and ``model_kwargs`` are owned by this helper -- explicit
+        helper args take precedence if any collide.
+    :returns: ``(pipeline, device)`` tuple. ``device`` is the resolved
+        device the pipeline is on, in the form it was passed (or the
+        auto-resolved string form when ``device=None``).
+    :rtype: Tuple[Any, Union[str, int]]
+    :raises ImportError: if ``torch`` or ``transformers`` is not
+        installed. Install the ``[hf]`` extra to fix.
+    """
+    try:
+        import torch  # pytype: disable=import-error
+    except ImportError as e:
+        raise ImportError(
+            "clams.backends.hf requires the `torch` package. "
+            "Install with: pip install clams-python[hf]"
+        ) from e
+    try:
+        from transformers import pipeline  # pytype: disable=import-error
+    except ImportError as e:
+        raise ImportError(
+            "clams.backends.hf requires the `transformers` package. "
+            "Install with: pip install clams-python[hf]"
+        ) from e
+
+    resolved_device = device if device is not None else (
+        'cuda' if torch.cuda.is_available() else 'cpu')
+
+    pipeline_call_kwargs = dict(pipeline_kwargs or {})
+    # Helper-owned keys: explicit args win on collision.
+    for owned in ('task', 'model', 'device'):
+        pipeline_call_kwargs.pop(owned, None)
+    if model_kwargs:
+        pipeline_call_kwargs['model_kwargs'] = dict(model_kwargs)
+    if revision is not None:
+        pipeline_call_kwargs['revision'] = revision
+
+    pipe = pipeline(
+        task,
+        model=model_id,
+        device=resolved_device,
+        **pipeline_call_kwargs,
+    )
+    return pipe, resolved_device

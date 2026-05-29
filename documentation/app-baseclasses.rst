@@ -374,19 +374,31 @@ when your app needs the backend.
 HuggingFace transformers (``clams.backends.hf``)
 """"""""""""""""""""""""""""""""""""""""""""""""
 
-:func:`clams.backends.hf.load_hf_model` loads any local HuggingFace
-``transformers`` model via ``from_pretrained()`` and returns it ready
-for inference, encapsulating the device, processor/tokenizer, dtype,
-and inference-mode boilerplate that every HF-backed app does
-identically. An app's ``__init__`` typically calls it once and stores
-the returned ``(processor, model, device)`` triple on ``self`` for
-later inference. See :func:`~clams.backends.hf.load_hf_model` for the
-full parameter reference, defaults, and pass-through kwargs.
+Two loaders cover the two HF-loading conventions a CLAMS app would
+pick between:
+
+:func:`clams.backends.hf.load_hf_model`
+    The ``from_pretrained()`` flow. Returns
+    ``(processor, model, device)`` ready for inference, encapsulating
+    the device, processor/tokenizer, dtype, and inference-mode
+    boilerplate. Use when the app needs raw access to the underlying
+    model and processor (e.g., for custom chat-template formatting or
+    batched ``generate`` calls).
+
+:func:`clams.backends.hf.load_hf_pipeline`
+    The :func:`transformers.pipeline` flow. Returns
+    ``(pipeline, device)`` ready for inference. Use when a task-level
+    pipeline is sufficient (ASR, NER, text classification, zero-shot,
+    etc.). Accepts the same revision pinning and shares the
+    auto-device-detection behavior with :func:`load_hf_model`.
+
+See each function's docstring for the full parameter reference,
+defaults, and pass-through kwargs.
 
 For promptable apps specifically,
 :class:`~clams.app.ClamsHFPromptableApp` (see :ref:`hf-promptable`)
-wraps this helper plus the standard inference loop, so most HF-backed
-VLM/LLM apps do not call :func:`load_hf_model` directly.
+wraps :func:`load_hf_model` plus the standard inference loop, so most
+HF-backed VLM/LLM apps do not call either loader directly.
 
 Installation
 ~~~~~~~~~~~~

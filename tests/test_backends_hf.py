@@ -1,20 +1,35 @@
 """
-Tests for :func:`clams.backends.hf.load_hf_model`.
+Tests for :mod:`clams.backends.hf`.
 
 Exercises the device / dtype / padding-side / kwargs-passthrough
-behavior of the helper against mocked ``transformers`` model and
-processor classes.
+behavior of both :func:`load_hf_model` and :func:`load_hf_pipeline`
+against mocked ``transformers`` model, processor, and pipeline
+constructors.
 
 If ``torch`` is not installed, the whole file is skipped (it is an
 optional dep behind the ``[hf]`` extra).
 """
 import unittest
+from unittest import mock
 
 import pytest
 
 pytest.importorskip('torch')
+pytest.importorskip('transformers')
 
-from clams.backends.hf import load_hf_model  # noqa: E402
+# Force ``transformers.pipeline`` to be eagerly resolved into the
+# package's ``__dict__``. ``transformers`` uses a lazy-loading
+# ``_LazyModule`` that fetches submodule attributes via
+# ``__getattr__`` on first access; before that, the attribute does
+# not live in ``__dict__``. The first ``mock.patch('transformers.pipeline', ...)``
+# call would then silently fail to redirect ``from transformers import pipeline``
+# inside the helper. Touching the attribute here resolves it and
+# caches it in the package dict, so subsequent ``mock.patch`` calls
+# rewrite the real entry as expected.
+import transformers  # noqa: E402
+_ = transformers.pipeline
+
+from clams.backends.hf import load_hf_model, load_hf_pipeline  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -242,6 +257,141 @@ class TestDeviceResolution(unittest.TestCase):
         )
         self.assertEqual(device, 'cpu')
         self.assertEqual(model.device, 'cpu')
+
+
+# ---------------------------------------------------------------------------
+# load_hf_pipeline tests
+# ---------------------------------------------------------------------------
+
+class _FakePipeline:
+    """Captures the args/kwargs the helper forwards to
+    ``transformers.pipeline``. Behaves as the returned pipeline object
+    too -- just a tagged callable stand-in."""
+
+    last_args = None
+    last_kwargs = None
+
+    def __init__(self, *args, **kwargs):
+        type(self).last_args = args
+        type(self).last_kwargs = dict(kwargs)
+
+
+def _patch_pipeline():
+    """Patch ``transformers.pipeline`` to record its call and return a
+    ``_FakePipeline`` instance."""
+    _FakePipeline.last_args = None
+    _FakePipeline.last_kwargs = None
+    return mock.patch('transformers.pipeline', _FakePipeline)
+
+
+class TestLoadHFPipelineDefaults(unittest.TestCase):
+    """The default path: just task + model_id."""
+
+    def test_returns_pipeline_and_device(self):
+        with _patch_pipeline():
+            pipe, device = load_hf_pipeline(
+                'automatic-speech-recognition', 'openai/whisper-tiny')
+        self.assertIsInstance(pipe, _FakePipeline)
+        self.assertIn(device, ('cpu', 'cuda'))
+
+    def test_task_arrives_first_positional(self):
+        with _patch_pipeline():
+            load_hf_pipeline(
+                'token-classification', 'fake/ner-model')
+        self.assertEqual(_FakePipeline.last_args, ('token-classification',))
+
+    def test_model_id_forwarded_as_model_kwarg(self):
+        with _patch_pipeline():
+            load_hf_pipeline(
+                'automatic-speech-recognition', 'openai/whisper-tiny')
+        self.assertEqual(
+            _FakePipeline.last_kwargs.get('model'), 'openai/whisper-tiny')
+
+    def test_no_revision_kwarg_when_not_specified(self):
+        with _patch_pipeline():
+            load_hf_pipeline(
+                'automatic-speech-recognition', 'openai/whisper-tiny')
+        self.assertNotIn('revision', _FakePipeline.last_kwargs)
+
+
+class TestLoadHFPipelineDevice(unittest.TestCase):
+    """Device handling: auto-detect, explicit string, explicit int."""
+
+    def test_auto_detect_when_none(self):
+        with _patch_pipeline():
+            _, device = load_hf_pipeline(
+                'automatic-speech-recognition', 'openai/whisper-tiny')
+        self.assertIn(device, ('cpu', 'cuda'))
+        # Same value should have been passed to pipeline().
+        self.assertEqual(_FakePipeline.last_kwargs.get('device'), device)
+
+    def test_explicit_string_device_honored(self):
+        with _patch_pipeline():
+            _, device = load_hf_pipeline(
+                'automatic-speech-recognition', 'openai/whisper-tiny',
+                device='cpu')
+        self.assertEqual(device, 'cpu')
+        self.assertEqual(_FakePipeline.last_kwargs.get('device'), 'cpu')
+
+    def test_explicit_int_device_honored(self):
+        """``pipeline()`` natively accepts ``-1`` for CPU, ``0+`` for
+        a specific GPU index. The helper passes it through unchanged."""
+        with _patch_pipeline():
+            _, device = load_hf_pipeline(
+                'automatic-speech-recognition', 'openai/whisper-tiny',
+                device=-1)
+        self.assertEqual(device, -1)
+        self.assertEqual(_FakePipeline.last_kwargs.get('device'), -1)
+
+
+class TestLoadHFPipelineKwargsPassThrough(unittest.TestCase):
+    """``model_kwargs`` lands inside ``pipeline(model_kwargs={...})``;
+    ``pipeline_kwargs`` is spread directly into the pipeline call."""
+
+    def test_pipeline_kwargs_spread_into_call(self):
+        with _patch_pipeline():
+            load_hf_pipeline(
+                'automatic-speech-recognition', 'openai/whisper-tiny',
+                pipeline_kwargs={
+                    'generate_kwargs': {'num_beams': 5},
+                    'batch_size': 8,
+                })
+        kw = _FakePipeline.last_kwargs
+        self.assertEqual(kw.get('generate_kwargs'), {'num_beams': 5})
+        self.assertEqual(kw.get('batch_size'), 8)
+
+    def test_model_kwargs_nested_under_model_kwargs(self):
+        with _patch_pipeline():
+            load_hf_pipeline(
+                'automatic-speech-recognition', 'openai/whisper-tiny',
+                model_kwargs={'use_safetensors': True})
+        kw = _FakePipeline.last_kwargs
+        self.assertEqual(kw.get('model_kwargs'),
+                         {'use_safetensors': True})
+
+    def test_revision_forwarded(self):
+        with _patch_pipeline():
+            load_hf_pipeline(
+                'automatic-speech-recognition', 'openai/whisper-tiny',
+                revision='abc1234')
+        self.assertEqual(_FakePipeline.last_kwargs.get('revision'), 'abc1234')
+
+    def test_explicit_helper_args_take_precedence(self):
+        """If the caller smuggles ``model`` / ``device`` / ``revision``
+        through ``pipeline_kwargs``, the helper's own args win."""
+        with _patch_pipeline():
+            load_hf_pipeline(
+                'automatic-speech-recognition', 'openai/whisper-tiny',
+                device='cpu', revision='abc1234',
+                pipeline_kwargs={
+                    'model': 'should-be-overridden',
+                    'device': 'should-be-overridden',
+                    'revision': 'should-be-overridden',
+                })
+        kw = _FakePipeline.last_kwargs
+        self.assertEqual(kw['model'], 'openai/whisper-tiny')
+        self.assertEqual(kw['device'], 'cpu')
+        self.assertEqual(kw['revision'], 'abc1234')
 
 
 if __name__ == '__main__':
