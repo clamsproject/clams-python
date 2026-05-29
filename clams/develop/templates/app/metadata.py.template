@@ -53,19 +53,29 @@ def appmetadata() -> AppMetadata:
     # metadta.add_parameter(more...)
 
     # If your app subclasses ``ClamsPromptableApp`` (a prompt-driven LLM/VLM/audio-LM
-    # app), uncomment the following two lines to add the SDK-managed promptable
-    # parameters (prompt, systemPrompt, temperature, maxNewTokens, etc.) to your
-    # app's metadata. See
+    # app on a non-HF backend), uncomment the following two lines to add the
+    # SDK-managed promptable parameters (prompt, systemPrompt, temperature,
+    # maxNewTokens, etc.) to your app's metadata. See
     # https://clams.ai/clams-python/app-baseclasses.html#promptable for the
-    # developer guide. Reminder: these parameter names are reserved by the SDK
-    # — do not redeclare any of them above.
+    # developer guide. Reminder: these parameter names are reserved by the SDK;
+    # do not redeclare any of them above.
     # from clams.app import ClamsPromptableApp
     # ClamsPromptableApp.inject_promptable_parameters(metadata)
     #
+    # If your app subclasses ``ClamsHFPromptableApp`` (HF transformers backend),
+    # use the HF override of the same helper -- it injects the promptable
+    # parameters AND a ``model`` parameter derived from ``analyzer_versions``.
+    # Also set ``analyzer_versions={<hf-id>: <commit-hash>, ...}`` on the
+    # ``AppMetadata(...)`` call above (replaces the singular
+    # ``analyzer_version`` for HF apps). See
+    # https://clams.ai/clams-python/app-baseclasses.html#hf-promptable for details.
+    # from clams.app import ClamsHFPromptableApp
+    # ClamsHFPromptableApp.inject_promptable_parameters(metadata)
+    #
     # To customize the default value of any promptable parameter (e.g. provide an
-    # app-specific default ``prompt``, raise ``maxNewTokens``, pin ``batchSize``,
+    # app-specific default ``prompt``, raise ``maxNewTokens``, pin ``parallelPrompts``,
     # etc.), mutate the ``default`` field on the already-injected parameter
-    # object — the SDK does NOT allow re-declaring promptable param names. See
+    # object; the SDK does NOT allow re-declaring promptable param names. See
     # https://clams.ai/clams-python/app-baseclasses.html#promptable-customizing-defaults
     # for details. Example:
     # for p in metadata.parameters:

@@ -75,7 +75,7 @@ class ClamsApp(ABC):
         # how vdh.extract_frames_by_mode() selects frames from TimeFrames.
         # The value is intercepted in annotate() and pushed into a
         # contextvars.ContextVar so that any vdh call inside _annotate()
-        # picks it up automatically — app developers never need to handle
+        # picks it up automatically; app developers never need to handle
         # this parameter themselves.
         {
             'name': 'tfSamplingMode', 'type': 'string',
@@ -643,15 +643,14 @@ class ClamsApp(ABC):
 # autodoc-based auto documentation export (e.g., ``automethod`` for
 # methods and a small Sphinx extension to render
 # ``promptable_parameters`` into the parameter table), instead of the
-# current hand-authored ``documentation/app-baseclasses.rst``. 
+# current hand-authored ``documentation/app-baseclasses.rst``.
 class ClamsPromptableApp(ClamsApp):
     """
     Base class for CLAMS apps that wrap a promptable model (an LLM or
     other multimodal model, local or remote). Standardizes the runtime
-    parameter surface
-    (prompt, generation hyperparameters, batch size) and provides
-    helpers for building chat conversations and persisting model
-    responses into MMIF.
+    parameter surface (prompt, generation hyperparameters, parallelism
+    control) and provides helpers for building chat conversations and
+    persisting model responses into MMIF.
 
     The standardized parameters are listed in
     :py:attr:`promptable_parameters` and added to an app's metadata via
@@ -665,17 +664,17 @@ class ClamsPromptableApp(ClamsApp):
     Inference is performed by :py:meth:`generate`, which subclasses MUST
     implement. The base class provides:
 
-    * :py:meth:`inject_promptable_parameters` — add the SDK-managed
+    * :py:meth:`inject_promptable_parameters` : adds the SDK-managed
       parameter set to ``AppMetadata``
-    * :py:meth:`build_conversation` — assemble a chat-template-compatible
-      message list (stub in this release)
-    * :py:meth:`response_to_grounded_textdocument` — persist a
+    * :py:meth:`build_conversation` : assembles a chat-template-compatible
+      message list from a prompt plus optional images/audios
+    * :py:meth:`response_to_grounded_textdocument` : persists a
       generated response into a view as ``TextDocument`` +
       ``Alignment`` (+ optional ``origins`` / ``origination``)
     """
 
     #: SDK-managed runtime parameters injected into every promptable app.
-    #: These names are reserved — apps cannot redeclare them with
+    #: These names are reserved; apps cannot redeclare them with
     #: customized specs.
     promptable_parameters = [
         {
@@ -774,7 +773,7 @@ class ClamsPromptableApp(ClamsApp):
         # ``inject_promptable_parameters()`` from inside
         # ``appmetadata()``. The parent ``__init__`` then iterates
         # ``self.metadata.parameters`` to populate
-        # ``annotate_param_spec`` and build the caster — so the
+        # ``annotate_param_spec`` and build the caster, so the
         # promptable parameters are already covered by the time we land
         # here. We only validate that the helper was actually called.
         super().__init__()
@@ -857,7 +856,7 @@ class ClamsPromptableApp(ClamsApp):
 
         :param prompt: a plain string, a ``List[str]`` of prompt turns,
             or a pre-built ``List[dict]`` of role/content message
-            objects (returned as-is — pass-through for advanced
+            objects (returned as-is; pass-through for advanced
             callers that constructed the conversation themselves).
         :param system_prompt: if non-empty, prepended as a
             system-role message.
@@ -1081,29 +1080,37 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
     prompts in one HF forward pass via the standard
     chat-template -> ``model.generate`` -> ``batch_decode`` pipeline.
 
-    Concrete subclasses declare the model via class attributes
-    (:py:attr:`MODEL_ID`, :py:attr:`MODEL_CLS`, etc.) and typically
-    only need to implement :py:meth:`_annotate` -- the per-app MMIF
-    I/O. Example::
+    Concrete subclasses declare the model class via :py:attr:`MODEL_CLS`
+    plus a handful of optional dtype/padding hints, and the family of
+    pinned model revisions via ``analyzer_versions`` in
+    ``metadata.py``. The SDK auto-derives a ``model`` runtime
+    parameter (choices = keys of ``analyzer_versions``), and the dev's
+    ``_annotate`` calls :py:meth:`load_model` to (lazily) load the
+    requested family member. Singleton families (one entry in
+    ``analyzer_versions``) eagerly pre-load in ``__init__`` so
+    single-model apps preserve warm-start semantics. Example::
 
         class MyVLMCaptioner(ClamsHFPromptableApp):
-            MODEL_ID = "HuggingFaceTB/SmolVLM2-2.2B-Instruct"
             MODEL_CLS = AutoModelForImageTextToText
             DTYPE = torch.bfloat16
             PADDING_SIDE = 'left'
 
+            # In metadata.py:
+            #     analyzer_versions={
+            #         "HuggingFaceTB/SmolVLM2-2.2B-Instruct": "482adb5",
+            #     }
+            # plus a call to
+            # ClamsHFPromptableApp.inject_promptable_parameters(metadata).
+
             def _annotate(self, mmif, **parameters):
-                # collect tasks from MMIF, build image groups, then
-                #   texts = self.generate(prompt, images=image_groups, ...)
-                # store responses via self.response_to_grounded_textdocument
+                self.load_model(parameters['model'])
+                # ... self.generate(prompt, images=image_groups, ...)
+                # ... self.response_to_grounded_textdocument(...)
                 ...
 
     Requires the ``[hf]`` extra (``pip install clams-python[hf]``).
     """
 
-    #: HuggingFace model identifier (Hub repo name or local path).
-    #: Subclasses MUST set this.
-    MODEL_ID: Optional[str] = None
     #: ``transformers`` model class (e.g.
     #: :class:`~transformers.AutoModelForImageTextToText`,
     #: :class:`~transformers.AutoModelForCausalLM`). Subclasses MUST
@@ -1126,32 +1133,167 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
     #: Extra kwargs forwarded to ``PROCESSOR_CLS.from_pretrained()``.
     PROCESSOR_KWARGS: Optional[dict] = None
 
+    @staticmethod
+    def inject_promptable_parameters(metadata: AppMetadata) -> None:
+        """
+        Add the SDK-managed promptable parameters AND a ``model``
+        parameter derived from ``metadata.analyzer_versions`` to the
+        app metadata. Overrides
+        :py:meth:`ClamsPromptableApp.inject_promptable_parameters` for
+        HF apps; call this at the end of your app's ``appmetadata()``
+        function in ``metadata.py`` if your app subclasses
+        :py:class:`ClamsHFPromptableApp`.
+
+        :param metadata: the :class:`AppMetadata` instance being
+            built. ``metadata.analyzer_versions`` MUST already be set
+            to a non-empty ``Dict[str, str]`` (model id -> commit
+            hash); this helper reads it to derive the ``model``
+            parameter's choices.
+        :raises ValueError: if ``metadata.analyzer_versions`` is
+            missing or empty.
+        """
+        ClamsPromptableApp.inject_promptable_parameters(metadata)
+        analyzer_versions = metadata.analyzer_versions or {}
+        if not analyzer_versions:
+            raise ValueError(
+                "ClamsHFPromptableApp.inject_promptable_parameters "
+                "requires ``metadata.analyzer_versions`` to be a "
+                "non-empty dict (HF model id -> commit hash). Set "
+                "it on the ``AppMetadata`` constructor call before "
+                "invoking this helper.")
+        choices = list(analyzer_versions.keys())
+        default = choices[0] if len(choices) == 1 else None
+        metadata.add_parameter(
+            name='model',
+            type='string',
+            choices=choices,
+            default=default,
+            multivalued=False,
+            description=(
+                "HuggingFace model identifier to use for this "
+                "request. Must be one of the model ids declared in "
+                "this app's ``analyzer_versions``; the SDK pins the "
+                "corresponding commit hash at load time. When the "
+                "app ships a single model (the typical case), this "
+                "parameter defaults to that one model and can be "
+                "omitted. Pass the full HF model id (e.g. "
+                "``org/repo-name``); URL-encoding the ``/`` is "
+                "optional."
+            ),
+        )
+
     def __init__(self):
         super().__init__()
         cls_name = type(self).__name__
-        if self.MODEL_ID is None:
-            raise ValueError(
-                f"{cls_name} must set the ``MODEL_ID`` class attribute "
-                f"(a HuggingFace model identifier).")
         if self.MODEL_CLS is None:
             raise ValueError(
                 f"{cls_name} must set the ``MODEL_CLS`` class attribute "
                 f"(a ``transformers`` model class).")
+        analyzer_versions = self.metadata.analyzer_versions
+        if not analyzer_versions:
+            raise ValueError(
+                f"{cls_name} must declare ``analyzer_versions`` in "
+                f"``metadata.py`` as a non-empty Dict[str, str] "
+                f"mapping HuggingFace model ids to pinned commit "
+                f"hashes (7-char abbreviation is sufficient). This is "
+                f"required for reproducibility: an unpinned download "
+                f"silently floats on whatever ``main`` points at and "
+                f"cannot be reproduced. Singleton families (one "
+                f"entry) are fine; multi-model families list every "
+                f"member.")
+        if 'model' not in {p.name for p in self.metadata.parameters}:
+            raise ValueError(
+                f"{cls_name} must call "
+                f"``ClamsHFPromptableApp.inject_promptable_parameters"
+                f"(metadata)`` (the HF override that also adds the "
+                f"``model`` parameter) inside ``appmetadata()`` in "
+                f"``metadata.py``; calling "
+                f"``ClamsPromptableApp.inject_promptable_parameters`` "
+                f"directly skips the ``model`` parameter and trips "
+                f"this check.")
+        #: Per-(model_id, revision) cache of loaded
+        #: ``(processor, model, device)`` triples. Populated by
+        #: :py:meth:`load_model`; survives for the lifetime of this
+        #: app instance.
+        self._model_cache: Dict[Tuple[str, str], Tuple[Any, Any, str]] = {}
+        #: References to the currently-active loaded model. Set by
+        #: :py:meth:`load_model`; ``generate()`` and friends read
+        #: from here. ``None`` until the first ``load_model`` call
+        #: (or until ``__init__`` eager-loads a singleton family).
+        self.processor: Any = None
+        self.model: Any = None
+        self.device: Optional[str] = None
+        # Singleton families pre-load in ``__init__`` so single-model
+        # apps preserve warm-start UX (no first-request latency cost).
+        # Multi-member families defer to lazy loading on the first
+        # ``load_model`` call.
+        if len(analyzer_versions) == 1:
+            only_model_id = next(iter(analyzer_versions.keys()))
+            self.load_model(only_model_id)
+
+    def _refine_params(self, **runtime_params):
+        """
+        Expand ``model`` from the raw HF id (``org/name``) to
+        ``org/name@<revision>`` so the resolved revision lands in
+        ``view.metadata.appConfiguration['model']``.
+        """
+        refined = super()._refine_params(**runtime_params)
+        model_id = refined.get('model')
+        if isinstance(model_id, str) and '@' not in model_id:
+            revision = (self.metadata.analyzer_versions or {}).get(model_id)
+            if revision is not None:
+                refined['model'] = f"{model_id}@{revision}"
+        return refined
+
+    def load_model(
+            self, model_id_or_with_rev: str,
+    ) -> Tuple[Any, Any, str]:
+        """
+        Load (or return cached) ``(processor, model, device)`` for
+        the given model id. Accepts both refined (``org/name@rev``)
+        and raw (``org/name``) forms; for raw form, the revision is
+        looked up from ``self.metadata.analyzer_versions``. Caches
+        results per ``(model_id, revision)`` and updates
+        :py:attr:`self.processor`, :py:attr:`self.model`,
+        :py:attr:`self.device` to the loaded triple so subsequent
+        :py:meth:`generate` calls operate on it.
+
+        :param model_id_or_with_rev: HF model id, optionally with
+            ``@<revision>`` suffix.
+        :return: ``(processor, model, device)`` tuple for the loaded
+            model. Same references are also stored on ``self``.
+        :raises KeyError: if a raw model id is passed and is not in
+            ``analyzer_versions``.
+        """
+        if '@' in model_id_or_with_rev:
+            model_id, _, revision = model_id_or_with_rev.rpartition('@')
+        else:
+            model_id = model_id_or_with_rev
+            revision = self.metadata.analyzer_versions[model_id]
+        cache_key = (model_id, revision)
+        cached = self._model_cache.get(cache_key)
+        if cached is not None:
+            self.processor, self.model, self.device = cached
+            return cached
         # Lazy import: avoids pulling torch/transformers into the base
         # clams-python install. Apps using this class must have the
         # ``[hf]`` extra installed.
         from clams.backends.hf import load_hf_model
-        self.logger.info(f"Loading HF model from {self.MODEL_ID}")
-        self.processor, self.model, self.device = load_hf_model(
-            self.MODEL_ID,
+        self.logger.info(f"Loading HF model from {model_id} @ {revision}")
+        triple = load_hf_model(
+            model_id,
             self.MODEL_CLS,
             processor_cls=self.PROCESSOR_CLS,
             dtype=self.DTYPE,
             padding_side=self.PADDING_SIDE,
+            revision=revision,
             model_kwargs=self.MODEL_KWARGS,
             processor_kwargs=self.PROCESSOR_KWARGS,
         )
-        self.logger.info(f"HF model loaded on {self.device}")
+        self.logger.info(f"HF model loaded on {triple[2]}")
+        self._model_cache[cache_key] = triple
+        self.processor, self.model, self.device = triple
+        return triple
 
     def generate(
             self,

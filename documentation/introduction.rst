@@ -72,7 +72,7 @@ As a developer you can expose different behaviors of the ``annotate()`` method b
   These runtime configurations are not part of the MMIF input, but for reproducible analysis, you should record these configurations in the output MMIF. 
 
 .. note::
-  Some runtime parameters are managed by the SDK itself rather than declared per-app. The *universal* parameters in :const:`clams.app.ClamsApp.universal_parameters` are one such set — they are auto-added to every CLAMS app. Specialized base classes (see below) add their own SDK-managed parameter sets on top.
+  Some runtime parameters are managed by the SDK itself rather than declared per-app. The *universal* parameters in :const:`clams.app.ClamsApp.universal_parameters` are one such set; they are auto-added to every CLAMS app. Specialized base classes (see below) add their own SDK-managed parameter sets on top.
 
 .. warning::
   All the runtime configurations should be pre-announced in the app metadata.

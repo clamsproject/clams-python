@@ -127,15 +127,10 @@ discriminative model), keep using :class:`~clams.app.ClamsApp` directly.
 
 .. note::
 
-   ``ClamsPromptableApp`` assumes an **instruction-tuned or chat-tuned**
-   model: one that has been fine-tuned to follow natural-language
-   instructions and that understands a system/user/assistant role
-   structure. The parameter
-   surface (``systemPrompt``, ``promptMode``'s turn-taking semantics, the
-   chat-template message list produced by ``build_conversation``) presupposes
-   this. Bare completion / next-token-prediction base models that have not
-   been instruction-tuned do not fit this base class cleanly; for those, use
-   :class:`~clams.app.ClamsApp` directly and design your own parameter surface.
+   ``ClamsPromptableApp`` assumes an **instruction- or chat-tuned**
+   model with a system/user/assistant role structure. Bare completion
+   / next-token-prediction base models do not fit this base class
+   cleanly; use :class:`~clams.app.ClamsApp` directly for those.
 
 Standardized runtime parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -200,18 +195,13 @@ from :class:`~clams.app.ClamsApp`. These names are reserved; see
      - integer
      - ``1``
      - no
-     - Number of independent prompts the app runs in parallel (stacks
-       into a single forward pass). The *size* of each prompt (how many
-       images, how long the system/user text is, etc.) is NOT regulated
-       by this parameter; that is each app's responsibility. Prompt
-       count and per-prompt content size combine multiplicatively for
-       GPU memory, so the two can blow up together. Catastrophic
-       example: ``tfSamplingMode=all`` on a TimeFrame without
-       ``targets`` expands that TF into one image per native-FPS frame
-       (300 images for a 10-second TF at 30fps); ``parallelPrompts=4``
-       then runs 4 such prompts in one forward pass (~1200 images),
-       guaranteed OOM. Keep at ``1`` on memory-tight setups; raise only
-       when per-prompt content is small and bounded.
+     - Number of independent prompts the app stacks into a single
+       forward pass. Per-prompt content size is the app's
+       responsibility; prompt count and per-prompt size combine
+       multiplicatively for GPU memory. Keep at ``1`` on memory-tight
+       setups; see the parameter's own description in
+       :py:attr:`~clams.app.ClamsPromptableApp.promptable_parameters`
+       for an OOM-risk example.
 
 .. _promptable-customizing-defaults:
 
@@ -255,39 +245,54 @@ A promptable app requires two paired edits relative to the scaffold generated
 by ``clams develop``:
 
 1. In ``app.py``, change the app class's base from :class:`~clams.app.ClamsApp`
-   to :class:`~clams.app.ClamsPromptableApp` and implement
-   :meth:`~clams.app.ClamsPromptableApp.generate`. The scaffold file already
-   contains a guiding comment at the class declaration line.
-2. In ``metadata.py``, call
-   :meth:`~clams.app.ClamsPromptableApp.inject_promptable_parameters` at the
-   end of ``appmetadata()``. The scaffold file already contains a
-   commented-out helper-call block; uncomment it.
+   to one of the promptable base classes. For a non-HF backend (remote API,
+   custom local server, etc.), use :class:`~clams.app.ClamsPromptableApp` and
+   implement :meth:`~clams.app.ClamsPromptableApp.generate`. For a local
+   HuggingFace ``transformers`` model, use
+   :class:`~clams.app.ClamsHFPromptableApp` instead and declare the model via
+   class attributes (no ``generate()`` override needed); see
+   :ref:`hf-promptable` for details. The scaffold file already contains a
+   guiding comment at the class declaration line.
+2. In ``metadata.py``, call ``inject_promptable_parameters`` at the
+   end of ``appmetadata()``. For a plain
+   :class:`~clams.app.ClamsPromptableApp` subclass, call
+   :meth:`ClamsPromptableApp.inject_promptable_parameters
+   <clams.app.ClamsPromptableApp.inject_promptable_parameters>`.
+   For a :class:`~clams.app.ClamsHFPromptableApp` subclass, set
+   ``analyzer_versions={<hf-id>: <commit-hash>, ...}`` on the
+   ``AppMetadata`` constructor call and call
+   :meth:`ClamsHFPromptableApp.inject_promptable_parameters
+   <clams.app.ClamsHFPromptableApp.inject_promptable_parameters>`
+   (the HF override that adds the ``model`` parameter on top of
+   the plain set). The scaffold ``metadata.py`` contains
+   commented-out blocks for both variants; uncomment the one
+   matching the base class chosen in step 1.
 
-The ``__main__`` block in ``metadata.py`` does NOT change; it stays identical
-to non-promptable apps.
+The ``__main__`` block in ``metadata.py`` is unchanged from non-promptable
+apps. The helper call inside ``appmetadata()`` makes the promptable
+parameters visible to both ``python metadata.py`` (build-time discovery)
+and to :meth:`~clams.app.ClamsApp._load_appmetadata` (runtime). The base
+class change ensures the app inherits the parameter-presence validation,
+the ``generate()`` contract, and the helper methods at runtime.
 
-The helper call inside ``appmetadata()`` makes the promptable parameters
-visible to both ``python metadata.py`` (build-time discovery) and to
-:meth:`~clams.app.ClamsApp._load_appmetadata` (runtime). The base class
-change ensures the app inherits the parameter-presence validation, the
-abstract ``generate()`` contract, and the helper methods at runtime.
+For a minimal worked HF example, see the class docstring on
+:class:`~clams.app.ClamsHFPromptableApp`.
 
 The ``generate()`` contract
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Subclasses MUST implement :meth:`~clams.app.ClamsPromptableApp.generate`.
-See the method's docstring for the full signature and parameter semantics.
+Subclasses of :class:`~clams.app.ClamsPromptableApp` that wrap a backend
+without a default SDK implementation (e.g., remote-API or custom local
+backends) MUST implement :meth:`~clams.app.ClamsPromptableApp.generate`.
+Subclasses of :class:`~clams.app.ClamsHFPromptableApp` inherit a concrete
+``generate()`` and do not need to override it. See the method's docstring
+for the full signature, batch semantics, and return value.
 
-The return value is a flat ``List[str]`` with one entry per prompt in the
-batch: the outer length of ``images`` (and/or ``audios``) determines N;
-``generate()`` returns ``N`` strings. For text-only single-shot calls
-(both ``images`` and ``audios`` ``None``), the return is a singleton list.
-Keep inference logic inside ``generate()`` distinct from MMIF I/O; the latter
-belongs in ``_annotate()`` (which calls ``self.generate()``).
-
-This separation is intentional: future SDK releases may provide default
-implementations of ``generate()`` for common backends, at which point apps
-that kept inference and annotation creation separate will need no changes.
+Keep inference logic inside ``generate()`` distinct from MMIF I/O; the
+latter belongs in ``_annotate()`` (which calls ``self.generate()``).
+This separation lets HF-backed apps inherit the default ``generate()``
+without restating backend mechanics, and lets non-HF apps swap in a new
+``generate()`` without rewriting their MMIF I/O.
 
 .. _promptable-multiturn:
 
@@ -371,61 +376,17 @@ HuggingFace transformers (``clams.backends.hf``)
 
 :func:`clams.backends.hf.load_hf_model` loads any local HuggingFace
 ``transformers`` model via ``from_pretrained()`` and returns it ready
-for inference. It encapsulates the device, processor/tokenizer, and
-inference-mode boilerplate that every HF-backed app needs to do
-identically:
+for inference, encapsulating the device, processor/tokenizer, dtype,
+and inference-mode boilerplate that every HF-backed app does
+identically. An app's ``__init__`` typically calls it once and stores
+the returned ``(processor, model, device)`` triple on ``self`` for
+later inference. See :func:`~clams.backends.hf.load_hf_model` for the
+full parameter reference, defaults, and pass-through kwargs.
 
-- detects an available CUDA device and falls back to CPU when none is
-  present
-- loads the caller-supplied ``processor_cls`` (defaults to
-  :class:`~transformers.AutoProcessor`; pass
-  :class:`~transformers.AutoTokenizer`,
-  :class:`~transformers.AutoImageProcessor`, etc. for narrower or
-  more specific cases)
-- loads the model via the caller-supplied ``model_cls``
-- moves the model to the resolved device and switches it to ``eval()``
-  mode
-- when ``padding_side`` is given (decoder-only / batched-generation
-  case), configures the tokenizer's padding side and uses the EOS
-  token as the pad token; left as the model's own default otherwise
-
-The function signature is::
-
-    load_hf_model(
-        model_id: str,
-        model_cls,                              # e.g. AutoModelForCausalLM, AutoModelForImageTextToText, ConvNextV2Model, ViTModel, ...
-        processor_cls = None,                   # default AutoProcessor; pass AutoTokenizer / AutoImageProcessor / ... for narrower cases, or None to skip processor loading
-        dtype = None,                           # None leaves the model's own default (typically float32); set explicitly (e.g., torch.bfloat16) for LLMs
-        device: Optional[str] = None,           # auto-detected when None
-        padding_side: Optional[str] = None,     # set to 'left' for decoder-only batched generation; leave None for encoder / non-batched cases
-        model_kwargs: Optional[dict] = None,    # extra kwargs forwarded to model_cls.from_pretrained()
-        processor_kwargs: Optional[dict] = None,  # extra kwargs forwarded to processor_cls.from_pretrained()
-    ) -> Tuple[processor, model, device_str]
-
-The ``model_kwargs`` and ``processor_kwargs`` pass-throughs cover the
-common ``from_pretrained()`` options that vary between model classes
-and use cases: ``use_safetensors``, ``use_fast``,
-``add_pooling_layer``, ``trust_remote_code``, ``revision``, etc.
-
-An app's ``__init__`` typically calls this helper once and stores the
-returned ``processor`` (or ``tokenizer`` / ``image_processor``),
-``model``, and ``device`` on ``self`` for use inside its inference
-method (e.g., :meth:`~clams.app.ClamsPromptableApp.generate`). See the
-function's docstring for the full parameter reference and return
-value.
-
-Promptable apps wrapping a decoder-only / chat-tuned model typically
-pass ``padding_side='left'`` and an explicit dtype like
-``torch.bfloat16``; encoder-side HF apps (e.g., a vision feature
-extractor + classifier head) leave both at the defaults and pass any
-class-specific kwargs through ``model_kwargs`` /
-``processor_kwargs``.
-
-For promptable apps specifically, the
-:class:`~clams.app.ClamsHFPromptableApp` base class (see
-:ref:`hf-promptable`) wraps this helper plus the standard inference
-loop, so most HF-backed VLM/LLM apps don't need to call
-:func:`load_hf_model` directly.
+For promptable apps specifically,
+:class:`~clams.app.ClamsHFPromptableApp` (see :ref:`hf-promptable`)
+wraps this helper plus the standard inference loop, so most HF-backed
+VLM/LLM apps do not call :func:`load_hf_model` directly.
 
 Installation
 ~~~~~~~~~~~~
@@ -478,10 +439,10 @@ non-HF local backend, inherit from
 Class-attribute hooks
 ^^^^^^^^^^^^^^^^^^^^^
 
-Concrete subclasses declare the model declaratively via class
-attributes; the base ``__init__`` reads them, calls
-:func:`load_hf_model`, and stores ``self.processor``, ``self.model``,
-``self.device``:
+Concrete subclasses declare the model class plus optional dtype /
+padding hints via class attributes, and declare the family of
+supported model variants (with pinned commits) via
+``analyzer_versions`` in ``metadata.py``:
 
 .. list-table::
    :header-rows: 1
@@ -490,9 +451,6 @@ attributes; the base ``__init__`` reads them, calls
    * - Attribute
      - Meaning
      - Required
-   * - ``MODEL_ID``
-     - HuggingFace model identifier (Hub repo name or local path).
-     - yes
    * - ``MODEL_CLS``
      - ``transformers`` model class (e.g.
        :class:`~transformers.AutoModelForImageTextToText`,
@@ -517,54 +475,61 @@ attributes; the base ``__init__`` reads them, calls
        ``trust_remote_code=True``).
      - no
 
+The HF model identifiers themselves are NOT a class attribute. They
+live in ``metadata.py`` as ``analyzer_versions``, a
+``Dict[str, str]`` mapping each supported model id to its pinned
+commit hash. The SDK auto-derives a ``model`` runtime parameter
+from this dict, with ``choices`` set to the dict keys.
+
+Family / singleton handling
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When ``analyzer_versions`` contains a single entry (the typical
+single-model app), the SDK eagerly pre-loads that one model in
+``__init__`` and sets ``model.default`` to the only key so callers
+can omit the parameter. Single-model apps thus preserve warm-start
+semantics: the model is loaded at app startup, not on first request.
+
+When ``analyzer_versions`` contains multiple entries (a family app),
+loading is deferred until the first :py:meth:`load_model` call inside
+``_annotate``, and ``model`` has no default by default -- callers
+must pick a family member explicitly (or the dev mutates
+``model.default`` post-injection to provide a recommended pick).
+Loaded models are cached per ``(model_id, revision)`` for the
+lifetime of the app instance; switching models loads on first miss,
+cache-hits on repeat.
+
+Reproducibility: ``model`` refinement and view metadata
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The user-facing ``model`` parameter accepts raw HF model ids
+(``org/repo-name``). The SDK's
+:py:meth:`~clams.app.ClamsHFPromptableApp._refine_params` expands the
+raw value to ``org/repo-name@<revision>`` form (using the dict
+lookup) during parameter refinement. The standard ``sign_view`` flow
+then stamps:
+
+- the **raw** user choice into ``view.metadata.parameters['model']``
+  (transparency: what the user typed),
+- the **resolved** ``org/repo-name@<revision>`` into
+  ``view.metadata.appConfiguration['model']`` (reproducibility: the
+  exact commit applied).
+
+A consumer of the output MMIF can read the resolved revision directly
+from the view metadata, with no cross-reference to the app metadata
+required.
+
 What the base class provides
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- A default :py:meth:`~clams.app.ClamsHFPromptableApp.__init__` that
-  loads the model from the class attributes via
-  :func:`load_hf_model`.
-- A concrete :py:meth:`~clams.app.ClamsHFPromptableApp.generate` that
-  satisfies the :class:`~clams.app.ClamsPromptableApp` abstract
-  contract. Takes ``images`` / ``audios`` as ``List[List[Any]]``
-  (N groups, one per prompt) and runs all N prompts in one HF
-  forward pass; returns one decoded string per group. Apps call
-  this from ``_annotate`` to run their inference; per-image
-  broadcast is a singleton-wrap (``images=[[img] for img in
-  images]``), per-TF composite is one group of N images per TF.
-- A default
-  :py:meth:`~clams.app.ClamsHFPromptableApp.build_gen_kwargs` that
-  maps SDK promptable parameters (``maxNewTokens``, ``temperature``,
-  ``topP``, ``topK``) into HF ``model.generate()`` kwargs.
-  Subclasses may override to add model-specific kwargs
-  (``num_beams``, ``repetition_penalty``, custom stopping criteria,
-  etc.).
+A subclass typically only writes ``_annotate()``. The base class
+supplies model loading and caching
+(:py:meth:`~clams.app.ClamsHFPromptableApp.load_model`), the parameter
+injector (:py:meth:`ClamsHFPromptableApp.inject_promptable_parameters
+<clams.app.ClamsHFPromptableApp.inject_promptable_parameters>`),
+a concrete batched HF :py:meth:`~clams.app.ClamsHFPromptableApp.generate`,
+and a default
+:py:meth:`~clams.app.ClamsHFPromptableApp.build_gen_kwargs` mapping
+the SDK promptable parameters to HF ``model.generate()`` kwargs. See
+each method's docstring for full details.
 
-Minimal subclass example
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: python
-
-    from transformers import AutoModelForImageTextToText
-    import torch
-
-    from clams.app import ClamsHFPromptableApp
-
-
-    class MyVLMCaptioner(ClamsHFPromptableApp):
-        MODEL_ID = "HuggingFaceTB/SmolVLM2-2.2B-Instruct"
-        MODEL_CLS = AutoModelForImageTextToText
-        DTYPE = torch.bfloat16
-        PADDING_SIDE = 'left'
-
-        def _appmetadata(self):
-            pass  # defined in metadata.py
-
-        def _annotate(self, mmif, **parameters):
-            ...  # collect tasks from MMIF, build image groups, call
-                 # self.generate(prompt, images=image_groups, ...), then
-                 # store responses via self.response_to_grounded_textdocument
-
-The ``metadata.py`` for an :class:`~clams.app.ClamsHFPromptableApp`
-subclass is identical to a plain
-:class:`~clams.app.ClamsPromptableApp` -- the helper-call requirement
-and the parameter table are unchanged.

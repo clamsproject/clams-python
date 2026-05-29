@@ -38,28 +38,33 @@ from lapps.discriminators import Uri
 #                         Implement: ``_annotate()`` + ``generate()``.
 #                         Import:
 #                             from clams import ClamsPromptableApp
-#                         Also: uncomment ``inject_promptable_parameters``
-#                         block in ``metadata.py``.
+#                         Also in ``metadata.py``: uncomment the
+#                         ``inject_promptable_parameters`` block.
 #
 #   ClamsHFPromptableApp  for prompt-driven apps wrapping a local HuggingFace
 #                         ``transformers`` model (the typical VLM/LLM case).
-#                         Implement: ``_annotate()`` + declare class
-#                         attributes:
-#                             MODEL_ID = "<hf-model-id>"
+#                         Implement: ``_annotate()`` (call
+#                         ``self.load_model(parameters['model'])`` first) +
+#                         declare class attributes:
 #                             MODEL_CLS = <transformers.AutoModelFor...>
 #                             DTYPE = torch.bfloat16        # optional
 #                             PADDING_SIDE = 'left'          # optional
 #                         Import:
 #                             from clams.app import ClamsHFPromptableApp
-#                         Also: uncomment ``inject_promptable_parameters``
-#                         block in ``metadata.py``. Requires the ``[hf]``
-#                         extra: ``pip install clams-python[hf]``.
-#                         The base class provides ``__init__`` (loads the
-#                         model), ``generate()`` (HF batched inference),
-#                         ``build_conversation`` (chat-template message
-#                         list), and ``build_gen_kwargs`` (HF
-#                         ``model.generate()`` kwargs); override the latter
-#                         two only for model-specific quirks.
+#                         Also in ``metadata.py``: set
+#                         ``analyzer_versions={<hf-id>: <commit-hash>, ...}``
+#                         on the ``AppMetadata`` call, and uncomment the
+#                         ``ClamsHFPromptableApp.inject_promptable_parameters``
+#                         block (the HF override of the plain helper).
+#                         Requires the ``[hf]`` extra:
+#                             pip install clams-python[hf]
+#                         Singleton ``analyzer_versions`` families pre-load
+#                         in ``__init__`` (warm start); multi-member
+#                         families load on the first ``load_model`` call
+#                         and cache thereafter. ``generate()``,
+#                         ``build_conversation``, and ``build_gen_kwargs``
+#                         have working defaults; override only for
+#                         model-specific quirks.
 #
 # See https://clams.ai/clams-python/app-baseclasses.html for the full
 # developer guide.

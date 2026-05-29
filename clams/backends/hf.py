@@ -4,7 +4,7 @@ HuggingFace transformers backend helper.
 Provides :func:`load_hf_model`, a general loader that wraps the device,
 processor, dtype, and inference-mode boilerplate every HF-backed CLAMS
 app does identically. Usable for any model class that supports
-``from_pretrained()`` — instruction-tuned LLMs/VLMs, encoder-only
+``from_pretrained()``: instruction-tuned LLMs/VLMs, encoder-only
 classifiers, vision/audio feature extractors, etc.
 
 ``torch`` and ``transformers`` are optional dependencies. Install them
@@ -27,6 +27,7 @@ def load_hf_model(
         dtype=None,
         device: Optional[str] = None,
         padding_side: Optional[str] = None,
+        revision: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
         processor_kwargs: Optional[dict] = None,
 ) -> Tuple[Any, Any, str]:
@@ -60,6 +61,21 @@ def load_hf_model(
         token is set -- uses the EOS token as the pad token. Leave
         ``None`` for encoder / non-batched cases (the tokenizer's own
         default is preserved).
+    :param revision: optional Git revision (commit hash, branch name,
+        or tag) on the Hub repository to pin the download to. When
+        set, forwarded as ``revision=...`` to both
+        ``model_cls.from_pretrained`` and
+        ``processor_cls.from_pretrained``, ensuring the model and
+        processor are loaded from the same commit. Strongly recommended
+        for production: pinning a commit hash makes the analyzer
+        artifact reproducible and immune to upstream silent updates.
+        Apps calling this helper directly should record the same hash
+        on ``analyzer_version`` (or ``analyzer_versions``) in
+        ``metadata.py`` so the output MMIF identifies the exact
+        artifact. Apps inheriting from
+        :class:`~clams.app.ClamsHFPromptableApp` do not call this
+        helper -- the base class reads ``analyzer_versions`` from the
+        app metadata and forwards the resolved revision automatically.
     :param model_kwargs: extra kwargs forwarded to
         ``model_cls.from_pretrained()`` (e.g.,
         ``{'use_safetensors': True, 'add_pooling_layer': False}``).
@@ -98,8 +114,11 @@ def load_hf_model(
         # default to AutoProcessor
         processor_cls = transformers.AutoProcessor
     if processor_cls is not None:
+        processor_load_kwargs = dict(processor_kwargs or {})
+        if revision is not None:
+            processor_load_kwargs.setdefault('revision', revision)
         processor = processor_cls.from_pretrained(
-            model_id, **(processor_kwargs or {}))
+            model_id, **processor_load_kwargs)
         if padding_side is not None:
             tokenizer = getattr(processor, 'tokenizer', processor)
             tokenizer.padding_side = padding_side
@@ -114,6 +133,8 @@ def load_hf_model(
     model_load_kwargs = dict(model_kwargs or {})
     if dtype is not None:
         model_load_kwargs['torch_dtype'] = dtype
+    if revision is not None:
+        model_load_kwargs.setdefault('revision', revision)
     model = model_cls.from_pretrained(model_id, **model_load_kwargs)
     model = model.to(resolved_device)
     model.eval()

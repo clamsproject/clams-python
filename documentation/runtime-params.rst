@@ -195,18 +195,14 @@ expected format in the parameter's ``description`` field.
 Promptable apps: an extra SDK-managed parameter set
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For apps that wrap an **instruction- or chat-tuned** promptable model — an
-LLM or other multimodal model, local or remote — we recommend inheriting
-from :class:`~clams.app.ClamsPromptableApp` instead of
-:class:`~clams.app.ClamsApp`. The promptable base class adds a standardized,
-SDK-managed set of runtime parameters (``prompt``, ``systemPrompt``,
-``temperature``, ``maxNewTokens``, ``topP``, ``topK``, ``promptMode``,
-``parallelPrompts``) on top of the universal parameters. If you use this base
-class, these names are reserved — your app's ``metadata.py`` must not
-redeclare them — and are added via a single helper call inside
-``appmetadata()``.
-
-See :ref:`promptable` for the full developer guide.
+For apps that wrap an **instruction- or chat-tuned** promptable model
+(an LLM or other multimodal model, local or remote), inherit from
+:class:`~clams.app.ClamsPromptableApp` instead of
+:class:`~clams.app.ClamsApp`. The promptable base class adds a
+standardized SDK-managed parameter set on top of the universal
+parameters; the names are reserved and are added via a single helper
+call inside ``appmetadata()``. See :ref:`promptable` for the full
+developer guide and parameter list.
 
 .. _runtime-params-envelope-note:
 

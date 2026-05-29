@@ -19,30 +19,45 @@ from clams import AppMetadata, ClamsPromptableApp
 # Test infrastructure
 # ---------------------------------------------------------------------------
 
-def make_metadata(call_helper=True, pre_declare=None):
+def make_metadata(call_helper=True, pre_declare=None,
+                  analyzer_versions=None, hf_helper=False):
     """
     Build a fresh AppMetadata for tests.
 
     :param call_helper: if True, calls
         ``ClamsPromptableApp.inject_promptable_parameters(metadata)``
         at the end (simulating a correctly-written ``appmetadata()``).
+        Mutually exclusive with ``hf_helper``.
     :param pre_declare: if set to a parameter spec dict, calls
         ``metadata.add_parameter(**pre_declare)`` BEFORE the helper
         runs — used to test reservation enforcement.
+    :param analyzer_versions: if set, passed through to
+        ``AppMetadata(analyzer_versions=...)``. Required when the
+        fixture is consumed by ``ClamsHFPromptableApp`` tests.
+    :param hf_helper: if True, calls
+        ``ClamsHFPromptableApp.inject_promptable_parameters(metadata)``
+        (the HF override of the plain promptable helper). Use for HF
+        fixture builds.
     """
-    m = AppMetadata(
+    kwargs = dict(
         name="Example Promptable App",
         description="Test fixture, creating input TD - output TD alignment",
         app_license="MIT",
         identifier="https://apps.clams.ai/example-promptable/v1",
         url="https://fakegithub.com/some/repository",
     )
+    if analyzer_versions is not None:
+        kwargs['analyzer_versions'] = analyzer_versions
+    m = AppMetadata(**kwargs)
     m.add_input(DocumentTypes.TextDocument)
     m.add_output(DocumentTypes.TextDocument)
     m.add_output(AnnotationTypes.Alignment)
     if pre_declare is not None:
         m.add_parameter(**pre_declare)
-    if call_helper:
+    if hf_helper:
+        from clams.app import ClamsHFPromptableApp
+        ClamsHFPromptableApp.inject_promptable_parameters(m)
+    elif call_helper:
         ClamsPromptableApp.inject_promptable_parameters(m)
     return m
 
@@ -398,66 +413,172 @@ class TestHFPromptableAppClassAttrs(unittest.TestCase):
     End-to-end inference tests live separately.
     """
 
-    def _make_subclass(self, *, model_id=None, model_cls=None, **extra_attrs):
+    SINGLETON_AV = {'org/fake-model': 'deadbee'}
+    MULTI_AV = {
+        'org/large-model': 'aaaaaaa',
+        'org/small-model': 'bbbbbbb',
+    }
+
+    def _make_subclass(
+            self, *, model_cls=object,
+            analyzer_versions=None, **extra_attrs):
+        if analyzer_versions is None:
+            analyzer_versions = dict(self.SINGLETON_AV)
         attrs = {
-            '_load_appmetadata': lambda self: make_metadata(call_helper=True),
+            '_load_appmetadata': lambda self: make_metadata(
+                hf_helper=True,
+                analyzer_versions=dict(analyzer_versions),
+            ),
             '_appmetadata': lambda self: None,
             '_annotate': lambda self, mmif, **kw: mmif,
-            'MODEL_ID': model_id,
             'MODEL_CLS': model_cls,
         }
         attrs.update(extra_attrs)
         from clams.app import ClamsHFPromptableApp
         return type('TestHFApp', (ClamsHFPromptableApp,), attrs)
 
-    def test_missing_model_id_raises(self):
-        cls = self._make_subclass(model_id=None, model_cls=object)
-        with self.assertRaises(ValueError) as ctx:
-            cls()
-        self.assertIn('MODEL_ID', str(ctx.exception))
-
     def test_missing_model_cls_raises(self):
-        cls = self._make_subclass(model_id='fake-id', model_cls=None)
+        cls = self._make_subclass(model_cls=None)
         with self.assertRaises(ValueError) as ctx:
             cls()
         self.assertIn('MODEL_CLS', str(ctx.exception))
 
-    def test_loads_via_load_hf_model_with_class_attrs(self):
+    def test_missing_analyzer_versions_raises(self):
+        # Use the plain promptable helper so promptable params are
+        # injected (parent __init__ passes) but analyzer_versions is
+        # absent and ``model`` was never injected. HF __init__ should
+        # refuse on the analyzer_versions check.
+        from clams.app import ClamsHFPromptableApp
+        cls = type('TestHFAppBad', (ClamsHFPromptableApp,), {
+            '_load_appmetadata': lambda self: make_metadata(
+                call_helper=True),  # plain promptable, no analyzer_versions
+            '_appmetadata': lambda self: None,
+            '_annotate': lambda self, mmif, **kw: mmif,
+            'MODEL_CLS': object,
+        })
+        with self.assertRaises(ValueError) as ctx:
+            cls()
+        self.assertIn('analyzer_versions', str(ctx.exception))
+
+    def _patch_load(self):
         """
-        Patches ``clams.backends.hf.load_hf_model`` and verifies the
-        base ``__init__`` forwards the declared class attributes to it.
+        Context-manager-ish helper that swaps in a fake ``load_hf_model``
+        recording every call. Returns ``(restore_fn, calls_list)``.
         """
         import clams.backends.hf as hf_module
         original = hf_module.load_hf_model
-        captured = {}
+        calls = []
 
         def fake_load(model_id, model_cls, **kwargs):
-            captured['model_id'] = model_id
-            captured['model_cls'] = model_cls
-            captured.update(kwargs)
-            return ('FAKE_PROCESSOR', 'FAKE_MODEL', 'cpu')
+            calls.append({'model_id': model_id, 'model_cls': model_cls, **kwargs})
+            # processor / model / device tuple uniquely identifiable
+            return (f'PROC:{model_id}@{kwargs.get("revision")}',
+                    f'MODEL:{model_id}@{kwargs.get("revision")}',
+                    'cpu')
 
+        hf_module.load_hf_model = fake_load
+        return (lambda: setattr(hf_module, 'load_hf_model', original)), calls
+
+    def test_singleton_eagerly_preloads_in_init(self):
+        restore, calls = self._patch_load()
         try:
-            hf_module.load_hf_model = fake_load
             cls = self._make_subclass(
-                model_id='org/fake-model',
-                model_cls=object,
+                analyzer_versions=self.SINGLETON_AV,
                 DTYPE='FAKE_DTYPE',
                 PADDING_SIDE='left',
                 MODEL_KWARGS={'trust_remote_code': True},
             )
             app = cls()
-            self.assertEqual(app.processor, 'FAKE_PROCESSOR')
-            self.assertEqual(app.model, 'FAKE_MODEL')
-            self.assertEqual(app.device, 'cpu')
-            self.assertEqual(captured['model_id'], 'org/fake-model')
-            self.assertIs(captured['model_cls'], object)
-            self.assertEqual(captured['dtype'], 'FAKE_DTYPE')
-            self.assertEqual(captured['padding_side'], 'left')
+            # eager load on the single family member
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(calls[0]['model_id'], 'org/fake-model')
+            self.assertEqual(calls[0]['revision'], 'deadbee')
+            self.assertEqual(calls[0]['dtype'], 'FAKE_DTYPE')
+            self.assertEqual(calls[0]['padding_side'], 'left')
             self.assertEqual(
-                captured['model_kwargs'], {'trust_remote_code': True})
+                calls[0]['model_kwargs'], {'trust_remote_code': True})
+            # self.processor / self.model / self.device populated
+            self.assertEqual(app.processor, 'PROC:org/fake-model@deadbee')
+            self.assertEqual(app.model, 'MODEL:org/fake-model@deadbee')
+            self.assertEqual(app.device, 'cpu')
         finally:
-            hf_module.load_hf_model = original
+            restore()
+
+    def test_multimember_defers_loading(self):
+        restore, calls = self._patch_load()
+        try:
+            cls = self._make_subclass(analyzer_versions=self.MULTI_AV)
+            app = cls()
+            # no eager load for multi-member families
+            self.assertEqual(calls, [])
+            self.assertIsNone(app.processor)
+            self.assertIsNone(app.model)
+            self.assertIsNone(app.device)
+        finally:
+            restore()
+
+    def test_load_model_parses_at_revision_form_and_caches(self):
+        restore, calls = self._patch_load()
+        try:
+            cls = self._make_subclass(analyzer_versions=self.MULTI_AV)
+            app = cls()
+            # first call -- load via load_hf_model
+            app.load_model('org/large-model@aaaaaaa')
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(calls[0]['model_id'], 'org/large-model')
+            self.assertEqual(calls[0]['revision'], 'aaaaaaa')
+            self.assertEqual(app.processor, 'PROC:org/large-model@aaaaaaa')
+            # second call same model -- cache hit, no new load
+            app.load_model('org/large-model@aaaaaaa')
+            self.assertEqual(len(calls), 1)
+            # switch to other family member -- new load
+            app.load_model('org/small-model@bbbbbbb')
+            self.assertEqual(len(calls), 2)
+            self.assertEqual(calls[1]['model_id'], 'org/small-model')
+            self.assertEqual(calls[1]['revision'], 'bbbbbbb')
+            self.assertEqual(app.processor, 'PROC:org/small-model@bbbbbbb')
+            # back to first -- still cached
+            app.load_model('org/large-model@aaaaaaa')
+            self.assertEqual(len(calls), 2)
+            self.assertEqual(app.processor, 'PROC:org/large-model@aaaaaaa')
+        finally:
+            restore()
+
+    def test_load_model_accepts_raw_form_looks_up_revision(self):
+        restore, calls = self._patch_load()
+        try:
+            cls = self._make_subclass(analyzer_versions=self.MULTI_AV)
+            app = cls()
+            app.load_model('org/small-model')  # no @rev suffix
+            self.assertEqual(calls[0]['model_id'], 'org/small-model')
+            self.assertEqual(calls[0]['revision'], 'bbbbbbb')
+        finally:
+            restore()
+
+    def test_refine_params_expands_modelid_to_at_revision(self):
+        restore, _ = self._patch_load()
+        try:
+            cls = self._make_subclass(analyzer_versions=self.MULTI_AV)
+            app = cls()
+            refined = app._refine_params(
+                prompt=['hi'],
+                model=['org/large-model'],
+            )
+            self.assertEqual(refined['model'], 'org/large-model@aaaaaaa')
+        finally:
+            restore()
+
+    def test_singleton_default_lets_user_omit_modelid(self):
+        restore, _ = self._patch_load()
+        try:
+            cls = self._make_subclass(analyzer_versions=self.SINGLETON_AV)
+            app = cls()
+            # No model in input -- SDK fills in the singleton default,
+            # then our override expands it.
+            refined = app._refine_params(prompt=['hi'])
+            self.assertEqual(refined['model'], 'org/fake-model@deadbee')
+        finally:
+            restore()
 
 
 if __name__ == '__main__':
