@@ -259,6 +259,58 @@ class TestDeviceResolution(unittest.TestCase):
         self.assertEqual(model.device, 'cpu')
 
 
+class TestMoveToDeviceFlag(unittest.TestCase):
+    """
+    ``move_to_device=False`` skips both the ``.to(device)`` move and
+    the ``.eval()`` switch, for library-style HF wrappers that defer
+    device placement and inference-mode switching to a downstream
+    consumer.
+    """
+
+    def setUp(self):
+        _MockModel.last_from_pretrained_args = None
+        _MockModel.last_from_pretrained_kwargs = None
+
+    def test_move_skipped_when_flag_false(self):
+        _, model, _ = load_hf_model(
+            'fake-model-id', _MockModel,
+            processor_cls=_MockProcessor,
+            move_to_device=False,
+        )
+        # _MockModel.__init__ leaves device=None; .to() would set it.
+        self.assertIsNone(model.device)
+
+    def test_eval_skipped_when_flag_false(self):
+        _, model, _ = load_hf_model(
+            'fake-model-id', _MockModel,
+            processor_cls=_MockProcessor,
+            move_to_device=False,
+        )
+        self.assertFalse(model.eval_called)
+
+    def test_resolved_device_still_returned(self):
+        """Even when not moved, the resolved target is reported so the
+        downstream consumer can use it for its own ``.to(device)``."""
+        _, _, device = load_hf_model(
+            'fake-model-id', _MockModel,
+            processor_cls=_MockProcessor,
+            device='cpu',
+            move_to_device=False,
+        )
+        self.assertEqual(device, 'cpu')
+
+    def test_default_still_moves_and_evals(self):
+        """Regression guard: the default (omitted) value of the new
+        flag preserves prior behavior."""
+        _, model, _ = load_hf_model(
+            'fake-model-id', _MockModel,
+            processor_cls=_MockProcessor,
+            device='cpu',
+        )
+        self.assertEqual(model.device, 'cpu')
+        self.assertTrue(model.eval_called)
+
+
 # ---------------------------------------------------------------------------
 # load_hf_pipeline tests
 # ---------------------------------------------------------------------------

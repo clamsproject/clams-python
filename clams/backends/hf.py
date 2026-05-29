@@ -35,6 +35,7 @@ def load_hf_model(
         revision: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
         processor_kwargs: Optional[dict] = None,
+        move_to_device: bool = True,
 ) -> Tuple[Any, Any, str]:
     """
     Load a HuggingFace ``transformers`` model via ``from_pretrained``
@@ -87,12 +88,25 @@ def load_hf_model(
     :param processor_kwargs: extra kwargs forwarded to
         ``processor_cls.from_pretrained()`` (e.g.,
         ``{'use_safetensors': True, 'use_fast': True}``).
+    :param move_to_device: when ``True`` (default), the helper moves
+        the loaded model to the resolved device and switches it to
+        ``eval()`` mode -- the right behavior for a "ready for
+        inference" app loader. When ``False``, both steps are
+        skipped; the model is returned in the state
+        ``from_pretrained`` left it (on CPU, in train mode). Use
+        ``False`` for library-style HF wrappers that defer device
+        placement and inference-mode switching to a downstream
+        consumer (e.g. an extractor class that may be combined with
+        a head and only then placed on a device by the wrapping
+        classifier). The returned ``device`` is still the resolved
+        target, so the consumer can use it later for its own
+        ``.to(device)`` call.
 
     :returns: ``(processor, model, device)`` tuple. ``processor`` is
         the loaded processor/tokenizer/feature-extractor (or ``None``
         if ``processor_cls`` was explicitly set to ``None``).
-        ``device`` is the resolved device string the model was moved
-        to.
+        ``device`` is the resolved device string (the model was moved
+        there iff ``move_to_device=True``).
     :rtype: Tuple[Any, Any, str]
     :raises ImportError: if ``torch`` or ``transformers`` is not
         installed. Install the ``[hf]`` extra to fix.
@@ -141,8 +155,9 @@ def load_hf_model(
     if revision is not None:
         model_load_kwargs.setdefault('revision', revision)
     model = model_cls.from_pretrained(model_id, **model_load_kwargs)
-    model = model.to(resolved_device)
-    model.eval()
+    if move_to_device:
+        model = model.to(resolved_device)
+        model.eval()
 
     return processor, model, resolved_device
 

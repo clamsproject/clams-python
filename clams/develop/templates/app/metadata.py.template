@@ -83,6 +83,15 @@ def appmetadata() -> AppMetadata:
     #         p.default = ['Describe what is in this image.']
     #     elif p.name == 'maxNewTokens':
     #         p.default = 2048
+    #
+    # HF-only: the ``model`` parameter the HF helper injects gets its ``default``
+    # auto-set to the only key when ``analyzer_versions`` has a single entry
+    # (singleton family); for multi-member families the default is ``None`` and
+    # the caller MUST pass ``model=...`` on every request. To provide a
+    # recommended pick instead, mutate ``default`` the same way:
+    # for p in metadata.parameters:
+    #     if p.name == 'model':
+    #         p.default = '<org>/<one-of-the-keys-from-analyzer_versions>'
 
     # CHANGE this line and make sure return the compiled `metadata` instance
     return None

@@ -23,6 +23,16 @@ The helpers are backend-agnostic: tasks can feed a HuggingFace VLM, a
 remote LLM API, a classical CV pipeline, or any other per-frame
 processor. They have no dependency on ``clams.app.ClamsPromptableApp``
 or any other promptable / inference machinery.
+
+These functions are scaffolded into each app so individual apps can
+edit them freely while the pattern stabilizes across the ecosystem.
+Once the shape converges across several apps, the helpers are good
+candidates for promotion into a shared package -- either
+``mmif.utils`` (for the pure-MMIF iteration / TP minting pieces, which
+have no clams-app dependency) or ``clams.<helpers>`` (for the
+task-tuple composition that does presuppose the "writing into a new
+view" CLAMS-app idiom). If/when that happens, apps would import the
+shared version and delete this local copy.
 """
 from typing import Any, Iterator, List, Optional, Tuple, Union
 
