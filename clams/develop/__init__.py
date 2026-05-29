@@ -18,7 +18,13 @@ available_recipes = {
         'description': 'GtiHub Actions workflow files specific to `clamsproject` GitHub organization',
         'sourcedir': 'gha',
         'targetdir': '.github',
-    }
+    },
+    'utl-tf': {
+        'description': 'Local helper module for iterating TimeFrames and collecting per-TF frame tasks '
+                       '(baked into ``utils/timeframe.py``; backend-agnostic, safe to edit/delete)',
+        'sourcedir': 'utl-tf',
+        'targetdir': 'utils',
+    },
 }
 
 
@@ -65,12 +71,20 @@ class CookieCutter(object):
             if recipe == 'gha':
                 # There's nothing for devs to tweak GHA template, so first generation and updating are the same.
                 self.bake_gha(src_dir, dst_dir)
+            if recipe.startswith('utl-'):
+                # Utility recipes bake static helper modules; once baked the
+                # code is local to the app and devs are free to edit. No
+                # templating-variable substitution is needed -- pass an
+                # empty dict so ``safe_substitute`` is a no-op.
+                if dst_dir.exists() and update_level == 0:
+                    raise FileExistsError(f"  {dst_dir} already exists. Did you mean `--update`? ")
+                self.bake_app(src_dir, dst_dir, {})
             
     def bake_app(self, src_dir, dst_dir, templating_vars):
         for g in src_dir.glob("**/*.template"):
             r = g.relative_to(src_dir).parent
             f = g.with_suffix('').name
-            (dst_dir / r).mkdir(exist_ok=True)
+            (dst_dir / r).mkdir(parents=True, exist_ok=True)
             
             with open(g, 'r') as in_f, open(dst_dir/r/f, 'w') as out_f:
                 tmpl_to_compile = Template(in_f.read())
