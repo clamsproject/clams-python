@@ -9,11 +9,11 @@ from contextlib import contextmanager
 from datetime import datetime
 from urllib import parse as urlparser
 
-__all__ = ['ClamsApp']
+__all__ = ['ClamsApp', 'ClamsPromptableApp', 'ClamsHFPromptableApp']
 
-from typing import Union, Any, Optional, Dict, List, Tuple
+from typing import Union, Any, Optional, Dict, List, Tuple, cast
 
-from mmif import Mmif, Document, DocumentTypes, View
+from mmif import Mmif, Document, DocumentTypes, View, AnnotationTypes
 from mmif.utils.video_document_helper import (
     SamplingMode, SAMPLING_MODE_DESCRIPTIONS, SAMPLING_MODE_DEFAULT,
     _sampling_mode,
@@ -75,7 +75,7 @@ class ClamsApp(ABC):
         # how vdh.extract_frames_by_mode() selects frames from TimeFrames.
         # The value is intercepted in annotate() and pushed into a
         # contextvars.ContextVar so that any vdh call inside _annotate()
-        # picks it up automatically — app developers never need to handle
+        # picks it up automatically; app developers never need to handle
         # this parameter themselves.
         {
             'name': 'tfSamplingMode', 'type': 'string',
@@ -116,7 +116,7 @@ class ClamsApp(ABC):
         """
         # cast only, no refinement
         casted = self.metadata_param_caster.cast(kwargs)
-        pretty = casted.pop('pretty') if 'pretty' in casted else False
+        pretty = casted.get('pretty', False)
         return self.metadata.jsonify(pretty)
     
     def _load_appmetadata(self) -> AppMetadata:
@@ -131,7 +131,7 @@ class ClamsApp(ABC):
         In any case, :class:`~clams.appmetadata.AppMetadata` class must be useful.
         
         For metadata specification, 
-        see `https://sdk.clams.ai/appmetadata.jsonschema <../appmetadata.jsonschema>`_. 
+        see `https://clams.ai/clams-python/appmetadata.jsonschema <../appmetadata.jsonschema>`_. 
         """
         cwd = pathlib.Path(sys.modules[self.__module__].__file__).parent
         
@@ -185,7 +185,7 @@ class ClamsApp(ABC):
         refined = self._refine_params(**runtime_params)
         self.logger.debug(f"Refined parameters: {refined}")
         pretty = refined.get('pretty', False)
-        sampling_mode_str = refined.pop('tfSamplingMode', None)
+        sampling_mode_str = refined.get('tfSamplingMode', None)
         if sampling_mode_str is not None:
             _sampling_mode.set(SamplingMode(sampling_mode_str))
         t = datetime.now()
@@ -639,6 +639,771 @@ class ClamsApp(ABC):
                         document_file.close()
                 else:
                     raise FileNotFoundError(p.path)
+
+
+# TODO (krim @ 05/28/26): maybe we should consider implementing
+# autodoc-based auto documentation export (e.g., ``automethod`` for
+# methods and a small Sphinx extension to render
+# ``promptable_parameters`` into the parameter table), instead of the
+# current hand-authored ``documentation/app-baseclasses.rst``.
+class ClamsPromptableApp(ClamsApp):
+    """
+    Base class for CLAMS apps that wrap a promptable model (an LLM or
+    other multimodal model, local or remote). Standardizes the runtime
+    parameter surface (prompt, generation hyperparameters, parallelism
+    control) and provides helpers for building chat conversations and
+    persisting model responses into MMIF.
+
+    The standardized parameters are listed in
+    :py:attr:`promptable_parameters` and added to an app's metadata via
+    :py:meth:`inject_promptable_parameters`. Promptable-app developers
+    MUST call that helper at the end of their ``appmetadata()`` function
+    in ``metadata.py``. The reservation rule (these parameter names are
+    SDK-managed and apps cannot redeclare them) is enforced implicitly
+    via :py:meth:`AppMetadata.add_parameter`'s existing duplicate-name
+    check.
+
+    Inference is performed by :py:meth:`generate`, which subclasses MUST
+    implement. The base class provides:
+
+    * :py:meth:`inject_promptable_parameters` : adds the SDK-managed
+      parameter set to ``AppMetadata``
+    * :py:meth:`build_conversation` : assembles a chat-template-compatible
+      message list from a prompt plus optional images/audios
+    * :py:meth:`response_to_grounded_textdocument` : persists a
+      generated response into a view as ``TextDocument`` +
+      ``Alignment`` (+ optional ``origins`` / ``origination``)
+    """
+
+    #: SDK-managed runtime parameters injected into every promptable app.
+    #: These names are reserved; apps cannot redeclare them with
+    #: customized specs.
+    promptable_parameters = [
+        {
+            'name': 'prompt', 'type': 'string', 'multivalued': True,
+            'description':
+                'User prompt(s) sent to the model. A single value runs as a '
+                'one-shot generation. A multi-value list is interpreted as a '
+                'multi-turn static prompt; see ``promptMode`` for how turns '
+                'are assembled.',
+        },
+        {
+            'name': 'systemPrompt', 'type': 'string', 'default': '',
+            'description':
+                'Optional system-role text prepended to the conversation. '
+                'Empty by default.',
+        },
+        {
+            'name': 'promptMode', 'type': 'string',
+            'choices': ['user-only', 'turn-taking'],
+            'default': 'turn-taking',
+            'description':
+                'How to interpret a multi-value ``prompt`` list. '
+                'Has no effect when ``prompt`` has a single value. '
+                'For semantics of each choice and worked examples, see '
+                'https://clams.ai/clams-python/app-baseclasses.html#promptable-multiturn',
+        },
+        {
+            'name': 'maxNewTokens', 'type': 'integer', 'default': 512,
+            'description':
+                'Maximum number of new tokens generated per inference call. '
+                'Forwarded to the backend\'s ``generate``-equivalent. Larger '
+                'values grow the KV cache linearly and increase GPU memory '
+                'usage; reduce if VRAM is constrained.',
+        },
+        {
+            'name': 'temperature', 'type': 'number', 'default': 0.0,
+            'description':
+                'Sampling temperature. The default ``0.0`` selects '
+                'deterministic / greedy decoding for maximum reproducibility; '
+                'override for sampled generation.',
+        },
+        {
+            'name': 'topP', 'type': 'number', 'default': 1.0,
+            'description':
+                'Nucleus-sampling cumulative probability cutoff. Only '
+                'meaningful when ``temperature`` is greater than 0.',
+        },
+        {
+            'name': 'topK', 'type': 'integer', 'default': 50,
+            'description':
+                'Top-K sampling cutoff. Only meaningful when ``temperature`` '
+                'is greater than 0.',
+        },
+        {
+            'name': 'parallelPrompts', 'type': 'integer', 'default': 1,
+            'description':
+                'Number of independent prompts the app runs in parallel '
+                '(stacks into a single forward pass). The *size* of each '
+                'prompt (how many images, how long the system/user text '
+                'is, etc.) is NOT regulated by this parameter; that is '
+                'each app\'s responsibility. Prompt count and per-prompt '
+                'content size combine multiplicatively for GPU memory, '
+                'so the two can blow up together. Catastrophic example: '
+                '``tfSamplingMode=all`` on a TimeFrame without '
+                '``targets`` expands that TF into one image per '
+                'native-FPS frame (300 images for a 10-second TF at '
+                '30fps); ``parallelPrompts=4`` then runs 4 such prompts '
+                'in one forward pass (~1200 images), guaranteed OOM. '
+                'Keep at ``1`` on memory-tight setups; raise only when '
+                'per-prompt content is small and bounded.',
+        },
+    ]
+
+    @staticmethod
+    def inject_promptable_parameters(metadata: AppMetadata) -> None:
+        """
+        Add the SDK-managed promptable parameters to ``metadata``. Call
+        this at the end of your app's ``appmetadata()`` function in
+        ``metadata.py`` if your app subclasses
+        :py:class:`ClamsPromptableApp`.
+
+        The reservation rule is enforced implicitly: if the app had
+        already called ``metadata.add_parameter('prompt', ...)`` (or
+        any other promptable name) before this helper, the helper's own
+        ``add_parameter`` call will trip the existing duplicate-name
+        ``ValueError`` in :py:meth:`AppMetadata.add_parameter`.
+
+        :param metadata: the :class:`AppMetadata` instance being built
+        """
+        for param in ClamsPromptableApp.promptable_parameters:
+            metadata.add_parameter(**param)
+
+    def __init__(self):
+        # ``ClamsApp.__init__`` loads the app's ``metadata.py``, which
+        # is expected to have already called
+        # ``inject_promptable_parameters()`` from inside
+        # ``appmetadata()``. The parent ``__init__`` then iterates
+        # ``self.metadata.parameters`` to populate
+        # ``annotate_param_spec`` and build the caster, so the
+        # promptable parameters are already covered by the time we land
+        # here. We only validate that the helper was actually called.
+        super().__init__()
+        declared = {p.name for p in self.metadata.parameters}
+        expected = {p['name'] for p in ClamsPromptableApp.promptable_parameters}
+        missing = expected - declared
+        if missing:
+            raise ValueError(
+                f"Promptable parameters {sorted(missing)} are missing "
+                f"from the app metadata. Promptable apps must call "
+                f"``ClamsPromptableApp.inject_promptable_parameters("
+                f"metadata)`` inside their ``appmetadata()`` function "
+                f"in ``metadata.py``."
+            )
+
+    @abstractmethod
+    def generate(
+            self,
+            prompt: List[str],
+            system_prompt: str = '',
+            images: Optional[List[List[Any]]] = None,
+            audios: Optional[List[List[Any]]] = None,
+            prompt_mode: str = 'turn-taking',
+            **generation_params,
+    ) -> List[str]:
+        """
+        Run N independent prompts in one inference call and return N
+        outputs. Subclasses MUST implement this.
+
+        Each inner list of ``images`` / ``audios`` is the bundled
+        multimodal content for ONE prompt -- the model sees those
+        items as one composite input and produces one output. The
+        outer list spans N prompts processed in parallel (when the
+        backend supports it; sequentially otherwise).
+
+        * Single-prompt call: ``images=[[img1, img2]]`` -> one output
+          (composite over the two bundled images).
+        * Per-input broadcast: ``images=[[img1], [img2], [img3]]`` ->
+          three outputs (one per image). Caller assembles the
+          singleton-wrap shape.
+        * Multimodal pair: ``images=[[img1]], audios=[[au1]]`` -> one
+          output. When both ``images`` and ``audios`` are given they
+          must have the same outer length; index ``i`` of each pairs
+          into prompt ``i``.
+
+        :param prompt: a ``List[str]`` of prompt turns. A
+            single-element list is one-shot. A multi-element list is
+            multi-turn and is assembled according to ``prompt_mode``.
+        :param system_prompt: optional system-role text prepended to
+            the conversation. Applies to every prompt in the batch.
+        :param images: optional ``List[List[Any]]`` -- N groups, one
+            per prompt; each inner list is the bundled images for that
+            prompt.
+        :param audios: optional ``List[List[Any]]`` -- N groups, one
+            per prompt; each inner list is the bundled audio clips
+            for that prompt.
+        :param prompt_mode: ``"turn-taking"`` (default) or
+            ``"user-only"``; see :py:attr:`promptable_parameters`.
+        :param generation_params: any additional backend-specific
+            generation kwargs (``maxNewTokens``, ``temperature``,
+            ``topP``, ``topK``, etc.).
+        :return: a ``List[str]`` with one entry per prompt in the
+            batch. For ``prompt_mode='user-only'`` multi-turn, each
+            prompt's entry is the assistant's final reply across its
+            N user turns.
+        :rtype: List[str]
+        """
+        raise NotImplementedError
+
+    def build_conversation(
+            self,
+            prompt: Union[str, List[str], List[dict]],
+            system_prompt: str = '',
+            images: Optional[List[Any]] = None,
+            audios: Optional[List[Any]] = None,
+            prompt_mode: str = 'turn-taking',
+    ) -> Union[List[dict], List[List[dict]]]:
+        """
+        Build a chat-template-compatible message list.
+
+        :param prompt: a plain string, a ``List[str]`` of prompt turns,
+            or a pre-built ``List[dict]`` of role/content message
+            objects (returned as-is; pass-through for advanced
+            callers that constructed the conversation themselves).
+        :param system_prompt: if non-empty, prepended as a
+            system-role message.
+        :param images: optional list of image inputs to include in the
+            (final) user turn's content. Each appears as a
+            ``{'type': 'image', 'image': <input>}`` entry.
+        :param audios: optional list of audio inputs to include in the
+            (final) user turn's content. Each appears as a
+            ``{'type': 'audio', 'audio': <input>}`` entry.
+        :param prompt_mode: ``"turn-taking"`` (default) or
+            ``"user-only"``. Only meaningful when ``prompt`` is a
+            multi-element list; ignored otherwise. See
+            :py:attr:`promptable_parameters` for semantics.
+
+        :returns:
+            * For single-shot prompts (string or single-element list)
+              and for multi-element ``turn-taking`` mode: a single
+              ``List[dict]`` of role/content messages, ready to feed
+              to a chat-template applier (e.g.,
+              ``processor.apply_chat_template``).
+            * For multi-element ``user-only`` mode: a
+              ``List[List[dict]]`` of N progressively-extending
+              conversation prefixes, one per user turn. Each prefix
+              ends in a user turn; assistant turns between users are
+              stored with ``content=None`` as placeholders for the
+              caller to fill in with successive generation results.
+
+        Subclasses may override to access model-specific state
+        (``self.processor``, ``self.tokenizer``, etc.) during
+        formatting; the base implementation is back-end-agnostic.
+        """
+        # Pass-through for pre-built message lists.
+        if isinstance(prompt, list) and prompt and all(
+                isinstance(p, dict) for p in prompt):
+            return cast(List[dict], prompt)
+
+        # Normalize to List[str].
+        if isinstance(prompt, str):
+            prompts = [prompt]
+        else:
+            prompts = list(prompt)
+
+        if len(prompts) == 1:
+            return self._build_single_turn(
+                prompts[0], system_prompt, images, audios)
+
+        if prompt_mode == 'turn-taking':
+            return self._build_turn_taking(
+                prompts, system_prompt, images, audios)
+        if prompt_mode == 'user-only':
+            return self._build_user_only(
+                prompts, system_prompt, images, audios)
+        raise ValueError(
+            f"Unknown prompt_mode: {prompt_mode!r}. "
+            f"Expected 'turn-taking' or 'user-only'.")
+
+    @staticmethod
+    def _make_user_content(text, images=None, audios=None):
+        """Build the content list for a user-role message."""
+        content = []
+        if images:
+            for img in images:
+                content.append({'type': 'image', 'image': img})
+        if audios:
+            for au in audios:
+                content.append({'type': 'audio', 'audio': au})
+        content.append({'type': 'text', 'text': text})
+        return content
+
+    def _build_single_turn(self, text, system_prompt, images, audios):
+        messages = []
+        if system_prompt:
+            messages.append({'role': 'system', 'content': system_prompt})
+        messages.append({
+            'role': 'user',
+            'content': self._make_user_content(text, images, audios),
+        })
+        return messages
+
+    def _build_turn_taking(self, prompts, system_prompt, images, audios):
+        """
+        Alternating user/assistant turns; one inference call.
+        Even indices in ``prompts`` are user turns, odd indices are
+        pre-written assistant exemplars. Images/audios (if any) are
+        attached to the final user turn (the actual query).
+        """
+        messages = []
+        if system_prompt:
+            messages.append({'role': 'system', 'content': system_prompt})
+        # index of the final user turn (the last even index)
+        last_user_idx = (len(prompts) - 1) - ((len(prompts) - 1) % 2)
+        for i, text in enumerate(prompts):
+            role = 'user' if i % 2 == 0 else 'assistant'
+            if role == 'user':
+                attach_media = (i == last_user_idx)
+                content = self._make_user_content(
+                    text,
+                    images if attach_media else None,
+                    audios if attach_media else None,
+                )
+                messages.append({'role': 'user', 'content': content})
+            else:
+                messages.append({'role': 'assistant', 'content': text})
+        return messages
+
+    def _build_user_only(self, prompts, system_prompt, images, audios):
+        """
+        N progressively-extending conversation prefixes, one per user
+        turn. Assistant slots between users have ``content=None`` as
+        placeholders for the caller's successive generation results.
+        """
+        convs: List[List[dict]] = []
+        base: List[dict] = []
+        if system_prompt:
+            base.append({'role': 'system', 'content': system_prompt})
+        for i, text in enumerate(prompts):
+            # First user turn carries the images/audios (the initial query);
+            # subsequent user turns are text-only.
+            user_content = self._make_user_content(
+                text,
+                images if i == 0 else None,
+                audios if i == 0 else None,
+            )
+            base.append({'role': 'user', 'content': user_content})
+            # Snapshot the conversation as it stands at the start of
+            # the i-th generation call. Shallow-copy each message so
+            # later in-place edits (e.g., filling in the assistant
+            # placeholder) don't retroactively mutate earlier
+            # snapshots.
+            convs.append([dict(m) for m in base])
+            if i < len(prompts) - 1:
+                base.append({'role': 'assistant', 'content': None})
+        return convs
+
+    def response_to_grounded_textdocument(
+            self,
+            view: View,
+            source: str,
+            response: str,
+            origins: Optional[List[str]] = None,
+            origination: Optional[str] = None,
+            reasoning_trace: Optional[str] = None,
+    ) -> Tuple[Any, Any]:
+        """
+        Persist a single LLM text response into a view. Writes one
+        ``TextDocument`` (containing the response) plus possible
+        grounding via an ``Alignment`` annotation and ``origins`` / 
+        ``origination`` properties on the TD.
+
+        The two grounding link kinds are semantically distinct:
+
+        * ``source`` is the *coarse* cross-modal grounding -- the
+          single annotation id that the response is anchored to.
+          Written into the new ``Alignment`` (``source -> td``).
+          Typical value: the parent ``TimeFrame`` for a
+          captioning/OCR app.
+        * ``origins`` are the *finer* derivation grounding -- a list
+          of annotation ids the response was specifically derived
+          from (e.g. the ``TimePoint``\\s whose frames were fed to
+          the model). Written into ``TextDocument.origins``. See
+          https://clams.ai/clams-vocabulary/Document for vocabulary
+          semantics.
+
+        :param view: the :class:`View` to write into. The caller is
+            responsible for having called
+            :meth:`View.new_contain` for ``TextDocument`` and
+            ``Alignment`` first if needed.
+        :param source: ``id`` of the annotation to record as the
+            cross-modal anchor of the response (see above).
+        :param response: the text generated by the model.
+        :param origins: optional list of ``id``\\s of annotations the
+            response was *derived* from. Must be paired with
+            ``origination``.
+        :param origination: nature of the derivation, written to
+            ``TextDocument.origination``. Accepted values per the
+            vocabulary include ``'derived'``, ``'transcription'``,
+            ``'topologically-identical'``. Must be paired with
+            ``origins``.
+        :param reasoning_trace: optional model-side reasoning trace
+            (a chain-of-thought / scratchpad string, NOT a Python
+            traceback). NOT YET SUPPORTED -- passing a non-``None``
+            value raises :py:class:`NotImplementedError`. Storage
+            convention is still being decided at
+            clamsproject/clams-python#263.
+        :return: ``(TextDocument, Alignment)`` tuple of the new
+            annotations.
+        :raises ValueError: if exactly one of ``origins`` /
+            ``origination`` is set; they must be supplied together
+            or both omitted.
+        """
+        if bool(origins) != bool(origination):
+            raise ValueError(
+                "`origins` and `origination` must be supplied together "
+                "or both omitted; got "
+                f"origins={origins!r}, origination={origination!r}."
+            )
+        td = view.new_textdocument(text=response)
+        if origins:
+            td.add_property('origins', origins)
+            td.add_property('origination', origination)
+        align = view.new_annotation(
+            AnnotationTypes.Alignment,
+            source=source,
+            target=td.id,
+        )
+        if reasoning_trace is not None:
+            raise NotImplementedError(
+                "Reasoning-trace storage convention is not yet defined; "
+                "tracked at clamsproject/clams-python#263."
+            )
+        return td, align
+
+
+class ClamsHFPromptableApp(ClamsPromptableApp):
+    """
+    Base class for promptable CLAMS apps backed by a local
+    HuggingFace ``transformers`` model. Layers HF-specific inference
+    plumbing on top of :class:`ClamsPromptableApp`: model loading
+    via :func:`clams.backends.hf.load_hf_model`, and a concrete
+    :py:meth:`generate` implementation that runs N independent
+    prompts in one HF forward pass via the standard
+    chat-template -> ``model.generate`` -> ``batch_decode`` pipeline.
+
+    Concrete subclasses declare the model class via :py:attr:`MODEL_CLS`
+    plus a handful of optional dtype/padding hints, and the family of
+    pinned model revisions via ``analyzer_versions`` in
+    ``metadata.py``. The SDK auto-derives a ``model`` runtime
+    parameter (choices = keys of ``analyzer_versions``), and the dev's
+    ``_annotate`` calls :py:meth:`load_model` to (lazily) load the
+    requested family member. Singleton families (one entry in
+    ``analyzer_versions``) eagerly pre-load in ``__init__`` so
+    single-model apps preserve warm-start semantics. Example::
+
+        class MyVLMCaptioner(ClamsHFPromptableApp):
+            MODEL_CLS = AutoModelForImageTextToText
+            DTYPE = torch.bfloat16
+            PADDING_SIDE = 'left'
+
+            # In metadata.py:
+            #     analyzer_versions={
+            #         "HuggingFaceTB/SmolVLM2-2.2B-Instruct": "482adb5",
+            #     }
+            # plus a call to
+            # ClamsHFPromptableApp.inject_promptable_parameters(metadata).
+
+            def _annotate(self, mmif, **parameters):
+                self.load_model(parameters['model'])
+                # ... self.generate(prompt, images=image_groups, ...)
+                # ... self.response_to_grounded_textdocument(...)
+                ...
+
+    Requires the ``[hf]`` extra (``pip install clams-python[hf]``).
+    """
+
+    #: ``transformers`` model class (e.g.
+    #: :class:`~transformers.AutoModelForImageTextToText`,
+    #: :class:`~transformers.AutoModelForCausalLM`). Subclasses MUST
+    #: set this.
+    MODEL_CLS: Optional[Any] = None
+    #: ``transformers`` processor / tokenizer / feature-extractor
+    #: class. Defaults to :class:`~transformers.AutoProcessor` (set
+    #: by :func:`clams.backends.hf.load_hf_model` when ``None``).
+    PROCESSOR_CLS: Optional[Any] = None
+    #: Torch dtype for the model (e.g. ``torch.bfloat16``). When
+    #: ``None``, the model class's own default is used (typically
+    #: float32). Also used to cast ``pixel_values`` in
+    #: :py:meth:`generate`.
+    DTYPE: Optional[Any] = None
+    #: Tokenizer padding side. Set to ``'left'`` for decoder-only
+    #: batched generation; leave ``None`` otherwise.
+    PADDING_SIDE: Optional[str] = None
+    #: Extra kwargs forwarded to ``MODEL_CLS.from_pretrained()``.
+    MODEL_KWARGS: Optional[dict] = None
+    #: Extra kwargs forwarded to ``PROCESSOR_CLS.from_pretrained()``.
+    PROCESSOR_KWARGS: Optional[dict] = None
+
+    @staticmethod
+    def inject_promptable_parameters(metadata: AppMetadata) -> None:
+        """
+        Add the SDK-managed promptable parameters AND a ``model``
+        parameter derived from ``metadata.analyzer_versions`` to the
+        app metadata. Overrides
+        :py:meth:`ClamsPromptableApp.inject_promptable_parameters` for
+        HF apps; call this at the end of your app's ``appmetadata()``
+        function in ``metadata.py`` if your app subclasses
+        :py:class:`ClamsHFPromptableApp`.
+
+        :param metadata: the :class:`AppMetadata` instance being
+            built. ``metadata.analyzer_versions`` MUST already be set
+            to a non-empty ``Dict[str, str]`` (model id -> commit
+            hash); this helper reads it to derive the ``model``
+            parameter's choices.
+        :raises ValueError: if ``metadata.analyzer_versions`` is
+            missing or empty.
+        """
+        ClamsPromptableApp.inject_promptable_parameters(metadata)
+        analyzer_versions = metadata.analyzer_versions or {}
+        if not analyzer_versions:
+            raise ValueError(
+                "ClamsHFPromptableApp.inject_promptable_parameters "
+                "requires ``metadata.analyzer_versions`` to be a "
+                "non-empty dict (HF model id -> commit hash). Set "
+                "it on the ``AppMetadata`` constructor call before "
+                "invoking this helper.")
+        choices = list(analyzer_versions.keys())
+        default = choices[0] if len(choices) == 1 else None
+        metadata.add_parameter(
+            name='model',
+            type='string',
+            choices=choices,
+            default=default,
+            multivalued=False,
+            description=(
+                "HuggingFace model identifier to use for this "
+                "request. Must be one of the model ids declared in "
+                "this app's ``analyzer_versions``; the SDK pins the "
+                "corresponding commit hash at load time. When the "
+                "app ships a single model (the typical case), this "
+                "parameter defaults to that one model and can be "
+                "omitted. Pass the full HF model id (e.g. "
+                "``org/repo-name``); URL-encoding the ``/`` is "
+                "optional."
+            ),
+        )
+
+    def __init__(self):
+        super().__init__()
+        cls_name = type(self).__name__
+        if self.MODEL_CLS is None:
+            raise ValueError(
+                f"{cls_name} must set the ``MODEL_CLS`` class attribute "
+                f"(a ``transformers`` model class).")
+        analyzer_versions = self.metadata.analyzer_versions
+        if not analyzer_versions:
+            raise ValueError(
+                f"{cls_name} must declare ``analyzer_versions`` in "
+                f"``metadata.py`` as a non-empty Dict[str, str] "
+                f"mapping HuggingFace model ids to pinned commit "
+                f"hashes (7-char abbreviation is sufficient). This is "
+                f"required for reproducibility: an unpinned download "
+                f"silently floats on whatever ``main`` points at and "
+                f"cannot be reproduced. Singleton families (one "
+                f"entry) are fine; multi-model families list every "
+                f"member.")
+        if 'model' not in {p.name for p in self.metadata.parameters}:
+            raise ValueError(
+                f"{cls_name} must call "
+                f"``ClamsHFPromptableApp.inject_promptable_parameters"
+                f"(metadata)`` (the HF override that also adds the "
+                f"``model`` parameter) inside ``appmetadata()`` in "
+                f"``metadata.py``; calling "
+                f"``ClamsPromptableApp.inject_promptable_parameters`` "
+                f"directly skips the ``model`` parameter and trips "
+                f"this check.")
+        #: Per-(model_id, revision) cache of loaded
+        #: ``(processor, model, device)`` triples. Populated by
+        #: :py:meth:`load_model`; survives for the lifetime of this
+        #: app instance.
+        self._model_cache: Dict[Tuple[str, str], Tuple[Any, Any, str]] = {}
+        #: References to the currently-active loaded model. Set by
+        #: :py:meth:`load_model`; ``generate()`` and friends read
+        #: from here. ``None`` until the first ``load_model`` call
+        #: (or until ``__init__`` eager-loads a singleton family).
+        self.processor: Any = None
+        self.model: Any = None
+        self.device: Optional[str] = None
+        # Singleton families pre-load in ``__init__`` so single-model
+        # apps preserve warm-start UX (no first-request latency cost).
+        # Multi-member families defer to lazy loading on the first
+        # ``load_model`` call.
+        if len(analyzer_versions) == 1:
+            only_model_id = next(iter(analyzer_versions.keys()))
+            self.load_model(only_model_id)
+
+    def _refine_params(self, **runtime_params):
+        """
+        Expand ``model`` from the raw HF id (``org/name``) to
+        ``org/name@<revision>`` so the resolved revision lands in
+        ``view.metadata.appConfiguration['model']``.
+        """
+        refined = super()._refine_params(**runtime_params)
+        model_id = refined.get('model')
+        if isinstance(model_id, str) and '@' not in model_id:
+            revision = (self.metadata.analyzer_versions or {}).get(model_id)
+            if revision is not None:
+                refined['model'] = f"{model_id}@{revision}"
+        return refined
+
+    def load_model(
+            self, model_id_or_with_rev: str,
+    ) -> Tuple[Any, Any, str]:
+        """
+        Load (or return cached) ``(processor, model, device)`` for
+        the given model id. Accepts both refined (``org/name@rev``)
+        and raw (``org/name``) forms; for raw form, the revision is
+        looked up from ``self.metadata.analyzer_versions``. Caches
+        results per ``(model_id, revision)`` and updates
+        :py:attr:`self.processor`, :py:attr:`self.model`,
+        :py:attr:`self.device` to the loaded triple so subsequent
+        :py:meth:`generate` calls operate on it.
+
+        :param model_id_or_with_rev: HF model id, optionally with
+            ``@<revision>`` suffix.
+        :return: ``(processor, model, device)`` tuple for the loaded
+            model. Same references are also stored on ``self``.
+        :raises KeyError: if a raw model id is passed and is not in
+            ``analyzer_versions``.
+        """
+        if '@' in model_id_or_with_rev:
+            model_id, _, revision = model_id_or_with_rev.rpartition('@')
+        else:
+            model_id = model_id_or_with_rev
+            revision = self.metadata.analyzer_versions[model_id]
+        cache_key = (model_id, revision)
+        cached = self._model_cache.get(cache_key)
+        if cached is not None:
+            self.processor, self.model, self.device = cached
+            return cached
+        # Lazy import: avoids pulling torch/transformers into the base
+        # clams-python install. Apps using this class must have the
+        # ``[hf]`` extra installed.
+        from clams.backends.hf import load_hf_model
+        self.logger.info(f"Loading HF model from {model_id} @ {revision}")
+        triple = load_hf_model(
+            model_id,
+            self.MODEL_CLS,
+            processor_cls=self.PROCESSOR_CLS,
+            dtype=self.DTYPE,
+            padding_side=self.PADDING_SIDE,
+            revision=revision,
+            model_kwargs=self.MODEL_KWARGS,
+            processor_kwargs=self.PROCESSOR_KWARGS,
+        )
+        self.logger.info(f"HF model loaded on {triple[2]}")
+        self._model_cache[cache_key] = triple
+        self.processor, self.model, self.device = triple
+        return triple
+
+    def generate(
+            self,
+            prompt: List[str],
+            system_prompt: str = '',
+            images: Optional[List[List[Any]]] = None,
+            audios: Optional[List[List[Any]]] = None,
+            prompt_mode: str = 'turn-taking',
+            **generation_params,
+    ) -> List[str]:
+        """
+        Default implementation of the
+        :py:meth:`ClamsPromptableApp.generate` contract for
+        HuggingFace ``transformers`` models. Runs N prompts in one
+        forward pass; returns N decoded strings.
+
+        Each inner list of ``images`` / ``audios`` is the bundled
+        content for one prompt. When both ``images`` and ``audios``
+        are given they must have the same outer length (multimodal
+        pairs are stitched by index). When both are ``None``, runs as
+        a single text-only prompt.
+
+        The default body is the canonical HF chat-model pipeline:
+        :py:meth:`build_conversation` -> ``apply_chat_template`` ->
+        ``model.generate`` -> ``batch_decode``. Subclasses can
+        customize finer-grained pieces via
+        :py:meth:`build_conversation` (model-specific message shape)
+        and :py:meth:`build_gen_kwargs` (model-specific generation
+        kwargs) without touching this method.
+        """
+        if images is not None and audios is not None:
+            if len(images) != len(audios):
+                raise ValueError(
+                    f"images and audios must have the same outer length "
+                    f"when both are given; got "
+                    f"{len(images)} vs {len(audios)}.")
+        if images is not None:
+            n = len(images)
+        elif audios is not None:
+            n = len(audios)
+        else:
+            n = 1  # text-only single prompt
+        if n == 0:
+            return []
+        gen_kwargs = self.build_gen_kwargs(**generation_params)
+        try:
+            conversations = [
+                self.build_conversation(
+                    prompt, system_prompt=system_prompt,
+                    images=images[i] if images is not None else None,
+                    audios=audios[i] if audios is not None else None,
+                    prompt_mode=prompt_mode)
+                for i in range(n)
+            ]
+            inputs = self.processor.apply_chat_template(
+                conversations,
+                add_generation_prompt=True,
+                tokenize=True,
+                return_dict=True,
+                padding=True,
+                return_tensors="pt",
+            )
+            inputs = inputs.to(self.device)
+            if (self.DTYPE is not None
+                    and 'pixel_values' in inputs
+                    and inputs['pixel_values'] is not None):
+                inputs['pixel_values'] = inputs['pixel_values'].to(
+                    dtype=self.DTYPE)
+            generated_ids = self.model.generate(**inputs, **gen_kwargs)
+            input_len = inputs.input_ids.shape[1]
+            new_tokens = generated_ids[:, input_len:]
+            return self.processor.batch_decode(
+                new_tokens, skip_special_tokens=True)
+        except Exception as e:
+            self.logger.error(
+                f"Error processing batch: {e}", exc_info=True)
+            return [''] * n
+
+    @staticmethod
+    def build_gen_kwargs(
+            max_new_tokens: int = 512,
+            temperature: float = 0.0,
+            top_p: float = 1.0,
+            top_k: int = 50,
+            **_unused,
+    ) -> dict:
+        """
+        Translate the SDK's promptable-parameter values into
+        HuggingFace ``model.generate()`` kwargs. Greedy decoding
+        (``do_sample=False``) when ``temperature == 0.0``; sampled
+        decoding with the given ``top_p`` / ``top_k`` otherwise.
+
+        Subclasses MAY override to add model-specific generation
+        kwargs (``num_beams``, ``repetition_penalty``, custom
+        stopping criteria, ``do_sample`` overrides, etc.). The base
+        implementation accepts any extra keyword args and silently
+        ignores them, so subclasses can pass through the full
+        ``**parameters`` dict from ``_annotate`` without filtering.
+        """
+        gen_kwargs = {'max_new_tokens': max_new_tokens}
+        if temperature > 0:
+            gen_kwargs.update({
+                'do_sample': True,
+                'temperature': temperature,
+                'top_p': top_p,
+                'top_k': top_k,
+            })
+        return gen_kwargs
 
 
 class ParameterCaster(object):

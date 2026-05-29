@@ -146,7 +146,7 @@ This means that if the user doesn't specify the value for these parameters at th
 If you want to make a parameter "optional" by providing a default value, you can do so by adding a `default` argument to the `add_parameter()` method.
 
 > **Note**
-> Also refer to [CLAMS App Metadata](https://sdk.clams.ai/appmetadata.html) for more details regarding what fields need to be specified.
+> Also refer to [CLAMS App Metadata](https://clams.ai/clams-python/appmetadata.html) for more details regarding what fields need to be specified.
 
 #### `_annotate()`
 The `_annotate()` method should accept a MMIF file/string/object as its first parameter and always returns a `MMIF` object with an additional `view` containing annotation results. This is where the bulk of your logic will go. For a text processing app, it is mostly concerned with finding text documents, calling the code that runs over the text, creating new views and inserting the results. 
@@ -228,20 +228,20 @@ First, with `text_value` we get the text from the text document, either from its
 
 ## Working with TimeFrame Annotations
 
-Many CLAMS apps process video by operating on TimeFrame annotations produced by an upstream app (e.g., scene detection, shot segmentation). A TimeFrame can carry structural members (currently called `targets` — a list of TimePoint IDs covering every frame in the segment), a salient subset of those members (currently called `representatives`), or simply `start`/`end` boundaries.
+Many CLAMS apps process video by operating on TimeFrame annotations produced by an upstream app (e.g., scene detection, shot segmentation). A TimeFrame can carry structural members (currently called `targets`; a list of TimePoint IDs covering every frame in the segment), a salient subset of those members (currently called `representatives`), or simply `start`/`end` boundaries.
 
 > **Note**
 > The property names `targets` and `representatives` are under review and may be renamed in a future MMIF spec version. See [mmif#238](https://github.com/clamsproject/mmif/issues/238) for the ongoing discussion. The SDK API will be updated accordingly.
 
 ### Frame sampling with `tfSamplingMode`
 
-When your app receives TimeFrame annotations, the caller can control which frames your app processes by setting the `tfSamplingMode` runtime parameter. This is a **universal parameter** — automatically available on every CLAMS app without any per-app configuration.
+When your app receives TimeFrame annotations, the caller can control which frames your app processes by setting the `tfSamplingMode` runtime parameter. This is a **universal parameter**: automatically available on every CLAMS app without any per-app configuration.
 
 There are three modes:
 
-- `representatives` (default) — use the frames listed in the TimeFrame's `representatives` property. If no representatives exist, the TimeFrame is skipped.
-- `single` — pick one frame: the middle representative if available, otherwise the midpoint of the start/end interval.
-- `all` — use every frame in `targets` if present, otherwise generate every frame in the start/end interval.
+- `representatives` (default): use the frames listed in the TimeFrame's `representatives` property. If no representatives exist, the TimeFrame is skipped.
+- `single`: pick one frame: the middle representative if available, otherwise the midpoint of the start/end interval.
+- `all`: use every frame in `targets` if present, otherwise generate every frame in the start/end interval.
 
 App developers do **not** need to handle this parameter themselves. The SDK intercepts it in `annotate()` and sets a context variable before `_annotate()` runs. Inside `_annotate()`, calls to `vdh.extract_frames_by_mode()` automatically read the active mode and select frames accordingly. The underlying per-mode functions (`_sample_representatives()`, `_sample_single()`, `_sample_all()`) in `mmif.utils.video_document_helper` are also available for apps that need frame numbers without extracting images.
 

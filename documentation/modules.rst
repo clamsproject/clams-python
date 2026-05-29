@@ -7,5 +7,6 @@ API documentation
 
    autodoc/clams.app
    autodoc/clams.appmetadata
+   autodoc/clams.backends
    autodoc/clams.restify
    autodoc/clams.mmif_utils

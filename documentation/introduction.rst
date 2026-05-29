@@ -72,12 +72,15 @@ As a developer you can expose different behaviors of the ``annotate()`` method b
   These runtime configurations are not part of the MMIF input, but for reproducible analysis, you should record these configurations in the output MMIF. 
 
 .. note::
-  There are *universal* parameters defined at the SDK-level that all CLAMS apps commonly use. See :const:`clams.app.ClamsApp.universal_parameters`. 
+  Some runtime parameters are managed by the SDK itself rather than declared per-app. The *universal* parameters in :const:`clams.app.ClamsApp.universal_parameters` are one such set; they are auto-added to every CLAMS app. Specialized base classes (see below) add their own SDK-managed parameter sets on top.
 
 .. warning::
   All the runtime configurations should be pre-announced in the app metadata.
 
 Also see <:doc:`tutorial`> for a step-by-step tutorial on how to write the ``_annotate()`` method with a simple example NLP tool.
+
+.. note::
+  Inheriting from :class:`~clams.app.ClamsApp` directly works for any CLAMS app. For common app categories (e.g. apps wrapping LLM or other multimodal models), the SDK provides specialized base classes that extend :class:`~clams.app.ClamsApp` with additional SDK-managed parameter sets and helpers. See :ref:`app-baseclasses`.
 
 appmetadata()
 """""""""""""

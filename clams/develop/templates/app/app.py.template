@@ -24,19 +24,64 @@ from mmif import Mmif, View, Annotation, Document, AnnotationTypes, DocumentType
 from lapps.discriminators import Uri
 
 
+# =============================================================================
+# Pick a base class for your app:
+#
+#   ClamsApp ............ default; the rest of this scaffold inherits from it.
+#                         Implement ``_annotate()``. That's it.
+#                         Choose for any non-LLM/VLM app: classical OCR /
+#                         ASR engines, classifiers, rule-based tools, etc.
+#
+#   ClamsPromptableApp .. for prompt-driven LLM/VLM/ALM/LMM apps wrapping a
+#                         non-HF backend (remote APIs like OpenAI/Anthropic,
+#                         vLLM, custom inference servers).
+#                         Implement: ``_annotate()`` + ``generate()``.
+#                         Import:
+#                             from clams import ClamsPromptableApp
+#                         Also in ``metadata.py``: uncomment the
+#                         ``inject_promptable_parameters`` block.
+#
+#   ClamsHFPromptableApp  for prompt-driven apps wrapping a local HuggingFace
+#                         ``transformers`` model (the typical VLM/LLM case).
+#                         Implement: ``_annotate()`` (call
+#                         ``self.load_model(parameters['model'])`` first) +
+#                         declare class attributes:
+#                             MODEL_CLS = <transformers.AutoModelFor...>
+#                             DTYPE = torch.bfloat16        # optional
+#                             PADDING_SIDE = 'left'          # optional
+#                         Import:
+#                             from clams.app import ClamsHFPromptableApp
+#                         Also in ``metadata.py``: set
+#                         ``analyzer_versions={<hf-id>: <commit-hash>, ...}``
+#                         on the ``AppMetadata`` call, and uncomment the
+#                         ``ClamsHFPromptableApp.inject_promptable_parameters``
+#                         block (the HF override of the plain helper).
+#                         Requires the ``[hf]`` extra:
+#                             pip install clams-python[hf]
+#                         Singleton ``analyzer_versions`` families pre-load
+#                         in ``__init__`` (warm start); multi-member
+#                         families load on the first ``load_model`` call
+#                         and cache thereafter. ``generate()``,
+#                         ``build_conversation``, and ``build_gen_kwargs``
+#                         have working defaults; override only for
+#                         model-specific quirks.
+#
+# See https://clams.ai/clams-python/app-baseclasses.html for the full
+# developer guide.
+# =============================================================================
 class $APP_CLASS_NAME(ClamsApp):
 
     def __init__(self):
         super().__init__()
 
     def _appmetadata(self):
-        # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata
+        # see https://clams.ai/clams-python/autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata
         # Also check out ``metadata.py`` in this directory.
         # When using the ``metadata.py`` leave this do-nothing "pass" method here.
         pass
 
     def _annotate(self, mmif: Mmif, **parameters) -> Mmif:
-        # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._annotate
+        # see https://clams.ai/clams-python/autodoc/clams.app.html#clams.app.ClamsApp._annotate
         raise NotImplementedError
 
 def get_app():
