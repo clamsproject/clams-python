@@ -1,4 +1,20 @@
 
+## releasing 1.7.0 (2026-05-29)
+### Overview
+This release introduces a specialized base class `ClamsPromptableApp` and its HuggingFace specialization `ClamsHFPromptableApp` for CLAMS apps that wrap LLM / VLM / ALM / LMM-based analyzers, along with other HF-related helper code in various places. Additionally, it adds `appTags` field for app categorization in app metadata, and new timeframe related local utility recipe for `clams develop --recipe utl-tf` scaffold.
+
+### Additions
+* `ClamsPromptableApp`, a new specialized base class (subclassing `ClamsApp`) for prompt-driven, instruction-tuned LLM apps with pre-equipped with commonly used runtime parameter set (`prompt`, `systemPrompt`, `promptMode`, `maxNewTokens`, `temperature`, `topP`, `topK`, `parallelPrompts`). Plus, `ClamsHFPromptableApp` (subclassing `ClamsPromptableApp`) for the common case of "promptable app + local HuggingFace `transformers` model". This subclass should significanly simplify wrapping HF models into a CLAMS app. See https://clams.ai/clams-python/app-baseclasses.html for the developer guide. (https://github.com/clamsproject/clams-python/pull/291)
+* `clams.backends.hf` (new module) with two general HF loaders: `load_hf_model` (`from_pretrained` flow) and `load_hf_pipeline` (`transformers.pipeline` flow). Wraps the device auto-detection, revision pinning, dtype handling, and kwargs pass-through that every HF-backed CLAMS app does identically; used internally by `ClamsHFPromptableApp` and callable directly from any non-promptable HF app. Requires the `[hf]` extra (`pip install clams-python[hf]`) to keep `torch` and `transformers` out of the base install.
+* `clams develop --recipe utl-tf` scaffold drops a `utils/timeframe.py` into the new app that factors out the canonical TimeFrame iteration / `vdh.extract_images_by_mode_with_sources` / TimePoint-on-fallback / task-tuple pattern. (7bc91d97ff0af2a2253ca24b00afa8b554ad5849)
+* `appTags` field on `AppMetadata`, a sibling to https://github.com/clamsproject/mmif/pull/253. Allows categorization of CLAMS apps for app-directory search / filtering. (https://github.com/clamsproject/clams-python/pull/290)
+
+### Changes
+* Updated to the latest `mmif-python` SDK (1.5.0).
+* Tightened the semantics of the `AppMetadata.analyzer_versions` field (introduced in 1.4.0) for CHFPApp-based development. When an app subclasses `ClamsHFPromptableApp`, the dict is now the source of truth for the family of supported HF model IDs and their pinned commit hashes: the SDK auto-derives a `model` runtime parameter from the dict's keys, and the HF base class refines `model=<id>` into `model=<id>@<revision>` on output so the resolved revision lands in `view.metadata.appConfiguration` automatically.
+* `clams develop` scaffold templates (`app.py.template`, `metadata.py.template`) updated with commented-out blocks for both promptable variants.
+
+
 ## releasing 1.6.0 (2026-05-19)
 ### Overview
 
