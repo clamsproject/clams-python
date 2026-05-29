@@ -16,8 +16,8 @@ def appmetadata() -> AppMetadata:
     """
     Function to set app-metadata values and return it as an ``AppMetadata`` obj.
     Read these documentations before changing the code below
-    - https://sdk.clams.ai/appmetadata.html metadata specification.
-    - https://sdk.clams.ai/autodoc/clams.appmetadata.html python API
+    - https://clams.ai/clams-python/appmetadata.html metadata specification.
+    - https://clams.ai/clams-python/autodoc/clams.appmetadata.html python API
     
     :return: AppMetadata object holding all necessary information.
     """
@@ -51,7 +51,48 @@ def appmetadata() -> AppMetadata:
     metadata.add_parameter(name='a_param', description='example parameter description',
                            type='boolean', default='false')
     # metadta.add_parameter(more...)
-    
+
+    # If your app subclasses ``ClamsPromptableApp`` (a prompt-driven LLM/VLM/audio-LM
+    # app on a non-HF backend), uncomment the following two lines to add the
+    # SDK-managed promptable parameters (prompt, systemPrompt, temperature,
+    # maxNewTokens, etc.) to your app's metadata. See
+    # https://clams.ai/clams-python/app-baseclasses.html#promptable for the
+    # developer guide. Reminder: these parameter names are reserved by the SDK;
+    # do not redeclare any of them above.
+    # from clams.app import ClamsPromptableApp
+    # ClamsPromptableApp.inject_promptable_parameters(metadata)
+    #
+    # If your app subclasses ``ClamsHFPromptableApp`` (HF transformers backend),
+    # use the HF override of the same helper -- it injects the promptable
+    # parameters AND a ``model`` parameter derived from ``analyzer_versions``.
+    # Also set ``analyzer_versions={<hf-id>: <commit-hash>, ...}`` on the
+    # ``AppMetadata(...)`` call above (replaces the singular
+    # ``analyzer_version`` for HF apps). See
+    # https://clams.ai/clams-python/app-baseclasses.html#hf-promptable for details.
+    # from clams.app import ClamsHFPromptableApp
+    # ClamsHFPromptableApp.inject_promptable_parameters(metadata)
+    #
+    # To customize the default value of any promptable parameter (e.g. provide an
+    # app-specific default ``prompt``, raise ``maxNewTokens``, pin ``parallelPrompts``,
+    # etc.), mutate the ``default`` field on the already-injected parameter
+    # object; the SDK does NOT allow re-declaring promptable param names. See
+    # https://clams.ai/clams-python/app-baseclasses.html#promptable-customizing-defaults
+    # for details. Example:
+    # for p in metadata.parameters:
+    #     if p.name == 'prompt':
+    #         p.default = ['Describe what is in this image.']
+    #     elif p.name == 'maxNewTokens':
+    #         p.default = 2048
+    #
+    # HF-only: the ``model`` parameter the HF helper injects gets its ``default``
+    # auto-set to the only key when ``analyzer_versions`` has a single entry
+    # (singleton family); for multi-member families the default is ``None`` and
+    # the caller MUST pass ``model=...`` on every request. To provide a
+    # recommended pick instead, mutate ``default`` the same way:
+    # for p in metadata.parameters:
+    #     if p.name == 'model':
+    #         p.default = '<org>/<one-of-the-keys-from-analyzer_versions>'
+
     # CHANGE this line and make sure return the compiled `metadata` instance
     return None
 

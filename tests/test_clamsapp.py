@@ -262,6 +262,33 @@ class TestClamsApp(unittest.TestCase):
         self.assertEqual(len(v4.metadata.appConfiguration), 6)
         self.assertEqual(len(v4.metadata.parameters['multivalued_param']), len(str(multiple_values)))
 
+    def test_app_tags_default_empty(self):
+        # apps that don't declare tags should not write an appTags field to view metadata
+        self.assertEqual(self.app.metadata.app_tags, [])
+        m = Mmif(self.in_mmif)
+        v = m.new_view()
+        self.app.sign_view(v, {})
+        self.assertIsNone(v.metadata.get('appTags'))
+
+    def test_app_tags_propagated_to_view(self):
+        # tags declared on app metadata should appear verbatim in signed views
+        self.app.metadata.add_app_tag('TemporalSegmentation', 'BarsDetection')
+        m = Mmif(self.in_mmif)
+        v = m.new_view()
+        self.app.sign_view(v, {})
+        self.assertEqual(
+            v.metadata.get('appTags'),
+            ['TemporalSegmentation', 'BarsDetection'],
+        )
+
+    def test_add_app_tag_dedupes_and_validates(self):
+        self.app.metadata.add_app_tag('foo', 'bar', 'foo')
+        self.assertEqual(self.app.metadata.app_tags, ['foo', 'bar'])
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_app_tag('')
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_app_tag(123)  # type: ignore[arg-type]
+
     def test_annotate(self):
         # The example app is hard-coded to **always** emit version mismatch warning
         out_mmif = self.app.annotate(self.in_mmif)
