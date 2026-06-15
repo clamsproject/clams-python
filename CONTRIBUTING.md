@@ -75,6 +75,13 @@ from clams.ver import __version__
 For a dev install without a matching tag, `setuptools-scm` generates a
 version like `1.4.1.dev20+gaf551a4e4.d20260325`.
 
+## Releases
+
+Release PRs (from `develop` to `main`) are gated by the `release-check` CI workflow. Before opening one:
+
+1. Title the PR exactly `releasing X.Y.Z` (strict semver); `release-check` reads the version from the title.
+2. Run `python build-tools/prep_release.py X.Y.Z` and commit its changes. See inside the prep script to see what's actually prepared.
+
 ## Migration from Makefile
 
 The old `Makefile` and `setup.py` have been removed. If you are

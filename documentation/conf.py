@@ -14,8 +14,6 @@ import datetime
 import inspect
 import json
 import os
-import re
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -196,24 +194,6 @@ def generate_jsonschema(app):
         json.dump(schema_dict, f, indent=2)
 
 
-def update_target_spec(app):
-    target_vers_csv = Path(__file__).parent / 'target-versions.csv'
-    version = _get_version('clams-python')
-    # Skip dev/dummy versions to avoid dirtying the git-tracked CSV
-    if 'dev' in version or not re.match(r'^\d+\.\d+\.\d+$', version):
-        return
-    mmifver = mmif.__version__
-    specver = mmif.__specver__
-    with open(target_vers_csv) as in_f, open(f'{target_vers_csv}.new', 'w') as out_f:
-        lines = in_f.readlines()
-        if not lines[1].startswith(f"`{version}"):
-            lines.insert(1, f"`{version} <https://pypi.org/project/clams-python/{version}/>`__,`{mmifver} <https://pypi.org/project/mmif-python/{mmifver}/>`__,`{specver} <https://mmif.clams.ai/{specver}/>`__\n")
-        for line in lines:
-            out_f.write(line)
-        shutil.move(out_f.name, in_f.name)
-
-
 def setup(app):
     app.connect('builder-inited', generate_whatsnew_rst)
     app.connect('builder-inited', generate_jsonschema)
-    app.connect('builder-inited', update_target_spec)
