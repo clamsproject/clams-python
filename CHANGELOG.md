@@ -1,4 +1,9 @@
 
+## releasing 1.7.1 (2026-06-19)
+### Overview
+Updates the `mmif-python` SDK dependency to 1.5.1 to incorporate a bugfix in VDH, with some other minor documentation generation improvements.
+
+
 ## releasing 1.7.0 (2026-05-29)
 ### Overview
 This release introduces a specialized base class `ClamsPromptableApp` and its HuggingFace specialization `ClamsHFPromptableApp` for CLAMS apps that wrap LLM / VLM / ALM / LMM-based analyzers, along with other HF-related helper code in various places. Additionally, it adds `appTags` field for app categorization in app metadata, and new timeframe related local utility recipe for `clams develop --recipe utl-tf` scaffold.
