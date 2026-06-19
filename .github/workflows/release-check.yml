@@ -1,0 +1,11 @@
+name: "🔖 Release PR check"
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  release-check:
+    name: "🤙 Call SDK release-check workflow"
+    uses: clamsproject/.github/.github/workflows/sdk-release-check.yml@main
