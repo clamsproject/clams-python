@@ -1071,7 +1071,43 @@ class ClamsPromptableApp(ClamsApp):
             )
         return td, align
 
+    @staticmethod
+    def split_tagged_reasoning_trace(
+            text: str,
+            open_tag: str = '<think>',
+            close_tag: str = '</think>',
+    ) -> Tuple[str, Optional[str]]:
+        """
+        Split a reasoning model's output into ``(answer, trace)`` for the
+        inline XML-tag style: a single reasoning block delimited by
+        ``open_tag`` / ``close_tag`` (default ``<think>`` / ``</think>``)
+        embedded in the decoded text, e.g. as emitted by DeepSeek-R1 or
+        Qwen3.
 
+        It does NOT handle models that isolate reasoning in a separate
+        token-delimited channel rather than an inline tag block (e.g.
+        gpt-oss, Gemma 4); those need their own parsing in the app. Trace
+        handling is the app's responsibility either way -- call this when
+        the model fits the inline-tag style, or parse it yourself.
+
+        ``answer`` is everything after the final ``close_tag`` (stripped);
+        ``trace`` is the text between the tags, or ``None`` when no closed
+        block is present -- so it is safe to call on non-reasoning output,
+        which returns ``(text.strip(), None)``.
+
+        :param text: raw decoded model output.
+        :param open_tag: opening marker of the inline reasoning block.
+        :param close_tag: closing marker of the inline reasoning block.
+        :return: ``(answer, trace_or_None)``.
+        """
+        ci = text.rfind(close_tag)
+        if ci == -1:
+            return text.strip(), None
+        answer = text[ci + len(close_tag):].strip()
+        oi = text.find(open_tag)
+        trace = (text[oi + len(open_tag):ci].strip()
+                 if oi != -1 and oi < ci else None)
+        return answer, trace
 class ClamsHFPromptableApp(ClamsPromptableApp):
     """
     Base class for promptable CLAMS apps backed by a local
@@ -1289,13 +1325,39 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
             dtype=self.DTYPE,
             padding_side=self.PADDING_SIDE,
             revision=revision,
-            model_kwargs=self.MODEL_KWARGS,
+            model_kwargs=self.model_load_kwargs(model_id, revision),
             processor_kwargs=self.PROCESSOR_KWARGS,
         )
         self.logger.info(f"HF model loaded on {triple[2]}")
         self._model_cache[cache_key] = triple
         self.processor, self.model, self.device = triple
         return triple
+
+    def model_load_kwargs(self, model_id: str, revision: str) -> dict:
+        """
+        The ``model_kwargs`` forwarded to
+        :func:`~clams.backends.hf.load_hf_model` (and on to
+        ``from_pretrained``) for a SPECIFIC family member. The base
+        implementation returns a copy of the class-level
+        :py:attr:`MODEL_KWARGS`, applied uniformly to every variant.
+
+        Override when a family mixes per-variant load requirements that
+        a single class-level ``MODEL_KWARGS`` cannot express -- e.g. a
+        ``analyzer_versions`` family whose members span full-precision,
+        FP8, and GPTQ-Int4 builds, where only the quantized members need
+        a ``quantization_config``::
+
+            def model_load_kwargs(self, model_id, revision):
+                kw = super().model_load_kwargs(model_id, revision)
+                if model_id.endswith('-GPTQ-Int4'):
+                    kw['quantization_config'] = ...   # gptq config
+                return kw
+
+        :param model_id: resolved HF model id (no ``@revision`` suffix).
+        :param revision: resolved commit/revision being loaded.
+        :return: ``model_kwargs`` dict for this variant.
+        """
+        return dict(self.MODEL_KWARGS or {})
 
     def generate(
             self,
@@ -1341,6 +1403,7 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
         if n == 0:
             return []
         gen_kwargs = self.build_gen_kwargs(**generation_params)
+        template_kwargs = self.build_template_kwargs(**generation_params)
         try:
             conversations = [
                 self.build_conversation(
@@ -1357,6 +1420,7 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
                 return_dict=True,
                 padding=True,
                 return_tensors="pt",
+                **template_kwargs,
             )
             inputs = inputs.to(self.device)
             if (self.DTYPE is not None
@@ -1404,6 +1468,28 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
                 'top_k': top_k,
             })
         return gen_kwargs
+
+    def build_template_kwargs(self, **generation_params) -> dict:
+        """
+        Extra keyword arguments to pass to
+        ``processor.apply_chat_template`` in :py:meth:`generate`, beyond
+        the SDK-fixed ones (``add_generation_prompt``, ``tokenize``,
+        ``return_dict``, ``padding``, ``return_tensors``). The base
+        implementation returns ``{}``.
+
+        Override to inject model-specific chat-template controls without
+        having to reimplement :py:meth:`generate`. Common cases:
+
+        * ``{'enable_thinking': False}`` to run a reasoning ("thinking")
+          model in non-thinking mode;
+        * ``{'tools': [...]}`` or ``{'documents': [...]}`` for tool-use /
+          RAG chat templates.
+
+        Keys MUST NOT collide with the SDK-fixed kwargs above. Unknown
+        keys are passed through to the template's render context, where
+        a template that does not reference them simply ignores them.
+        """
+        return {}
 
 
 class ParameterCaster(object):
