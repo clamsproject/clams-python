@@ -1005,8 +1005,10 @@ class ClamsPromptableApp(ClamsApp):
         """
         Persist a single LLM text response into a view. Writes one
         ``TextDocument`` (containing the response) plus possible
-        grounding via an ``Alignment`` annotation and ``origins`` / 
-        ``origination`` properties on the TD.
+        grounding via an ``Alignment`` annotation and ``origins`` /
+        ``origination`` properties on the TD. The TD also inherits the
+        ``document`` of its ``source`` annotation, so it records which
+        medium the response describes.
 
         The two grounding link kinds are semantically distinct:
 
@@ -1046,8 +1048,11 @@ class ClamsPromptableApp(ClamsApp):
         :return: ``(TextDocument, Alignment)`` tuple of the new
             annotations.
         :raises ValueError: if exactly one of ``origins`` /
-            ``origination`` is set; they must be supplied together
-            or both omitted.
+            ``origination`` is set (they must be supplied together or
+            both omitted), or if the ``source`` annotation carries no
+            ``document`` to ground the response to (a malformed input).
+        :raises KeyError: if ``source`` does not resolve to an
+            annotation in the MMIF.
         """
         if bool(origins) != bool(origination):
             raise ValueError(
@@ -1056,6 +1061,20 @@ class ClamsPromptableApp(ClamsApp):
                 f"origins={origins!r}, origination={origination!r}."
             )
         td = view.new_textdocument(text=response)
+        # Ground the TextDocument to the medium it describes: copy `document`
+        # from the source annotation (e.g. the parent TimeFrame's video) onto
+        # the TD, so it records which document the response pertains to. A
+        # grounded response must be traceable to a document, so a source that
+        # carries no `document` means the upstream MMIF is malformed -- raise
+        # rather than silently drop the grounding.
+        source_ann = view._parent_mmif[source]
+        source_doc = source_ann.get_property('document')
+        if not source_doc:
+            raise ValueError(
+                f"source annotation {source!r} has no `document` property to "
+                f"ground the response to; the input MMIF is malformed."
+            )
+        td.add_property('document', source_doc)
         if origins:
             td.add_property('origins', origins)
             td.add_property('origination', origination)

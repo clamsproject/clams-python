@@ -10,7 +10,7 @@ single-turn / turn-taking / user-only modes, and the
 """
 import unittest
 
-from mmif import AnnotationTypes, DocumentTypes, Mmif
+from mmif import AnnotationTypes, Document, DocumentTypes, Mmif
 
 from clams import AppMetadata, ClamsPromptableApp
 
@@ -326,6 +326,19 @@ class TestStoreResponse(unittest.TestCase):
     def setUp(self):
         self.app = make_test_app(make_metadata(call_helper=True))
         self.mmif = Mmif(validate=False)
+        # upstream: a media document and an annotation anchored to it, which
+        # serves as the response's `source`.
+        vdoc = Document()
+        vdoc.at_type = DocumentTypes.VideoDocument
+        vdoc.id = 'v1'
+        vdoc.location = 'file:///video.mp4'
+        self.mmif.add_document(vdoc)
+        self.doc_id = vdoc.id
+        src_view = self.mmif.new_view()
+        src_view.metadata.app = 'http://upstream/1'
+        self.src = src_view.new_annotation(
+            AnnotationTypes.TimeFrame, document=vdoc.id, label='scene')
+        # the current app's view
         self.view = self.mmif.new_view()
         self.app.sign_view(self.view, {})
         self.view.new_contain(DocumentTypes.TextDocument)
@@ -333,21 +346,30 @@ class TestStoreResponse(unittest.TestCase):
 
     def test_happy_path_creates_textdocument_and_alignment(self):
         td, align = self.app.response_to_grounded_textdocument(
-            self.view, source='src1', response='generated text')
+            self.view, source=self.src.id, response='generated text')
         self.assertEqual(td.text_value, 'generated text')
-        self.assertEqual(align.get_property('source'), 'src1')
+        # the TD inherits the source annotation's document
+        self.assertEqual(td.get_property('document'), self.doc_id)
+        self.assertEqual(align.get_property('source'), self.src.id)
         self.assertEqual(align.get_property('target'), td.id)
+
+    def test_source_without_document_raises(self):
+        # a source annotation carrying no `document` means a malformed input
+        ungrounded = self.view.new_annotation(AnnotationTypes.TimeFrame)
+        with self.assertRaises(ValueError):
+            self.app.response_to_grounded_textdocument(
+                self.view, source=ungrounded.id, response='text')
 
     def test_reasoning_trace_none_does_not_raise(self):
         # no exception
         self.app.response_to_grounded_textdocument(
-            self.view, source='src1', response='text',
+            self.view, source=self.src.id, response='text',
             reasoning_trace=None)
 
     def test_reasoning_trace_not_none_raises_not_implemented(self):
         with self.assertRaises(NotImplementedError):
             self.app.response_to_grounded_textdocument(
-                self.view, source='src1', response='text',
+                self.view, source=self.src.id, response='text',
                 reasoning_trace='intermediate reasoning')
 
     # TODO (krim @ 05/28/26): this test case belongs upstream in the
@@ -359,11 +381,11 @@ class TestStoreResponse(unittest.TestCase):
     # underlying TD.
     def test_origins_and_origination_written_together(self):
         td, align = self.app.response_to_grounded_textdocument(
-            self.view, source='tf1', response='caption text',
+            self.view, source=self.src.id, response='caption text',
             origins=['tp1'], origination='derived')
         self.assertEqual(td.get_property('origins'), ['tp1'])
         self.assertEqual(td.get_property('origination'), 'derived')
-        self.assertEqual(align.get_property('source'), 'tf1')
+        self.assertEqual(align.get_property('source'), self.src.id)
         self.assertEqual(align.get_property('target'), td.id)
 
     def test_unpaired_origins_or_origination_raises(self):
