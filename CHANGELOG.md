@@ -1,4 +1,16 @@
 
+## releasing 1.7.2 (2026-07-07)
+### Overview
+This patch adds experimental handling of "reasoning traces" of propmtable apps
+
+### Additions
+* common parameter `useReasoning` (bool) is added
+* when reasoning is on, in-line tagged reasoning traces (commonly within `<think>...</think>`) are separately stored in `modelReasoningTrace` of the TextDocument 
+
+> [!NOTE]
+> The new names are tentative and can be changed in the near future.
+
+
 ## releasing 1.7.1 (2026-06-19)
 ### Overview
 Updates the `mmif-python` SDK dependency to 1.5.1 to incorporate a bugfix in VDH, with some other minor documentation generation improvements.
