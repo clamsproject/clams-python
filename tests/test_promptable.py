@@ -360,17 +360,20 @@ class TestStoreResponse(unittest.TestCase):
             self.app.response_to_grounded_textdocument(
                 self.view, source=ungrounded.id, response='text')
 
-    def test_reasoning_trace_none_does_not_raise(self):
-        # no exception
-        self.app.response_to_grounded_textdocument(
+    def test_reasoning_trace_none_stores_no_property(self):
+        td, _ = self.app.response_to_grounded_textdocument(
             self.view, source=self.src.id, response='text',
             reasoning_trace=None)
+        self.assertNotIn('modelReasoningTrace', td.properties)
 
-    def test_reasoning_trace_not_none_raises_not_implemented(self):
-        with self.assertRaises(NotImplementedError):
-            self.app.response_to_grounded_textdocument(
-                self.view, source=self.src.id, response='text',
-                reasoning_trace='intermediate reasoning')
+    def test_reasoning_trace_stored_on_textdocument(self):
+        td, _ = self.app.response_to_grounded_textdocument(
+            self.view, source=self.src.id, response='the answer',
+            reasoning_trace='step 1 ... step 2 ...')
+        # trace lives in the property; the TD text stays answer-only
+        self.assertEqual(
+            td.get_property('modelReasoningTrace'), 'step 1 ... step 2 ...')
+        self.assertEqual(td.text_value, 'the answer')
 
     # TODO (krim @ 05/28/26): this test case belongs upstream in the
     # vocabulary type definition (the `origins`/`origination` pairing
