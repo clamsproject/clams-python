@@ -10,7 +10,7 @@ single-turn / turn-taking / user-only modes, and the
 """
 import unittest
 
-from mmif import AnnotationTypes, DocumentTypes, Mmif
+from mmif import AnnotationTypes, Document, DocumentTypes, Mmif
 
 from clams import AppMetadata, ClamsPromptableApp
 
@@ -326,6 +326,19 @@ class TestStoreResponse(unittest.TestCase):
     def setUp(self):
         self.app = make_test_app(make_metadata(call_helper=True))
         self.mmif = Mmif(validate=False)
+        # upstream: a media document and an annotation anchored to it, which
+        # serves as the response's `source`.
+        vdoc = Document()
+        vdoc.at_type = DocumentTypes.VideoDocument
+        vdoc.id = 'v1'
+        vdoc.location = 'file:///video.mp4'
+        self.mmif.add_document(vdoc)
+        self.doc_id = vdoc.id
+        src_view = self.mmif.new_view()
+        src_view.metadata.app = 'http://upstream/1'
+        self.src = src_view.new_annotation(
+            AnnotationTypes.TimeFrame, document=vdoc.id, label='scene')
+        # the current app's view
         self.view = self.mmif.new_view()
         self.app.sign_view(self.view, {})
         self.view.new_contain(DocumentTypes.TextDocument)
@@ -333,22 +346,34 @@ class TestStoreResponse(unittest.TestCase):
 
     def test_happy_path_creates_textdocument_and_alignment(self):
         td, align = self.app.response_to_grounded_textdocument(
-            self.view, source='src1', response='generated text')
+            self.view, source=self.src.id, response='generated text')
         self.assertEqual(td.text_value, 'generated text')
-        self.assertEqual(align.get_property('source'), 'src1')
+        # the TD inherits the source annotation's document
+        self.assertEqual(td.get_property('document'), self.doc_id)
+        self.assertEqual(align.get_property('source'), self.src.id)
         self.assertEqual(align.get_property('target'), td.id)
 
-    def test_reasoning_trace_none_does_not_raise(self):
-        # no exception
-        self.app.response_to_grounded_textdocument(
-            self.view, source='src1', response='text',
-            reasoning_trace=None)
-
-    def test_reasoning_trace_not_none_raises_not_implemented(self):
-        with self.assertRaises(NotImplementedError):
+    def test_source_without_document_raises(self):
+        # a source annotation carrying no `document` means a malformed input
+        ungrounded = self.view.new_annotation(AnnotationTypes.TimeFrame)
+        with self.assertRaises(ValueError):
             self.app.response_to_grounded_textdocument(
-                self.view, source='src1', response='text',
-                reasoning_trace='intermediate reasoning')
+                self.view, source=ungrounded.id, response='text')
+
+    def test_reasoning_trace_none_stores_no_property(self):
+        td, _ = self.app.response_to_grounded_textdocument(
+            self.view, source=self.src.id, response='text',
+            reasoning_trace=None)
+        self.assertNotIn('modelReasoningTrace', td.properties)
+
+    def test_reasoning_trace_stored_on_textdocument(self):
+        td, _ = self.app.response_to_grounded_textdocument(
+            self.view, source=self.src.id, response='the answer',
+            reasoning_trace='step 1 ... step 2 ...')
+        # trace lives in the property; the TD text stays answer-only
+        self.assertEqual(
+            td.get_property('modelReasoningTrace'), 'step 1 ... step 2 ...')
+        self.assertEqual(td.text_value, 'the answer')
 
     # TODO (krim @ 05/28/26): this test case belongs upstream in the
     # vocabulary type definition (the `origins`/`origination` pairing
@@ -359,11 +384,11 @@ class TestStoreResponse(unittest.TestCase):
     # underlying TD.
     def test_origins_and_origination_written_together(self):
         td, align = self.app.response_to_grounded_textdocument(
-            self.view, source='tf1', response='caption text',
+            self.view, source=self.src.id, response='caption text',
             origins=['tp1'], origination='derived')
         self.assertEqual(td.get_property('origins'), ['tp1'])
         self.assertEqual(td.get_property('origination'), 'derived')
-        self.assertEqual(align.get_property('source'), 'tf1')
+        self.assertEqual(align.get_property('source'), self.src.id)
         self.assertEqual(align.get_property('target'), td.id)
 
     def test_unpaired_origins_or_origination_raises(self):
@@ -375,6 +400,51 @@ class TestStoreResponse(unittest.TestCase):
             with self.subTest(**kwargs), self.assertRaises(ValueError):
                 self.app.response_to_grounded_textdocument(
                     self.view, source='src1', response='text', **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# Reasoning-trace split helper
+# ---------------------------------------------------------------------------
+
+class TestSplitReasoningTrace(unittest.TestCase):
+    """:meth:`ClamsPromptableApp.split_tagged_reasoning_trace` (static)."""
+
+    split = staticmethod(ClamsPromptableApp.split_tagged_reasoning_trace)
+
+    def test_closed_block_splits_answer_and_trace(self):
+        answer, trace = self.split('<think>reasoning</think>The answer.')
+        self.assertEqual(answer, 'The answer.')
+        self.assertEqual(trace, 'reasoning')
+
+    def test_no_tags_returns_text_as_answer_none_trace(self):
+        answer, trace = self.split('just an answer')
+        self.assertEqual(answer, 'just an answer')
+        self.assertIsNone(trace)
+
+    def test_unterminated_block_not_overstripped(self):
+        # No closing tag (e.g. ran out of tokens mid-thought): return the
+        # raw text rather than discard a possibly-real answer.
+        raw = '<think>thinking with no close'
+        answer, trace = self.split(raw)
+        self.assertEqual(answer, raw)
+        self.assertIsNone(trace)
+
+    def test_uses_final_close_tag(self):
+        answer, trace = self.split(
+            '<think>a</think>mid<think>b</think>final')
+        self.assertEqual(answer, 'final')
+
+    def test_custom_tags(self):
+        answer, trace = self.split(
+            '[R]why[/R]done', open_tag='[R]', close_tag='[/R]')
+        self.assertEqual(answer, 'done')
+        self.assertEqual(trace, 'why')
+
+    def test_non_thinking_output_safe_to_call(self):
+        # Safe to call unconditionally even when thinking is disabled.
+        answer, trace = self.split('   plain caption   ')
+        self.assertEqual(answer, 'plain caption')
+        self.assertIsNone(trace)
 
 
 # ---------------------------------------------------------------------------
@@ -577,6 +647,56 @@ class TestHFPromptableAppClassAttrs(unittest.TestCase):
             # then our override expands it.
             refined = app._refine_params(prompt=['hi'])
             self.assertEqual(refined['model'], 'org/fake-model@deadbee')
+        finally:
+            restore()
+
+    def test_build_template_kwargs_default_empty(self):
+        restore, _ = self._patch_load()
+        try:
+            app = self._make_subclass(analyzer_versions=self.SINGLETON_AV)()
+            self.assertEqual(app.build_template_kwargs(), {})
+        finally:
+            restore()
+
+    def test_model_load_kwargs_default_is_model_kwargs_copy(self):
+        restore, calls = self._patch_load()
+        try:
+            app = self._make_subclass(
+                analyzer_versions=self.SINGLETON_AV,
+                MODEL_KWARGS={'trust_remote_code': True},
+            )()
+            # eager singleton load forwarded the class-level MODEL_KWARGS
+            self.assertEqual(
+                calls[0]['model_kwargs'], {'trust_remote_code': True})
+            # and it's a copy, not the same object
+            self.assertIsNot(
+                app.model_load_kwargs('org/fake-model', 'deadbee'),
+                app.MODEL_KWARGS)
+        finally:
+            restore()
+
+    def test_model_load_kwargs_override_is_per_variant(self):
+        restore, calls = self._patch_load()
+        try:
+            def per_variant(self, model_id, revision):
+                kw = {'base': True}
+                if model_id.endswith('small-model'):
+                    kw['quantized'] = True
+                return kw
+
+            cls = self._make_subclass(
+                analyzer_versions=self.MULTI_AV,
+                model_load_kwargs=per_variant,
+            )
+            app = cls()  # multi-member: no eager load
+            self.assertEqual(len(calls), 0)
+            app.load_model('org/large-model')
+            app.load_model('org/small-model')
+            large = next(c for c in calls if c['model_id'] == 'org/large-model')
+            small = next(c for c in calls if c['model_id'] == 'org/small-model')
+            self.assertEqual(large['model_kwargs'], {'base': True})
+            self.assertEqual(
+                small['model_kwargs'], {'base': True, 'quantized': True})
         finally:
             restore()
 
