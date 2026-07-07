@@ -311,25 +311,31 @@ class ClamsApp(ABC):
         view.metadata.app = str(self.metadata.identifier)
         if self.metadata.app_tags:
             view.metadata.set_additional_property('appTags', list(self.metadata.app_tags))
-        params_map = {p.name: p for p in self.metadata.parameters}
         if self._RAW_PARAMS_KEY in runtime_conf:
             for k, v in runtime_conf.items():
                 if k == self._RAW_PARAMS_KEY:
-                    for orik, oriv in v.items():
-                        if orik in params_map and params_map[orik].multivalued:
-                            view.metadata.add_parameter(orik, str(oriv))
-                        else:
-                            view.metadata.add_parameter(orik, oriv[0])
+                    self.add_parameters_to_metadata(view, v)
                 else:
                     view.metadata.add_app_configuration(k, v)
         else:
             # meaning the parameters directly from flask or argparser and values are in lists
-            for k, v in runtime_conf.items():
-                if k in params_map and params_map[k].multivalued:
+            self.add_parameters_to_metadata(view, runtime_conf)
+
+    def add_parameters_to_metadata(self, view: View, parameters: dict):
+        """Add parameters to the view's metadata. Handles parameters that are
+        defined in the metadata of the app differently from those that are not."""
+        # TODO: should this deal differently with parameters that are handed in
+        # via an envelope?
+        params_map = {p.name: p for p in self.metadata.parameters}
+        for k, v in parameters.items():
+            if k in params_map:
+                if params_map[k].multivalued:
                     view.metadata.add_parameter(k, str(v))
                 else:
                     view.metadata.add_parameter(k, v[0])
-        
+            else:
+                view.metadata.add_parameter(k, str(v))
+
     def set_error_view(self, mmif: Union[str, dict, Mmif], **runtime_conf: List[str]) -> Mmif:
         """
         A method to record an error instead of annotation results in the view
