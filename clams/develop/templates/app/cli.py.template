@@ -6,13 +6,17 @@ DO NOT CHANGE the name of the file
 """
 
 import argparse
+import json
 import sys
 from contextlib import redirect_stdout
+
+import jsonschema
 
 import app
 
 import clams.app
 from clams import AppMetadata
+from clams.envelop import EnvelopeError
 
 
 def metadata_to_argparser(app_metadata: AppMetadata) -> argparse.ArgumentParser:
@@ -81,11 +85,24 @@ if __name__ == "__main__":
                 params[pname] = pvalue
             else:
                 params[pname] = [pvalue]
-        if args.OUT_MMIF_FILE.name == '<stdout>':
-            with redirect_stdout(sys.stderr):
+        # Mirror the HTTP server's error handling (see clams.restify): an invalid
+        # input is reported and exits non-zero, while an app-level failure is
+        # recorded as an error view instead of crashing with a raw traceback.
+        try:
+            if args.OUT_MMIF_FILE.name == '<stdout>':
+                with redirect_stdout(sys.stderr):
+                    out_mmif = clamsapp.annotate(in_data, **params)
+            else:
                 out_mmif = clamsapp.annotate(in_data, **params)
-        else:
-            out_mmif = clamsapp.annotate(in_data, **params)
+        except (jsonschema.exceptions.ValidationError, json.JSONDecodeError, EnvelopeError) as e:
+            detail = e.message if isinstance(e, jsonschema.exceptions.ValidationError) else str(e)
+            print(f"Invalid input data. See below for validation error.\n\n{detail}", file=sys.stderr)
+            sys.exit(1)
+        except Exception:
+            clamsapp.logger.exception("Error in annotation")
+            out_mmif = clamsapp.record_error(in_data, **params).serialize(pretty=True)
+            args.OUT_MMIF_FILE.write(out_mmif)
+            sys.exit(1)
         args.OUT_MMIF_FILE.write(out_mmif)
     else:
         arg_parser.print_help()
