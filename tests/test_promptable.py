@@ -446,6 +446,28 @@ class TestSplitReasoningTrace(unittest.TestCase):
         self.assertEqual(answer, 'plain caption')
         self.assertIsNone(trace)
 
+    def test_assume_open_close_present_open_absent(self):
+        # Prefilled opening tag (e.g. Qwen3.5): only the close tag is emitted.
+        answer, trace = self.split(
+            'reasoning body</think>The answer.', assume_open=True)
+        self.assertEqual(answer, 'The answer.')
+        self.assertEqual(trace, 'reasoning body')
+
+    def test_assume_open_no_close_is_unterminated_reasoning(self):
+        # Trace overran the budget before closing: empty answer, whole text is
+        # the unterminated trace.
+        raw = 'still thinking, never closed'
+        answer, trace = self.split(raw, assume_open=True)
+        self.assertEqual(answer, '')
+        self.assertEqual(trace, raw)
+
+    def test_open_absent_default_keeps_backward_compatible(self):
+        # Without assume_open, a lone close tag is not treated as a prefilled
+        # block: answer after the close, no trace.
+        answer, trace = self.split('reasoning body</think>The answer.')
+        self.assertEqual(answer, 'The answer.')
+        self.assertIsNone(trace)
+
 
 # ---------------------------------------------------------------------------
 # Transport-neutral parameter casting

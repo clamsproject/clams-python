@@ -712,6 +712,26 @@ class ClamsPromptableApp(ClamsApp):
                 'usage; reduce if VRAM is constrained.',
         },
         {
+            'name': 'useReasoning', 'type': 'boolean', 'default': False,
+            'description':
+                'Request the model\'s reasoning ("thinking") mode. Off by '
+                'default. Honored only by apps whose backing model has a '
+                'distinct reasoning mode; apps without one ignore it. When '
+                'honored and enabled, the reasoning trace is split from the '
+                'answer and stored in the ``modelReasoningTrace`` property of '
+                'the output ``TextDocument`` (kept out of the document text). '
+                'Reasoning is markedly slower and far more token-hungry: the '
+                'whole trace is generated before the answer and drawn from the '
+                'same budget capped by ``maxNewTokens``, so raise '
+                '``maxNewTokens`` substantially (thousands of tokens, not '
+                'hundreds) when enabling this, or the trace may consume the '
+                'entire budget and the answer be truncated or empty. Small '
+                'reasoning models (as a rule of thumb, roughly 4B parameters '
+                'and under) are especially prone to non-terminating "thinking '
+                'loops" that exhaust the budget without producing an answer; '
+                'validate termination per model before relying on it.',
+        },
+        {
             'name': 'temperature', 'type': 'number', 'default': 0.0,
             'description':
                 'Sampling temperature. The default ``0.0`` selects '
@@ -1109,37 +1129,56 @@ class ClamsPromptableApp(ClamsApp):
             text: str,
             open_tag: str = '<think>',
             close_tag: str = '</think>',
+            assume_open: bool = False,
     ) -> Tuple[str, Optional[str]]:
         """
         Split a reasoning model's output into ``(answer, trace)`` for the
-        inline XML-tag style: a single reasoning block delimited by
-        ``open_tag`` / ``close_tag`` (default ``<think>`` / ``</think>``)
-        embedded in the decoded text, e.g. as emitted by DeepSeek-R1 or
-        Qwen3.
+        inline XML-tag style: a reasoning block delimited by ``open_tag`` /
+        ``close_tag`` (default ``<think>`` / ``</think>``), e.g. as emitted
+        by DeepSeek-R1 or Qwen3.5.
 
-        It does NOT handle models that isolate reasoning in a separate
-        token-delimited channel rather than an inline tag block (e.g.
-        gpt-oss, Gemma 4); those need their own parsing in the app. Trace
-        handling is the app's responsibility either way -- call this when
-        the model fits the inline-tag style, or parse it yourself.
+        Prefilled opening tags: some chat templates inject the OPENING tag
+        into the prompt when reasoning is enabled (Qwen3.5 does this), so the
+        decoded output carries only the CLOSING tag -- the model never emits
+        the opener. Pass ``assume_open=True`` in that situation (typically
+        wired to the app's reasoning toggle) so the trace is still recovered.
+        The cases:
 
-        ``answer`` is everything after the final ``close_tag`` (stripped);
-        ``trace`` is the text between the tags, or ``None`` when no closed
-        block is present -- so it is safe to call on non-reasoning output,
-        which returns ``(text.strip(), None)``.
+        * close tag present: ``answer`` is the text after it; ``trace`` is the
+          text between the tags, or everything before the close tag when the
+          opening tag is absent (prefilled).
+        * close tag absent, ``assume_open=True``: the output is unterminated
+          reasoning (e.g. the trace overran ``maxNewTokens`` before closing) --
+          there is no answer, so returns ``('', text.strip())``.
+        * close tag absent, ``assume_open=False`` (default): treated as a
+          plain, non-reasoning answer -- returns ``(text.strip(), None)``.
+
+        Only the inline-tag style is handled; models that isolate reasoning in
+        a separate token-delimited channel (e.g. gpt-oss, Gemma) need their own
+        parsing in the app.
 
         :param text: raw decoded model output.
         :param open_tag: opening marker of the inline reasoning block.
         :param close_tag: closing marker of the inline reasoning block.
+        :param assume_open: treat the text as the body of a reasoning block
+            whose opening tag was prefilled into the prompt, so a missing close
+            tag means unterminated reasoning (empty answer) rather than a plain
+            answer.
         :return: ``(answer, trace_or_None)``.
         """
         ci = text.rfind(close_tag)
         if ci == -1:
-            return text.strip(), None
+            return ('', text.strip()) if assume_open else (text.strip(), None)
         answer = text[ci + len(close_tag):].strip()
         oi = text.find(open_tag)
-        trace = (text[oi + len(open_tag):ci].strip()
-                 if oi != -1 and oi < ci else None)
+        if oi != -1 and oi < ci:
+            trace = text[oi + len(open_tag):ci].strip()
+        elif assume_open:
+            # opening tag was prefilled into the prompt (not generated), so the
+            # trace is everything up to the close tag
+            trace = text[:ci].strip()
+        else:
+            trace = None
         return answer, trace
 class ClamsHFPromptableApp(ClamsPromptableApp):
     """
@@ -1511,10 +1550,13 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
         implementation returns ``{}``.
 
         Override to inject model-specific chat-template controls without
-        having to reimplement :py:meth:`generate`. Common cases:
+        having to reimplement :py:meth:`generate`. This is where an app
+        honors the SDK ``useReasoning`` parameter, mapping it onto the
+        backend's reasoning switch. Common cases:
 
-        * ``{'enable_thinking': False}`` to run a reasoning ("thinking")
-          model in non-thinking mode;
+        * ``{'enable_thinking': bool(generation_params.get('use_reasoning'))}``
+          to bind ``useReasoning`` to a reasoning ("thinking") model's
+          template switch;
         * ``{'tools': [...]}`` or ``{'documents': [...]}`` for tool-use /
           RAG chat templates.
 
