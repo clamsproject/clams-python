@@ -174,6 +174,17 @@ from :class:`~clams.app.ClamsApp`. These names are reserved; see
      - Maximum number of new tokens generated per inference call. Larger values
        grow the KV cache linearly and add to GPU memory usage; reduce if VRAM
        is constrained.
+   * - ``useReasoning``
+     - boolean
+     - ``false``
+     - no
+     - Request the model's reasoning ("thinking") mode. Off by default;
+       honored only by apps whose model has a distinct reasoning mode
+       (others ignore it). Much slower and more token-hungry -- the trace is
+       generated before the answer and drawn from the ``maxNewTokens`` budget,
+       and small models can loop without terminating. When honored, the trace
+       is stored in the ``modelReasoningTrace`` property of the output
+       ``TextDocument``. See :ref:`promptable-reasoning`.
    * - ``temperature``
      - number
      - ``0.0``
@@ -319,6 +330,52 @@ inferences, final reply returned.
 
 ``turn-taking`` is the default because it costs a single inference call
 and is the more common multi-element pattern.
+
+.. _promptable-reasoning:
+
+Reasoning traces (``useReasoning``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some models expose a distinct reasoning ("thinking") mode that emits an
+intermediate reasoning trace before the answer. ``useReasoning`` is the
+standard toggle for that mode. It is inert unless the app honors it, and
+honoring is a per-app choice with three wiring points:
+
+- map ``useReasoning`` onto the backend's reasoning switch (for HF chat
+  templates, typically ``enable_thinking``) by overriding
+  :meth:`~clams.app.ClamsHFPromptableApp.build_template_kwargs`;
+- split the trace from the answer with
+  :meth:`~clams.app.ClamsPromptableApp.split_tagged_reasoning_trace`
+  (inline ``<think>...</think>``-style traces only; channel-delimited
+  formats need app-specific parsing). Many chat templates prefill the
+  opening ``<think>`` into the prompt, so only the closing tag appears in
+  the output; pass ``assume_open=True`` (wired to the reasoning toggle) so
+  the trace is still recovered and a missing close tag is read as
+  unterminated reasoning (empty answer) rather than a plain answer;
+- pass the trace to
+  :meth:`~clams.app.ClamsPromptableApp.response_to_grounded_textdocument`
+  through its ``reasoning_trace`` argument, which stores it in the
+  ``modelReasoningTrace`` property of the produced ``TextDocument``,
+  separate from the document text.
+
+An app whose model has no reasoning mode leaves ``useReasoning`` unwired;
+callers may still set it and it has no effect, like ``topK`` under greedy
+decoding.
+
+Cost and failure modes
+""""""""""""""""""""""
+
+Reasoning is much slower and far more token-hungry than a direct answer:
+the entire trace is generated first, from the same budget capped by
+``maxNewTokens``. Enabling ``useReasoning`` without raising ``maxNewTokens``
+substantially (thousands of tokens, not hundreds) risks the trace consuming
+the whole budget, leaving the answer truncated or empty. Small reasoning
+models (as a rule of thumb, roughly 4B parameters and under) are especially
+prone to non-terminating "thinking loops" that never reach an answer; budget
+generously and validate termination per model. When the trace overruns the
+budget before closing, ``assume_open=True`` yields an empty answer plus the
+unterminated trace -- an app should surface that (e.g. a warning and an empty
+``TextDocument``) rather than emitting the raw reasoning as the answer.
 
 Helpers
 ^^^^^^^
@@ -512,7 +569,10 @@ supplies:
 * a default
   :py:meth:`~clams.app.ClamsHFPromptableApp.build_gen_kwargs` that
   maps the SDK promptable parameters to HF ``model.generate()``
-  kwargs.
+  kwargs;
+* a :py:meth:`~clams.app.ClamsHFPromptableApp.build_template_kwargs`
+  hook for chat-template controls, the override point for honoring
+  ``useReasoning`` (see :ref:`promptable-reasoning`).
 
 See each method's docstring for full details.
 

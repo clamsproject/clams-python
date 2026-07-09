@@ -26,7 +26,9 @@ sys.path.insert(0, str(proj_root_dir))
 
 # -- Project information -----------------------------------------------------
 
-project = proj_root_dir.name
+# The canonical package name — NOT derived from the checkout directory,
+# which is `clone-repo` when the shared docs-publish workflow builds here.
+project = 'clams-python'
 blob_base_url = f'https://github.com/clamsproject/{project}/blob'
 copyright = f'{datetime.date.today().year}, Brandeis LLC'
 author = 'Brandeis LLC'
