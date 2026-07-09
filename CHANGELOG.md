@@ -1,4 +1,13 @@
 
+## releasing 1.7.3 (2026-07-09)
+### Overview
+This patch includes critical bugfixes. See changes below. 
+
+### Changes
+* fixes handling of error during `annotate()` (and `_annotate()`) when running an app via cli.py  (#297)
+* added the `useReasoning` common parameter for promptable apps (#299) Note that release 1.7.2 was supposed to include this parameter (and the release note says so), but it was omitted by mistake.
+
+
 ## releasing 1.7.2 (2026-07-07)
 ### Overview
 This patch adds experimental handling of "reasoning traces" of propmtable apps
