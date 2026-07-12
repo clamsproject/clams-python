@@ -301,12 +301,34 @@ class ClamsApp(ABC):
         """
         A method to "sign" a new view that this app creates at the beginning of annotation.
         Signing will populate the view metadata with information and configuration of this app.
-        The parameters passed to the :meth:`~clams.app.ClamsApp._annotate` must be
-        passed to this method. This means all parameters for "common" configuration that
-        are consumed in :meth:`~clams.app.ClamsApp.annotate` should not be recorded in the
-        view metadata.
+
+        The ``runtime_conf`` argument can be either "refined" or "raw" parameters,
+        and what ends up recorded in the view metadata differs accordingly:
+
+        * "refined" params: the output of :meth:`~clams.app.ClamsApp._refine_params`,
+          identifiable by the presence of the internal ``_RAW_PARAMS_KEY`` marker.
+          These carry both the user's raw input and the fully resolved configuration
+          (declared parameters with their defaults filled in). Signing then populates
+          **two** metadata fields: ``parameters`` with the raw user input (before
+          defaults), and ``appConfiguration`` with the resolved configuration,
+          including the universal parameters (e.g. ``pretty``, ``runningTime``,
+          ``hwFetch``, ``tfSamplingMode``).
+        * "raw" params: an unrefined ``Dict[str, List[str]]`` straight from the
+          HTTP query string or the CLI parser. Only the ``parameters`` field is
+          populated; there is no resolved configuration to record.
+
+        These two cases exist because of two distinct execution paths. On the normal
+        annotation path, :meth:`~clams.app.ClamsApp.annotate` refines the parameters
+        before invoking :meth:`~clams.app.ClamsApp._annotate`, so a well-behaved app
+        forwards those already-refined params here and gets the full two-field record.
+        On the error path (:meth:`~clams.app.ClamsApp.set_error_view`), refinement may
+        be exactly what failed (:meth:`~clams.app.ClamsApp._refine_params` raises on a
+        missing required parameter or an invalid choice) so the error view is signed
+        with the raw params to guarantee the error is still recorded.
+
         :param view: a view to sign
-        :param runtime_conf: runtime configuration of the app as k-v pairs
+        :param runtime_conf: runtime configuration of the app, either refined
+            (output of :meth:`~clams.app.ClamsApp._refine_params`) or raw k-v pairs
         """
         view.metadata.app = str(self.metadata.identifier)
         if self.metadata.app_tags:

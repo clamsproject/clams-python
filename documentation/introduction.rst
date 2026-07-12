@@ -69,7 +69,7 @@ When you inherit :class:`~clams.app.ClamsApp`, you need to implement
 As a developer you can expose different behaviors of the ``annotate()`` method by providing configurable parameters as keyword arguments of the method. For example, you can have the user specify a re-sample rate of an audio file to be analyzed by providing a ``resample_rate`` parameter. 
 
 .. note::
-  These runtime configurations are not part of the MMIF input, but for reproducible analysis, you should record these configurations in the output MMIF. 
+  These runtime configurations are not part of the MMIF input. The SDK records them automatically in the output view metadata for reproducibility: the raw user input in ``view.metadata.parameters`` and the fully resolved configuration in ``view.metadata.appConfiguration``. Both fields are defined in the view-metadata section of the `MMIF specification <https://mmif.clams.ai/1.2.0/>`_.
 
 .. note::
   Some runtime parameters are managed by the SDK itself rather than declared per-app. The *universal* parameters in :const:`clams.app.ClamsApp.universal_parameters` are one such set; they are auto-added to every CLAMS app. Specialized base classes (see below) add their own SDK-managed parameter sets on top.

@@ -493,6 +493,11 @@ A consumer of the output MMIF can read the resolved revision directly
 from the view metadata, with no cross-reference to the app metadata
 required.
 
+This ``model`` handling is a specific instance of the general MMIF convention
+for recording runtime configuration; see the view-metadata section of the
+`MMIF specification <https://mmif.clams.ai/1.2.0/>`_ for the definitions of the
+``parameters`` and ``appConfiguration`` fields.
+
 What the base class provides
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
