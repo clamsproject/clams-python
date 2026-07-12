@@ -262,6 +262,34 @@ class TestClamsApp(unittest.TestCase):
         self.assertEqual(len(v4.metadata.appConfiguration), 6)
         self.assertEqual(len(v4.metadata.parameters['multivalued_param']), len(str(multiple_values)))
 
+    def test_add_parameters_to_metadata_len_branch(self):
+        # recording branches purely on the number of values, uniformly for
+        # declared and undeclared params (issue #296)
+        m = Mmif(self.in_mmif)
+
+        # single value -> bare value, no list brackets
+        v = m.new_view()
+        self.app.add_parameters_to_metadata(v, {'undeclared': ['solo']})
+        self.assertEqual(v.metadata.parameters['undeclared'], 'solo')
+
+        # multiple values -> serialized list, no data loss
+        v = m.new_view()
+        self.app.add_parameters_to_metadata(v, {'undeclared_multi': ['a', 'b']})
+        self.assertEqual(v.metadata.parameters['undeclared_multi'], str(['a', 'b']))
+
+        # empty list (only an envelope like {"x": []}/{"x": {}} can produce it)
+        # -> treated as unset, skipped, and must not raise IndexError
+        v = m.new_view()
+        self.app.add_parameters_to_metadata(v, {'empty': []})
+        self.assertNotIn('empty', v.metadata.parameters)
+
+        # a declared multivalued param given a single value is also recorded clean
+        self.app.metadata.add_parameter(
+            'mv', 'multivalued', type='string', multivalued=True, default=[])
+        v = m.new_view()
+        self.app.add_parameters_to_metadata(v, {'mv': ['only']})
+        self.assertEqual(v.metadata.parameters['mv'], 'only')
+
     def test_app_tags_default_empty(self):
         # apps that don't declare tags should not write an appTags field to view metadata
         self.assertEqual(self.app.metadata.app_tags, [])

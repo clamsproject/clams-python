@@ -313,9 +313,10 @@ class ClamsApp(ABC):
           defaults), and ``appConfiguration`` with the resolved configuration,
           including the universal parameters (e.g. ``pretty``, ``runningTime``,
           ``hwFetch``, ``tfSamplingMode``).
-        * "raw" params: an unrefined ``Dict[str, List[str]]`` straight from the
-          HTTP query string or the CLI parser. Only the ``parameters`` field is
-          populated; there is no resolved configuration to record.
+        * "raw" params: an unrefined ``Dict[str, List[str]]``. Only the
+          ``parameters`` field is populated; there is no resolved configuration
+          to record. See :meth:`~clams.app.ClamsApp.add_parameters_to_metadata`
+          for the input channels these values come from and how each is recorded.
 
         These two cases exist because of two distinct execution paths. On the normal
         annotation path, :meth:`~clams.app.ClamsApp.annotate` refines the parameters
@@ -340,21 +341,38 @@ class ClamsApp(ABC):
                 else:
                     view.metadata.add_app_configuration(k, v)
         else:
-            # meaning the parameters directly from flask or argparser and values are in lists
+            # unrefined params passed directly (no _RAW_PARAMS_KEY marker), e.g.
+            # the error path; values are lists
             self.add_parameters_to_metadata(view, runtime_conf)
 
     def add_parameters_to_metadata(self, view: View, parameters: dict):
-        """Add parameters to the view's metadata. Handles parameters that are
-        defined in the metadata of the app differently from those that are not."""
-        # TODO: should this deal differently with parameters that are handed in
-        # via an envelope?
-        params_map = {p.name: p for p in self.metadata.parameters}
+        """
+        Record raw runtime parameters into the view's ``parameters`` metadata.
+
+        The ``parameters`` argument reaches an app through one of three channels:
+
+        #. a query string, when the app runs as an HTTP server (``app.py``, via
+           :class:`~clams.restify.Restifier`);
+        #. shell arguments, when the app runs as a CLI program (``cli.py``);
+        #. a JSON envelope built with the ``clams envelop`` command (see
+           :mod:`clams.envelop`), whose values are flattened by
+           :func:`~clams.envelop.normalize_params`.
+
+        In every case the values arrive as ``List[str]`` (the shape
+        :meth:`~clams.app.ClamsApp._refine_params` consumes). A single value is
+        recorded bare with the ``List`` wrapper stripped, multiple values as the
+        serialized list, and an empty list skipped as unset (only an envelope
+        such as ``{"x": []}`` produces one, guarding against an ``IndexError``
+        on ``v[0]``).
+
+        :param view: the view being signed
+        :param parameters: raw runtime parameters as ``Dict[str, List[str]]``
+        """
         for k, v in parameters.items():
-            if k in params_map:
-                if params_map[k].multivalued:
-                    view.metadata.add_parameter(k, str(v))
-                else:
-                    view.metadata.add_parameter(k, v[0])
+            if len(v) == 0:
+                continue
+            elif len(v) == 1:
+                view.metadata.add_parameter(k, v[0])
             else:
                 view.metadata.add_parameter(k, str(v))
 
