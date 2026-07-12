@@ -32,8 +32,16 @@ annotations. See an example below.
           
       ...
 
-When you use a configuration parameter in your app, you should also expose it 
+When you use a configuration parameter in your app, you should also expose it
 to the user via the app metadata. See :ref:`appmetadata` section for more details.
+
+.. note::
+  Whichever channel supplies them, the SDK records the runtime parameters in the
+  output view metadata: the raw user input (as strings) in
+  ``view.metadata.parameters``, and the fully refined configuration (defaults filled
+  and values cast) in ``view.metadata.appConfiguration``. See the view-metadata
+  section of the `MMIF specification <https://mmif.clams.ai/1.2.0/>`_ for the
+  authoritative definitions of these two fields.
 
 As HTTP Server
 --------------
