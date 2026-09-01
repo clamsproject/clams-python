@@ -49,6 +49,10 @@ falsy_values = [
 ]
 
 
+class EmptyOutputWarning(UserWarning):
+    """Raised when an app's ``_annotate()`` produces no non-empty views."""
+
+
 class ClamsApp(ABC):
     """
     An abstract class to define API's for ClamsApps. A CLAMS app should inherit
@@ -191,6 +195,15 @@ class ClamsApp(ABC):
         t = datetime.now()
         with warnings.catch_warnings(record=True) as ws:
             annotated, cuda_profiler = self._profile_cuda_memory(self._annotate)(mmif, **refined)
+            new_views = [v for v in annotated.views if v.id not in existing_view_ids]
+            is_empty = lambda v: len(v.annotations) == 0 and not v.has_error() and not v.has_warnings()
+            for v in new_views:
+                if is_empty(v):
+                    del annotated.views._items[v.id]  # no public API to remove a view (mmif-python)
+            if all(is_empty(v) for v in new_views):
+                warnings.warn(f'App "{self.metadata.identifier}" produced no annotations for this '
+                              f'input; the input may lack expected content, or there may genuinely '
+                              f'be nothing to annotate.', EmptyOutputWarning)
             if ws:
                 issued_warnings.extend(ws)
         if issued_warnings:
