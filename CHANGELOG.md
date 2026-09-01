@@ -1,4 +1,17 @@
 
+## releasing 1.7.4 (2026-09-01)
+### Overview
+
+Fixes parameter recording in signed view metadata, adds consistent handling of empty views, and repairs the `-torch` base container images.
+
+### Changes
+
+* `parameters`: fix recording of multi-valued and raw parameters when signing a view, and clarify the distinction between `params` and `appConfiguration` in view metadata (https://github.com/clamsproject/clams-python/issues/296)
+* views: handle "empty" views returned from apps consistently and emit an SDK-level warning when an app returns no new annotations (https://github.com/clamsproject/clams-python/issues/305)
+* `-torch` container images: add a minimal C tool chain to the base images for triton compatibility ( https://github.com/clamsproject/clams-python/issues/302)
+
+
+
 ## releasing 1.7.3 (2026-07-09)
 ### Overview
 This patch includes critical bugfixes. See changes below. 
