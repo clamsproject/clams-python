@@ -236,6 +236,19 @@ class TestRestifierEnvelope(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         Mmif(res.get_data(as_text=True))
 
+    def test_empty_collection_param_does_not_crash(self):
+        # {"x": []} / {"x": {}} normalize to an empty list; recording must skip
+        # the param instead of raising IndexError on v[0] (issue #296)
+        for empty in ([], {}):
+            envelope_str = create_envelope(
+                self.mmif_str, {'emptyparam': empty}
+            )
+            res = self.client.post('/', data=envelope_str)
+            self.assertEqual(res.status_code, 200)
+            out = Mmif(res.get_data(as_text=True))
+            for view in out.views:
+                self.assertNotIn('emptyparam', view.metadata.parameters)
+
     PREFIX = "Invalid input data. See below for validation error."
 
     def test_envelope_missing_mmif(self):

@@ -262,6 +262,34 @@ class TestClamsApp(unittest.TestCase):
         self.assertEqual(len(v4.metadata.appConfiguration), 6)
         self.assertEqual(len(v4.metadata.parameters['multivalued_param']), len(str(multiple_values)))
 
+    def test_add_parameters_to_metadata_len_branch(self):
+        # recording branches purely on the number of values, uniformly for
+        # declared and undeclared params (issue #296)
+        m = Mmif(self.in_mmif)
+
+        # single value -> bare value, no list brackets
+        v = m.new_view()
+        self.app.add_parameters_to_metadata(v, {'undeclared': ['solo']})
+        self.assertEqual(v.metadata.parameters['undeclared'], 'solo')
+
+        # multiple values -> serialized list, no data loss
+        v = m.new_view()
+        self.app.add_parameters_to_metadata(v, {'undeclared_multi': ['a', 'b']})
+        self.assertEqual(v.metadata.parameters['undeclared_multi'], str(['a', 'b']))
+
+        # empty list (only an envelope like {"x": []}/{"x": {}} can produce it)
+        # -> treated as unset, skipped, and must not raise IndexError
+        v = m.new_view()
+        self.app.add_parameters_to_metadata(v, {'empty': []})
+        self.assertNotIn('empty', v.metadata.parameters)
+
+        # a declared multivalued param given a single value is also recorded clean
+        self.app.metadata.add_parameter(
+            'mv', 'multivalued', type='string', multivalued=True, default=[])
+        v = m.new_view()
+        self.app.add_parameters_to_metadata(v, {'mv': ['only']})
+        self.assertEqual(v.metadata.parameters['mv'], 'only')
+
     def test_app_tags_default_empty(self):
         # apps that don't declare tags should not write an appTags field to view metadata
         self.assertEqual(self.app.metadata.app_tags, [])
@@ -416,6 +444,55 @@ class TestClamsApp(unittest.TestCase):
         last_view: View = next(reversed(out_mmif.views))
         self.assertEqual(len(last_view.metadata.contains), 0)
         self.assertEqual(len(last_view.metadata.error), 2)
+
+    def test_empty_view_becomes_warning_view(self):
+        class EmptyClamsApp(clams.app.ClamsApp):
+            def _appmetadata(self):
+                pass
+            def _annotate(self, mmif, **kwargs):
+                new_view = mmif.new_view()
+                self.sign_view(new_view, kwargs)
+                new_view.new_contain(AnnotationTypes.TimeFrame)
+                return mmif
+        out_mmif = Mmif(EmptyClamsApp().annotate(self.in_mmif))
+        self.assertEqual(len(out_mmif.views), 1)
+        view = next(iter(out_mmif.views))
+        self.assertEqual(len(view.annotations), 0)
+        self.assertTrue(any('EmptyOutputWarning' in w for w in view.metadata.warnings))
+
+    def test_partial_empty_views_are_pruned_without_warning(self):
+        class MixedClamsApp(clams.app.ClamsApp):
+            def _appmetadata(self):
+                pass
+            def _annotate(self, mmif, **kwargs):
+                populated = mmif.new_view()
+                self.sign_view(populated, kwargs)
+                populated.new_contain(AnnotationTypes.TimeFrame)
+                populated.new_annotation(AnnotationTypes.TimeFrame, start=0, end=1)
+                empty = mmif.new_view()
+                self.sign_view(empty, kwargs)
+                empty.new_contain(AnnotationTypes.TimeFrame)
+                return mmif
+        out_mmif = Mmif(MixedClamsApp().annotate(self.in_mmif))
+        self.assertEqual(len(out_mmif.views), 1)
+        view = next(iter(out_mmif.views))
+        self.assertEqual(len(view.annotations), 1)
+        self.assertFalse(view.has_warnings())
+
+    def test_self_reported_error_view_is_not_pruned(self):
+        class ErroringClamsApp(clams.app.ClamsApp):
+            def _appmetadata(self):
+                pass
+            def _annotate(self, mmif, **kwargs):
+                new_view = mmif.new_view()
+                self.sign_view(new_view, kwargs)
+                new_view.set_error('simulated failure', 'trace')
+                return mmif
+        out_mmif = Mmif(ErroringClamsApp().annotate(self.in_mmif))
+        self.assertEqual(len(out_mmif.views), 1)
+        view = next(iter(out_mmif.views))
+        self.assertTrue(view.has_error())
+        self.assertFalse(view.has_warnings())
 
     def test_gpu_mem_fields_default_zero(self):
         """GPU memory fields default to 0."""

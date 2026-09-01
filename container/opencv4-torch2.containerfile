@@ -4,3 +4,10 @@ LABEL org.opencontainers.image.description="clams-python-opencv4-torch2 image is
 
 RUN pip install --no-cache-dir torch==2.*
 
+# PyTorch ships Triton, which JIT-compiles a small host-side CUDA driver shim
+# at runtime -- that needs a C compiler + libc headers. Keep it minimal
+# (gcc + libc6-dev); build-essential is not required.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
