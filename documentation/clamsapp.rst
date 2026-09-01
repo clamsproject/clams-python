@@ -299,6 +299,18 @@ The envelope looks like this:
 The output is always raw MMIF, regardless of input format, so downstream
 pipeline steps are unaffected.
 
+.. note::
+
+   The values in the envelope's ``parameters`` block (not to be confused with
+   ``view.metadata.parameters``, the recorded output field) are interpreted as
+   native JSON. Use real numbers, booleans, arrays, and objects (e.g. ``0.7``, ``true``,
+   ``["a", "b"]``, ``{"B": "bars"}``), not the URL-encoded string form. To
+   reproduce a past run from an existing MMIF, copy the target view's
+   ``appConfiguration`` into the envelope's ``parameters``; it holds the fully
+   resolved, native-JSON configuration. Copying from ``view.metadata.parameters``
+   is not reliable, since that field is the raw "as typed" transcript and is not
+   guaranteed to round-trip.
+
 You can still combine the envelope with query string parameters.
 When the same parameter appears in both, the **query string takes priority**,
 which allows quick overrides without editing the parameter file:

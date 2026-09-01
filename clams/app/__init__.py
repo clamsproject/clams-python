@@ -301,35 +301,81 @@ class ClamsApp(ABC):
         """
         A method to "sign" a new view that this app creates at the beginning of annotation.
         Signing will populate the view metadata with information and configuration of this app.
-        The parameters passed to the :meth:`~clams.app.ClamsApp._annotate` must be
-        passed to this method. This means all parameters for "common" configuration that
-        are consumed in :meth:`~clams.app.ClamsApp.annotate` should not be recorded in the
-        view metadata.
+
+        The ``runtime_conf`` argument can be either "refined" or "raw" parameters,
+        and what ends up recorded in the view metadata differs accordingly:
+
+        * "refined" params: the output of :meth:`~clams.app.ClamsApp._refine_params`,
+          identifiable by the presence of the internal ``_RAW_PARAMS_KEY`` marker.
+          These carry both the user's raw input and the fully resolved configuration
+          (declared parameters with their defaults filled in). Signing then populates
+          **two** metadata fields: ``parameters`` with the raw user input (before
+          defaults), and ``appConfiguration`` with the resolved configuration,
+          including the universal parameters (e.g. ``pretty``, ``runningTime``,
+          ``hwFetch``, ``tfSamplingMode``).
+        * "raw" params: an unrefined ``Dict[str, List[str]]``. Only the
+          ``parameters`` field is populated; there is no resolved configuration
+          to record. See :meth:`~clams.app.ClamsApp.add_parameters_to_metadata`
+          for the input channels these values come from and how each is recorded.
+
+        These two cases exist because of two distinct execution paths. On the normal
+        annotation path, :meth:`~clams.app.ClamsApp.annotate` refines the parameters
+        before invoking :meth:`~clams.app.ClamsApp._annotate`, so a well-behaved app
+        forwards those already-refined params here and gets the full two-field record.
+        On the error path (:meth:`~clams.app.ClamsApp.set_error_view`), refinement may
+        be exactly what failed (:meth:`~clams.app.ClamsApp._refine_params` raises on a
+        missing required parameter or an invalid choice) so the error view is signed
+        with the raw params to guarantee the error is still recorded.
+
         :param view: a view to sign
-        :param runtime_conf: runtime configuration of the app as k-v pairs
+        :param runtime_conf: runtime configuration of the app, either refined
+            (output of :meth:`~clams.app.ClamsApp._refine_params`) or raw k-v pairs
         """
         view.metadata.app = str(self.metadata.identifier)
         if self.metadata.app_tags:
             view.metadata.set_additional_property('appTags', list(self.metadata.app_tags))
-        params_map = {p.name: p for p in self.metadata.parameters}
         if self._RAW_PARAMS_KEY in runtime_conf:
             for k, v in runtime_conf.items():
                 if k == self._RAW_PARAMS_KEY:
-                    for orik, oriv in v.items():
-                        if orik in params_map and params_map[orik].multivalued:
-                            view.metadata.add_parameter(orik, str(oriv))
-                        else:
-                            view.metadata.add_parameter(orik, oriv[0])
+                    self.add_parameters_to_metadata(view, v)
                 else:
                     view.metadata.add_app_configuration(k, v)
         else:
-            # meaning the parameters directly from flask or argparser and values are in lists
-            for k, v in runtime_conf.items():
-                if k in params_map and params_map[k].multivalued:
-                    view.metadata.add_parameter(k, str(v))
-                else:
-                    view.metadata.add_parameter(k, v[0])
-        
+            # unrefined params passed directly (no _RAW_PARAMS_KEY marker), e.g.
+            # the error path; values are lists
+            self.add_parameters_to_metadata(view, runtime_conf)
+
+    def add_parameters_to_metadata(self, view: View, parameters: dict):
+        """
+        Record raw runtime parameters into the view's ``parameters`` metadata.
+
+        The ``parameters`` argument reaches an app through one of three channels:
+
+        #. a query string, when the app runs as an HTTP server (``app.py``, via
+           :class:`~clams.restify.Restifier`);
+        #. shell arguments, when the app runs as a CLI program (``cli.py``);
+        #. a JSON envelope built with the ``clams envelop`` command (see
+           :mod:`clams.envelop`), whose values are flattened by
+           :func:`~clams.envelop.normalize_params`.
+
+        In every case the values arrive as ``List[str]`` (the shape
+        :meth:`~clams.app.ClamsApp._refine_params` consumes). A single value is
+        recorded bare with the ``List`` wrapper stripped, multiple values as the
+        serialized list, and an empty list skipped as unset (only an envelope
+        such as ``{"x": []}`` produces one, guarding against an ``IndexError``
+        on ``v[0]``).
+
+        :param view: the view being signed
+        :param parameters: raw runtime parameters as ``Dict[str, List[str]]``
+        """
+        for k, v in parameters.items():
+            if len(v) == 0:
+                continue
+            elif len(v) == 1:
+                view.metadata.add_parameter(k, v[0])
+            else:
+                view.metadata.add_parameter(k, str(v))
+
     def set_error_view(self, mmif: Union[str, dict, Mmif], **runtime_conf: List[str]) -> Mmif:
         """
         A method to record an error instead of annotation results in the view
