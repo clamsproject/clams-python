@@ -827,6 +827,23 @@ class ClamsPromptableApp(ClamsApp):
                 'Keep at ``1`` on memory-tight setups; raise only when '
                 'per-prompt content is small and bounded.',
         },
+        {
+            'name': 'maxImagesPerPrompt', 'type': 'integer', 'default': 0,
+            'description':
+                'Maximum number of images the app bundles into a single '
+                'prompt (one generation, one output TextDocument). ``0`` '
+                'means no limit, so all images for a TimeFrame go into one '
+                'prompt and yield one TextDocument. With a positive N, the '
+                'app splits a TimeFrame whose frames exceed N into '
+                'consecutive groups of at most N; each group produces its '
+                'own TextDocument aligned to the same TimeFrame and grounded '
+                'to its own source TimePoints via ``origins``. This bounds '
+                'GPU memory for long dynamic scenes. The value is '
+                'operator-set, so the number of output TextDocuments is '
+                'deterministic and does not vary by GPU. Composes with '
+                '``parallelPrompts``, which batches independent prompts '
+                'into one forward pass.',
+        },
     ]
 
     @staticmethod

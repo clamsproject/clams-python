@@ -213,6 +213,16 @@ from :class:`~clams.app.ClamsApp`. These names are reserved; see
        setups; see the parameter's own description in
        :py:attr:`~clams.app.ClamsPromptableApp.promptable_parameters`
        for an OOM-risk example.
+   * - ``maxImagesPerPrompt``
+     - integer
+     - ``0``
+     - no
+     - Maximum number of images the app bundles into a single prompt (one
+       generation, one output ``TextDocument``). ``0`` means no limit. With a
+       positive value, the app splits a TimeFrame with more frames into
+       consecutive capped groups, each producing its own ``TextDocument``
+       aligned to that TimeFrame and grounded via ``origins``. Bounds GPU
+       memory for long dynamic scenes; composes with ``parallelPrompts``.
 
 .. _promptable-customizing-defaults:
 
