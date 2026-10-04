@@ -7,11 +7,12 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass
+from enum import Enum
 from datetime import datetime
 from urllib import parse as urlparser
 
 __all__ = ['ClamsApp', 'ClamsPromptableApp', 'ClamsHFPromptableApp',
-           'PromptTask']
+           'PromptTask', 'ImagesPerPromptMode']
 
 from typing import Union, Any, Optional, Dict, List, Tuple, cast
 
@@ -53,6 +54,18 @@ falsy_values = [
 
 class EmptyOutputWarning(UserWarning):
     """Raised when an app's ``_annotate()`` produces no non-empty views."""
+
+
+class ImagesPerPromptMode(str, Enum):
+    """
+    How :py:meth:`ClamsPromptableApp.chunk_tasks` sizes the chunks of a
+    task that has more images than the cap. Both modes produce the same
+    number of chunks; they differ in how images are spread over them.
+    """
+    #: Fill each chunk to the cap; the last chunk holds the remainder.
+    MAX = 'max'
+    #: Spread images evenly, so chunk sizes differ by at most one.
+    BALANCED = 'balanced'
 
 
 @dataclass(frozen=True)
@@ -762,8 +775,9 @@ class ClamsPromptableApp(ClamsApp):
       message list from a prompt plus optional images/audios
     * :py:meth:`chunk_tasks` : caps images per prompt by splitting
       :class:`PromptTask`\\ s (``maxImagesPerPrompt``)
-    * :py:meth:`generate_batched` : runs :py:meth:`generate` in slices
-      of at most ``parallelPrompts`` prompts
+    * :py:meth:`generate_batched` : runs :py:meth:`generate` in batches
+      of at most ``parallelPrompts`` prompts, reporting through
+      :py:meth:`report_progress`
     * :py:meth:`response_to_grounded_textdocument` : persists a
       generated response into a view as ``TextDocument`` +
       ``Alignment`` (+ optional ``origins`` / ``origination``)
@@ -878,6 +892,21 @@ class ClamsPromptableApp(ClamsApp):
                 'deterministic and does not vary by GPU. Composes with '
                 '``parallelPrompts``, which batches independent prompts '
                 'into one forward pass.',
+        },
+        {
+            'name': 'imagesPerPromptMode', 'type': 'string',
+            'choices': [m.value for m in ImagesPerPromptMode],
+            'default': ImagesPerPromptMode.MAX.value,
+            'description':
+                'How the images of a TimeFrame that exceeds '
+                '``maxImagesPerPrompt`` are spread over its prompts. Has '
+                'no effect when ``maxImagesPerPrompt`` is ``0``. Both '
+                'choices produce the same number of prompts. "max" fills '
+                'each prompt to the cap and puts the remainder in the '
+                'last one (33 images at a cap of 32 give 32 and 1). '
+                '"balanced" spreads the images evenly, so prompt sizes '
+                'differ by at most one (33 images at a cap of 32 give 17 '
+                'and 16).',
         },
     ]
 
@@ -1135,7 +1164,7 @@ class ClamsPromptableApp(ClamsApp):
             **generation_params,
     ) -> List[str]:
         """
-        Run N prompts through :py:meth:`generate` in slices of at most
+        Run N prompts through :py:meth:`generate` in batches of at most
         ``parallel_prompts`` prompts per call, and return N outputs in
         input order. Apps typically pass the ``parallelPrompts`` runtime
         parameter as ``parallel_prompts``.
@@ -1144,6 +1173,9 @@ class ClamsPromptableApp(ClamsApp):
         meaning as in :py:meth:`generate` and are forwarded to it. A
         text-only call (``images`` and ``audios`` both ``None``) is one
         prompt and runs as a single :py:meth:`generate` call.
+
+        Progress is reported through :py:meth:`report_progress`: once
+        before the first batch and once after each batch.
 
         :param parallel_prompts: maximum number of prompts per
             :py:meth:`generate` call.
@@ -1165,33 +1197,57 @@ class ClamsPromptableApp(ClamsApp):
                 f"{len(images)} vs {len(audios)}.")
         groups = images if images is not None else audios
         if groups is None:
-            return self.generate(
+            self.report_progress(0, 1)
+            outputs = self.generate(
                 prompt, system_prompt=system_prompt,
                 prompt_mode=prompt_mode, **generation_params)
-        outputs: List[str] = []
-        for start in range(0, len(groups), parallel_prompts):
+            self.report_progress(1, 1)
+            return outputs
+        total = len(groups)
+        outputs = []
+        self.report_progress(0, total)
+        for start in range(0, total, parallel_prompts):
             end = start + parallel_prompts
-            self.logger.debug(
-                f"Generating prompts {start + 1}-{min(end, len(groups))} "
-                f"of {len(groups)}")
             outputs.extend(self.generate(
                 prompt, system_prompt=system_prompt,
                 images=images[start:end] if images is not None else None,
                 audios=audios[start:end] if audios is not None else None,
                 prompt_mode=prompt_mode, **generation_params))
+            self.report_progress(min(end, total), total)
         return outputs
+
+    def report_progress(self, done: int, total: int) -> None:
+        """
+        Receive generation progress from :py:meth:`generate_batched`,
+        which calls this once with ``done=0`` before the first batch and
+        once after each batch. The default implementation writes one
+        INFO log line. Override to report differently (another log
+        level or wording, a progress bar) or to stay silent.
+
+        The app instance serves all requests, so an override that keeps
+        state on ``self`` between calls is shared by concurrent
+        requests.
+
+        :param done: number of prompts generated so far.
+        :param total: number of prompts in this
+            :py:meth:`generate_batched` call.
+        """
+        self.logger.info(f"Generated {done}/{total} prompts")
 
     @staticmethod
     def chunk_tasks(
-            tasks: List[PromptTask], max_images: int,
+            tasks: List[PromptTask],
+            max_images: int,
+            mode: Union[str, ImagesPerPromptMode] = ImagesPerPromptMode.MAX,
     ) -> List[PromptTask]:
         """
         Split each task with more than ``max_images`` images into
         consecutive tasks of at most ``max_images`` images, chunking
         ``origins`` in step and keeping ``source``. Tasks at or under the
         cap pass through unchanged, and task order is preserved. Apps
-        typically pass the ``maxImagesPerPrompt`` runtime parameter as
-        ``max_images``.
+        typically pass the ``maxImagesPerPrompt`` and
+        ``imagesPerPromptMode`` runtime parameters as ``max_images`` and
+        ``mode``.
 
         Each resulting task yields one response and one ``TextDocument``,
         so an over-cap TimeFrame produces several ``TextDocument``\\ s
@@ -1201,10 +1257,14 @@ class ClamsPromptableApp(ClamsApp):
         :param tasks: the tasks to split.
         :param max_images: maximum number of images per task. ``0`` means
             no cap.
+        :param mode: how the images of an over-cap task are spread over
+            its chunks; see :class:`ImagesPerPromptMode`.
         :returns: the capped tasks, in order.
         :rtype: List[PromptTask]
-        :raises ValueError: if ``max_images`` is negative.
+        :raises ValueError: if ``max_images`` is negative or ``mode`` is
+            not a valid :class:`ImagesPerPromptMode`.
         """
+        mode = ImagesPerPromptMode(mode)
         if max_images < 0:
             raise ValueError(
                 f"max_images must be 0 (no cap) or positive; "
@@ -1213,15 +1273,26 @@ class ClamsPromptableApp(ClamsApp):
             return list(tasks)
         capped: List[PromptTask] = []
         for task in tasks:
-            if len(task.images) <= max_images:
+            n_images = len(task.images)
+            if n_images <= max_images:
                 capped.append(task)
                 continue
-            for start in range(0, len(task.images), max_images):
-                end = start + max_images
+            n_chunks = -(-n_images // max_images)
+            if mode is ImagesPerPromptMode.BALANCED:
+                size, n_larger = divmod(n_images, n_chunks)
+                sizes = ([size + 1] * n_larger
+                         + [size] * (n_chunks - n_larger))
+            else:
+                sizes = [max_images] * (n_chunks - 1)
+                sizes.append(n_images - sum(sizes))
+            start = 0
+            for size in sizes:
+                end = start + size
                 capped.append(PromptTask(
                     images=task.images[start:end],
                     origins=task.origins[start:end],
                     source=task.source))
+                start = end
         return capped
 
     def response_to_grounded_textdocument(

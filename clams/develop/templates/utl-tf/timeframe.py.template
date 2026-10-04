@@ -136,12 +136,13 @@ def collect_timeframes_of_interest(
     ``mmif[task.source].get_property('label')``.
 
     In a ``ClamsPromptableApp``, the tasks feed the SDK helpers that
-    honor the ``maxImagesPerPrompt`` and ``parallelPrompts`` runtime
-    parameters::
+    honor the ``maxImagesPerPrompt``, ``imagesPerPromptMode``, and
+    ``parallelPrompts`` runtime parameters::
 
         tasks = self.chunk_tasks(
             collect_timeframes_of_interest(...),
-            parameters['maxImagesPerPrompt'])
+            parameters['maxImagesPerPrompt'],
+            parameters['imagesPerPromptMode'])
         responses = self.generate_batched(
             parameters['prompt'], images=[t.images for t in tasks],
             parallel_prompts=parameters['parallelPrompts'], ...)

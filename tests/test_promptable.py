@@ -191,6 +191,22 @@ class TestChunkTasks(unittest.TestCase):
         with self.assertRaises(ValueError):
             ClamsPromptableApp.chunk_tasks([make_task(5)], -1)
 
+    def test_balanced_mode_evens_out_chunk_sizes(self):
+        for n_images, expected in [(33, [17, 16]), (90, [30, 30, 30]),
+                                   (65, [22, 22, 21]), (64, [32, 32])]:
+            with self.subTest(n_images=n_images):
+                chunks = ClamsPromptableApp.chunk_tasks(
+                    [make_task(n_images)], 32, 'balanced')
+                self.assertEqual(
+                    [len(c.images) for c in chunks], expected)
+                self.assertEqual(
+                    [img for c in chunks for img in c.images],
+                    make_task(n_images).images)
+
+    def test_unknown_mode_raises(self):
+        with self.assertRaises(ValueError):
+            ClamsPromptableApp.chunk_tasks([make_task(5)], 2, 'even')
+
 
 # ---------------------------------------------------------------------------
 # generate_batched (parallelPrompts)
@@ -201,15 +217,22 @@ class TestGenerateBatched(unittest.TestCase):
     def setUp(self):
         self.app = make_test_app(make_metadata(call_helper=True))
         self.calls = []
+        self.call_kwargs = []
 
         def stub_generate(prompt, images=None, audios=None, **kwargs):
             self.calls.append(images)
-            if images is None:
+            self.call_kwargs.append(
+                dict(prompt=prompt, images=images, audios=audios, **kwargs))
+            if images is None and audios is None:
                 return ['text-only']
-            # echo the first image of each group so output order is visible
-            return [group[0] for group in images]
+            # echo the first item of each group so output order is visible
+            groups = images if images is not None else audios
+            return [group[0] for group in groups]
 
         self.app.generate = stub_generate
+        self.progress = []
+        self.app.report_progress = (
+            lambda done, total: self.progress.append((done, total)))
 
     def test_slices_by_parallel_prompts_and_keeps_order(self):
         images = [[f'img{i}'] for i in range(5)]
@@ -224,11 +247,70 @@ class TestGenerateBatched(unittest.TestCase):
         self.assertEqual([len(c) for c in self.calls], [1, 1, 1])
         self.assertEqual(outputs, ['a', 'b', 'c'])
 
+    def test_arguments_are_forwarded_to_generate(self):
+        outputs = self.app.generate_batched(
+            ['q1', 'a1', 'q2'], system_prompt='be brief',
+            images=[[f'img{i}'] for i in range(3)],
+            prompt_mode='user-only', parallel_prompts=2,
+            max_new_tokens=64, use_reasoning=True)
+        self.assertEqual(len(self.call_kwargs), 2)
+        for kw in self.call_kwargs:
+            self.assertEqual(kw['prompt'], ['q1', 'a1', 'q2'])
+            self.assertEqual(kw['system_prompt'], 'be brief')
+            self.assertEqual(kw['prompt_mode'], 'user-only')
+            self.assertEqual(kw['max_new_tokens'], 64)
+            self.assertIs(kw['use_reasoning'], True)
+            self.assertNotIn('parallel_prompts', kw)
+        self.assertEqual(outputs, ['img0', 'img1', 'img2'])
+
+    def test_audio_only_input_is_batched(self):
+        audios = [[f'aud{i}'] for i in range(5)]
+        outputs = self.app.generate_batched(
+            ['transcribe'], audios=audios, parallel_prompts=2)
+        self.assertEqual(
+            [kw['audios'] for kw in self.call_kwargs],
+            [audios[0:2], audios[2:4], audios[4:5]])
+        self.assertEqual([kw['images'] for kw in self.call_kwargs],
+                         [None, None, None])
+        self.assertEqual(outputs, [f'aud{i}' for i in range(5)])
+
+    def test_images_and_audios_are_sliced_in_step(self):
+        images = [[f'img{i}'] for i in range(5)]
+        audios = [[f'aud{i}'] for i in range(5)]
+        self.app.generate_batched(
+            ['describe'], images=images, audios=audios,
+            parallel_prompts=2)
+        self.assertEqual(
+            [kw['images'] for kw in self.call_kwargs],
+            [images[0:2], images[2:4], images[4:5]])
+        self.assertEqual(
+            [kw['audios'] for kw in self.call_kwargs],
+            [audios[0:2], audios[2:4], audios[4:5]])
+
     def test_text_only_runs_single_call(self):
         outputs = self.app.generate_batched(
             ['describe'], parallel_prompts=4)
         self.assertEqual(self.calls, [None])
         self.assertEqual(outputs, ['text-only'])
+
+    def test_progress_is_reported_before_and_after_each_batch(self):
+        self.app.generate_batched(
+            ['describe'], images=[[f'img{i}'] for i in range(5)],
+            parallel_prompts=2)
+        self.assertEqual(self.progress, [(0, 5), (2, 5), (4, 5), (5, 5)])
+
+    def test_text_only_progress_counts_one_prompt(self):
+        self.app.generate_batched(['describe'])
+        self.assertEqual(self.progress, [(0, 1), (1, 1)])
+
+    def test_default_progress_report_logs_at_info(self):
+        del self.app.report_progress
+        with self.assertLogs(self.app.logger, level='INFO') as logs:
+            self.app.generate_batched(
+                ['describe'], images=[['a'], ['b']], parallel_prompts=2)
+        self.assertEqual(
+            [r.getMessage() for r in logs.records],
+            ['Generated 0/2 prompts', 'Generated 2/2 prompts'])
 
     def test_parallel_prompts_below_one_raises(self):
         with self.assertRaises(ValueError):
@@ -240,6 +322,70 @@ class TestGenerateBatched(unittest.TestCase):
             self.app.generate_batched(
                 ['describe'], images=[['a'], ['b']], audios=[['x']],
                 parallel_prompts=1)
+
+
+# ---------------------------------------------------------------------------
+# Chunked grounding (chunk_tasks + generate_batched + response writing)
+# ---------------------------------------------------------------------------
+
+class TestChunkedGrounding(unittest.TestCase):
+
+    def setUp(self):
+        self.app = make_test_app(make_metadata(call_helper=True))
+        self.app.report_progress = lambda done, total: None
+        self.mmif = Mmif(validate=False)
+        vdoc = Document()
+        vdoc.at_type = DocumentTypes.VideoDocument
+        vdoc.id = 'v1'
+        vdoc.location = 'file:///video.mp4'
+        self.mmif.add_document(vdoc)
+        src_view = self.mmif.new_view()
+        src_view.metadata.app = 'http://upstream/1'
+        self.tf = src_view.new_annotation(
+            AnnotationTypes.TimeFrame, document=vdoc.id, label='scene')
+        self.tp_ids = [
+            src_view.new_annotation(
+                AnnotationTypes.TimePoint, document=vdoc.id,
+                timePoint=1000 * (i + 1)).id
+            for i in range(5)]
+        self.view = self.mmif.new_view()
+        self.app.sign_view(self.view, {})
+        self.view.new_contain(DocumentTypes.TextDocument)
+        self.view.new_contain(AnnotationTypes.Alignment)
+
+    def test_chunks_yield_one_grounded_textdocument_each(self):
+        task = PromptTask(
+            images=[f'img{i}' for i in range(5)],
+            origins=list(self.tp_ids), source=self.tf.id)
+        tasks = ClamsPromptableApp.chunk_tasks([task], 2)
+        self.app.generate = lambda prompt, images=None, **kw: [
+            '+'.join(group) for group in images]
+        responses = self.app.generate_batched(
+            ['describe'], images=[t.images for t in tasks],
+            parallel_prompts=2)
+        results = [
+            self.app.response_to_grounded_textdocument(
+                self.view, t.source, r, origins=t.origins,
+                origination='derived')
+            for t, r in zip(tasks, responses)]
+
+        self.assertEqual(len(results), 3)
+        tds = [td for td, _ in results]
+        aligns = [al for _, al in results]
+        self.assertEqual(
+            [al.get_property('source') for al in aligns],
+            [self.tf.id] * 3)
+        self.assertEqual(
+            len({al.get_property('target') for al in aligns}), 3)
+        self.assertEqual(
+            [al.get_property('target') for al in aligns],
+            [td.id for td in tds])
+        self.assertEqual(
+            [td.get_property('origins') for td in tds],
+            [self.tp_ids[0:2], self.tp_ids[2:4], self.tp_ids[4:5]])
+        self.assertEqual(
+            [td.text_value for td in tds],
+            ['img0+img1', 'img2+img3', 'img4'])
 
 
 # ---------------------------------------------------------------------------
