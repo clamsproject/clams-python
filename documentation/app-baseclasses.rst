@@ -404,6 +404,20 @@ Helpers
     may override to access model-specific state (e.g.
     ``self.processor``) when formatting messages.
 
+:meth:`~clams.app.ClamsPromptableApp.chunk_tasks`
+    A static method that applies ``maxImagesPerPrompt``: splits each
+    :class:`~clams.app.PromptTask` (images, their ``origins``, and the
+    anchoring ``source``) with more images than the cap into consecutive
+    capped tasks. Each task yields one ``TextDocument``, so with a cap
+    set, one TimeFrame can yield several ``TextDocument`` annotations
+    aligned to it, each grounded to its own ``origins``. Consumers of
+    promptable-app output must not assume one ``TextDocument`` per
+    TimeFrame.
+
+:meth:`~clams.app.ClamsPromptableApp.generate_batched`
+    Applies ``parallelPrompts``: calls ``generate()`` on slices of at
+    most that many prompts and returns one output per prompt, in order.
+
 :meth:`~clams.app.ClamsPromptableApp.response_to_grounded_textdocument`
     Writes a ``TextDocument`` plus an ``Alignment`` (``source -> TD``)
     into a view. ``source`` is the coarse cross-modal anchor; the

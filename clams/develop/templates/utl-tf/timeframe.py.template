@@ -16,13 +16,14 @@ processing video by TimeFrames tends to write:
   3. when ``vdh`` returns a fallback timestamp (milliseconds, no
      existing TP behind it), mint a fresh ``TimePoint`` annotation in
      the app's new view so downstream code has a stable anchor id
-  4. assemble per-TF task tuples that downstream batching /
-     inference / annotation code can consume uniformly
+  4. assemble one ``clams.app.PromptTask`` per TF that downstream
+     batching / inference / annotation code can consume uniformly
 
 The helpers are backend-agnostic: tasks can feed a HuggingFace VLM, a
 remote LLM API, a classical CV pipeline, or any other per-frame
-processor. They have no dependency on ``clams.app.ClamsPromptableApp``
-or any other promptable / inference machinery.
+processor. Their only SDK dependency is the ``PromptTask`` data type;
+they do not use ``clams.app.ClamsPromptableApp`` or any other
+inference machinery.
 
 These functions are scaffolded into each app so individual apps can
 edit them freely while the pattern stabilizes across the ecosystem.
@@ -30,12 +31,13 @@ Once the shape converges across several apps, the helpers are good
 candidates for promotion into a shared package -- either
 ``mmif.utils`` (for the pure-MMIF iteration / TP minting pieces, which
 have no clams-app dependency) or ``clams.<helpers>`` (for the
-task-tuple composition that does presuppose the "writing into a new
-view" CLAMS-app idiom). If/when that happens, apps would import the
+task composition that does presuppose the "writing into a new view"
+CLAMS-app idiom). If/when that happens, apps would import the
 shared version and delete this local copy.
 """
-from typing import Any, Iterator, List, Optional, Tuple, Union
+from typing import Iterator, List, Union
 
+from clams.app import PromptTask
 from mmif import Annotation, Document, Mmif, View, AnnotationTypes
 from mmif.utils import video_document_helper as vdh
 
@@ -117,21 +119,36 @@ def collect_timeframes_of_interest(
         parent_view: View,
         video_doc: Document,
         tflabels_of_interest: List[str],
-) -> List[Tuple[List[Any], List[str], str, Optional[str]]]:
+) -> List[PromptTask]:
     """
     Convenience composition of :func:`iter_timeframes`,
     :func:`vdh.extract_images_by_mode_with_sources`, and
-    :func:`to_timepoints`. Returns one
-    ``(images, tp_ids, tf_id, tf_label)`` task per matching TimeFrame
-    that produced at least one sampled frame.
+    :func:`to_timepoints`. Returns one ``PromptTask`` per matching
+    TimeFrame that produced at least one sampled frame.
 
-    Each task's ``images`` and ``tp_ids`` are parallel lists -- one
+    Each task's ``images`` and ``origins`` are parallel lists -- one
     entry per frame sampled from that TF (length 1 for
     ``tfSamplingMode=single``, N for ``representatives`` / ``all``).
-    Each entry of ``tp_ids`` is either the id of an existing
+    Each entry of ``origins`` is either the id of an existing
     TimePoint or the id of a freshly-minted one (see
-    :func:`to_timepoints`). ``tf_label`` is the source TimeFrame's
-    ``label`` property value, or ``None`` if unset.
+    :func:`to_timepoints`). ``source`` is the TimeFrame id; look up
+    other TF properties through it, e.g.
+    ``mmif[task.source].get_property('label')``.
+
+    In a ``ClamsPromptableApp``, the tasks feed the SDK helpers that
+    honor the ``maxImagesPerPrompt`` and ``parallelPrompts`` runtime
+    parameters::
+
+        tasks = self.chunk_tasks(
+            collect_timeframes_of_interest(...),
+            parameters['maxImagesPerPrompt'])
+        responses = self.generate_batched(
+            parameters['prompt'], images=[t.images for t in tasks],
+            parallel_prompts=parameters['parallelPrompts'], ...)
+        for task, response in zip(tasks, responses):
+            self.response_to_grounded_textdocument(
+                view, task.source, response,
+                origins=task.origins, origination='derived')
 
     :param mmif: the input MMIF.
     :param parent_view: the view this app is writing into.
@@ -139,16 +156,17 @@ def collect_timeframes_of_interest(
         extracted from.
     :param tflabels_of_interest: optional label filter; empty list =
         no filter.
-    :return: per-TF task tuples, ready to feed a batched inference
-        loop or any other per-frame processor.
+    :return: per-TF tasks, ready to feed a batched inference loop or
+        any other per-frame processor.
     """
-    tasks: List[Tuple[List[Any], List[str], str, Optional[str]]] = []
+    tasks: List[PromptTask] = []
     for tf in iter_timeframes(mmif, tflabels_of_interest):
         images, sources = vdh.extract_images_by_mode_with_sources(
             mmif, tf, as_PIL=True)
         if not images:
             continue
-        tp_ids = to_timepoints(parent_view, video_doc, sources)
-        tf_label = tf.get_property('label')
-        tasks.append((list(images), tp_ids, tf.id, tf_label))
+        tasks.append(PromptTask(
+            images=list(images),
+            origins=to_timepoints(parent_view, video_doc, sources),
+            source=tf.id))
     return tasks

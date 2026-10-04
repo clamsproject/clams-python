@@ -13,6 +13,7 @@ import unittest
 from mmif import AnnotationTypes, Document, DocumentTypes, Mmif
 
 from clams import AppMetadata, ClamsPromptableApp
+from clams.app import PromptTask
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +126,120 @@ class TestParameterDiscovery(unittest.TestCase):
                   if p.name == 'promptMode')
         self.assertEqual(set(pm.choices), {'user-only', 'turn-taking'})
         self.assertEqual(pm.default, 'turn-taking')
+
+
+# ---------------------------------------------------------------------------
+# PromptTask and chunk_tasks (maxImagesPerPrompt)
+# ---------------------------------------------------------------------------
+
+def make_task(n_images, source='tf1'):
+    """
+    Build a PromptTask whose ``origins[i]`` names the frame in
+    ``images[i]``, so alignment can be checked after chunking.
+    """
+    return PromptTask(
+        images=[f'{source}-img{i}' for i in range(n_images)],
+        origins=[f'{source}-tp{i}' for i in range(n_images)],
+        source=source)
+
+
+class TestPromptTask(unittest.TestCase):
+
+    def test_mismatched_images_and_origins_raise(self):
+        with self.assertRaises(ValueError):
+            PromptTask(images=['a', 'b'], origins=['tp1'], source='tf1')
+
+
+class TestChunkTasks(unittest.TestCase):
+
+    def test_no_cap_keeps_one_task_per_timeframe(self):
+        tasks = [make_task(90, 'tf1'), make_task(3, 'tf2')]
+        self.assertEqual(ClamsPromptableApp.chunk_tasks(tasks, 0), tasks)
+
+    def test_task_at_cap_is_not_split(self):
+        task = make_task(32)
+        self.assertEqual(
+            ClamsPromptableApp.chunk_tasks([task], 32), [task])
+
+    def test_over_cap_splits_in_order(self):
+        chunks = ClamsPromptableApp.chunk_tasks([make_task(90)], 32)
+        self.assertEqual([len(c.images) for c in chunks], [32, 32, 26])
+        self.assertEqual(
+            [img for c in chunks for img in c.images],
+            make_task(90).images)
+        self.assertEqual({c.source for c in chunks}, {'tf1'})
+
+    def test_exact_multiple_splits_evenly(self):
+        chunks = ClamsPromptableApp.chunk_tasks([make_task(64)], 32)
+        self.assertEqual([len(c.images) for c in chunks], [32, 32])
+
+    def test_origins_stay_aligned_with_images(self):
+        chunks = ClamsPromptableApp.chunk_tasks([make_task(7)], 3)
+        for c in chunks:
+            self.assertEqual(
+                [o.replace('-tp', '-img') for o in c.origins], c.images)
+
+    def test_timeframe_order_is_preserved(self):
+        tasks = [make_task(5, 'tf1'), make_task(1, 'tf2'),
+                 make_task(3, 'tf3')]
+        chunks = ClamsPromptableApp.chunk_tasks(tasks, 2)
+        self.assertEqual(
+            [c.source for c in chunks],
+            ['tf1', 'tf1', 'tf1', 'tf2', 'tf3', 'tf3'])
+
+    def test_negative_cap_raises(self):
+        with self.assertRaises(ValueError):
+            ClamsPromptableApp.chunk_tasks([make_task(5)], -1)
+
+
+# ---------------------------------------------------------------------------
+# generate_batched (parallelPrompts)
+# ---------------------------------------------------------------------------
+
+class TestGenerateBatched(unittest.TestCase):
+
+    def setUp(self):
+        self.app = make_test_app(make_metadata(call_helper=True))
+        self.calls = []
+
+        def stub_generate(prompt, images=None, audios=None, **kwargs):
+            self.calls.append(images)
+            if images is None:
+                return ['text-only']
+            # echo the first image of each group so output order is visible
+            return [group[0] for group in images]
+
+        self.app.generate = stub_generate
+
+    def test_slices_by_parallel_prompts_and_keeps_order(self):
+        images = [[f'img{i}'] for i in range(5)]
+        outputs = self.app.generate_batched(
+            ['describe'], images=images, parallel_prompts=2)
+        self.assertEqual([len(c) for c in self.calls], [2, 2, 1])
+        self.assertEqual(outputs, [f'img{i}' for i in range(5)])
+
+    def test_default_runs_one_prompt_per_call(self):
+        images = [['a'], ['b'], ['c']]
+        outputs = self.app.generate_batched(['describe'], images=images)
+        self.assertEqual([len(c) for c in self.calls], [1, 1, 1])
+        self.assertEqual(outputs, ['a', 'b', 'c'])
+
+    def test_text_only_runs_single_call(self):
+        outputs = self.app.generate_batched(
+            ['describe'], parallel_prompts=4)
+        self.assertEqual(self.calls, [None])
+        self.assertEqual(outputs, ['text-only'])
+
+    def test_parallel_prompts_below_one_raises(self):
+        with self.assertRaises(ValueError):
+            self.app.generate_batched(
+                ['describe'], images=[['a']], parallel_prompts=0)
+
+    def test_mismatched_images_and_audios_raise(self):
+        with self.assertRaises(ValueError):
+            self.app.generate_batched(
+                ['describe'], images=[['a'], ['b']], audios=[['x']],
+                parallel_prompts=1)
 
 
 # ---------------------------------------------------------------------------

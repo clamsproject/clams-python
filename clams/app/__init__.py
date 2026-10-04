@@ -6,10 +6,12 @@ import sys
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime
 from urllib import parse as urlparser
 
-__all__ = ['ClamsApp', 'ClamsPromptableApp', 'ClamsHFPromptableApp']
+__all__ = ['ClamsApp', 'ClamsPromptableApp', 'ClamsHFPromptableApp',
+           'PromptTask']
 
 from typing import Union, Any, Optional, Dict, List, Tuple, cast
 
@@ -51,6 +53,35 @@ falsy_values = [
 
 class EmptyOutputWarning(UserWarning):
     """Raised when an app's ``_annotate()`` produces no non-empty views."""
+
+
+@dataclass(frozen=True)
+class PromptTask:
+    """
+    One unit of promptable work: the images bundled into a single prompt,
+    the annotations they were drawn from, and the annotation the response
+    is anchored to.
+
+    ``images`` and ``origins`` are parallel: ``origins[i]`` is the ``id``
+    of the annotation (typically a ``TimePoint``) that ``images[i]`` was
+    extracted from. ``source`` is the ``id`` of the coarse anchor
+    (typically the parent ``TimeFrame``). The fields map directly onto
+    :py:meth:`ClamsPromptableApp.response_to_grounded_textdocument`.
+    ``source`` also serves as the join key for app-side data about the
+    anchor, such as the TimeFrame label.
+
+    :raises ValueError: if ``images`` and ``origins`` differ in length.
+    """
+    images: List[Any]
+    origins: List[str]
+    source: str
+
+    def __post_init__(self):
+        if len(self.images) != len(self.origins):
+            raise ValueError(
+                f"PromptTask images and origins must be parallel; got "
+                f"{len(self.images)} images and {len(self.origins)} "
+                f"origins for source {self.source!r}.")
 
 
 class ClamsApp(ABC):
@@ -729,6 +760,10 @@ class ClamsPromptableApp(ClamsApp):
       parameter set to ``AppMetadata``
     * :py:meth:`build_conversation` : assembles a chat-template-compatible
       message list from a prompt plus optional images/audios
+    * :py:meth:`chunk_tasks` : caps images per prompt by splitting
+      :class:`PromptTask`\\ s (``maxImagesPerPrompt``)
+    * :py:meth:`generate_batched` : runs :py:meth:`generate` in slices
+      of at most ``parallelPrompts`` prompts
     * :py:meth:`response_to_grounded_textdocument` : persists a
       generated response into a view as ``TextDocument`` +
       ``Alignment`` (+ optional ``origins`` / ``origination``)
@@ -1088,6 +1123,106 @@ class ClamsPromptableApp(ClamsApp):
             if i < len(prompts) - 1:
                 base.append({'role': 'assistant', 'content': None})
         return convs
+
+    def generate_batched(
+            self,
+            prompt: List[str],
+            system_prompt: str = '',
+            images: Optional[List[List[Any]]] = None,
+            audios: Optional[List[List[Any]]] = None,
+            prompt_mode: str = 'turn-taking',
+            parallel_prompts: int = 1,
+            **generation_params,
+    ) -> List[str]:
+        """
+        Run N prompts through :py:meth:`generate` in slices of at most
+        ``parallel_prompts`` prompts per call, and return N outputs in
+        input order. Apps typically pass the ``parallelPrompts`` runtime
+        parameter as ``parallel_prompts``.
+
+        The arguments other than ``parallel_prompts`` have the same
+        meaning as in :py:meth:`generate` and are forwarded to it. A
+        text-only call (``images`` and ``audios`` both ``None``) is one
+        prompt and runs as a single :py:meth:`generate` call.
+
+        :param parallel_prompts: maximum number of prompts per
+            :py:meth:`generate` call.
+        :returns: one output per prompt, in input order.
+        :rtype: List[str]
+        :raises ValueError: if ``parallel_prompts`` is less than 1, or if
+            ``images`` and ``audios`` are both given with different outer
+            lengths.
+        """
+        if parallel_prompts < 1:
+            raise ValueError(
+                f"parallel_prompts must be at least 1; "
+                f"got {parallel_prompts}.")
+        if images is not None and audios is not None \
+                and len(images) != len(audios):
+            raise ValueError(
+                f"images and audios must have the same outer length "
+                f"when both are given; got "
+                f"{len(images)} vs {len(audios)}.")
+        groups = images if images is not None else audios
+        if groups is None:
+            return self.generate(
+                prompt, system_prompt=system_prompt,
+                prompt_mode=prompt_mode, **generation_params)
+        outputs: List[str] = []
+        for start in range(0, len(groups), parallel_prompts):
+            end = start + parallel_prompts
+            self.logger.debug(
+                f"Generating prompts {start + 1}-{min(end, len(groups))} "
+                f"of {len(groups)}")
+            outputs.extend(self.generate(
+                prompt, system_prompt=system_prompt,
+                images=images[start:end] if images is not None else None,
+                audios=audios[start:end] if audios is not None else None,
+                prompt_mode=prompt_mode, **generation_params))
+        return outputs
+
+    @staticmethod
+    def chunk_tasks(
+            tasks: List[PromptTask], max_images: int,
+    ) -> List[PromptTask]:
+        """
+        Split each task with more than ``max_images`` images into
+        consecutive tasks of at most ``max_images`` images, chunking
+        ``origins`` in step and keeping ``source``. Tasks at or under the
+        cap pass through unchanged, and task order is preserved. Apps
+        typically pass the ``maxImagesPerPrompt`` runtime parameter as
+        ``max_images``.
+
+        Each resulting task yields one response and one ``TextDocument``,
+        so an over-cap TimeFrame produces several ``TextDocument``\\ s
+        aligned to the same ``source``, each grounded to its own
+        ``origins``.
+
+        :param tasks: the tasks to split.
+        :param max_images: maximum number of images per task. ``0`` means
+            no cap.
+        :returns: the capped tasks, in order.
+        :rtype: List[PromptTask]
+        :raises ValueError: if ``max_images`` is negative.
+        """
+        if max_images < 0:
+            raise ValueError(
+                f"max_images must be 0 (no cap) or positive; "
+                f"got {max_images}.")
+        if max_images == 0:
+            return list(tasks)
+        capped: List[PromptTask] = []
+        for task in tasks:
+            if len(task.images) <= max_images:
+                capped.append(task)
+                continue
+            for start in range(0, len(task.images), max_images):
+                end = start + max_images
+                capped.append(PromptTask(
+                    images=task.images[start:end],
+                    origins=task.origins[start:end],
+                    source=task.source))
+        return capped
 
     def response_to_grounded_textdocument(
             self,
