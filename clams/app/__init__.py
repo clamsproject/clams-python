@@ -56,7 +56,7 @@ class EmptyOutputWarning(UserWarning):
     """Raised when an app's ``_annotate()`` produces no non-empty views."""
 
 
-class ImagesPerPromptMode(str, Enum):
+class ImagesPerPromptMode(Enum):
     """
     How :py:meth:`ClamsPromptableApp.chunk_tasks` sizes the chunks of a
     task that has more images than the cap. Both modes produce the same
