@@ -15,7 +15,7 @@ Unlike the old `setup.py`-based workflow, an editable install
 (`pip install -e .`) is now required before running tests or building
 docs. The package uses `importlib.metadata` for version resolution at
 runtime, which only works when the package is registered in the
-environment. You can no longer run `pytest` or `pytype` directly
+environment. You can no longer run `pytest` or `mypy` directly
 against the source tree without installing first. If you want to avoid
 pulling in all dependencies, `pip install -e . --no-deps` is sufficient
 to register the package metadata.

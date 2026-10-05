@@ -13,7 +13,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 # Directories to remove
 CLEAN_DIRS = [
     "build", "dist", "*.egg-info", "clams_python-*",
-    ".pytest_cache", ".pytype", ".hypothesis",
+    ".pytest_cache", ".mypy_cache", ".hypothesis",
     "tests/.hypothesis", "htmlcov",
     "docs-test",
 ]
