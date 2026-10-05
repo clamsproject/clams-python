@@ -37,7 +37,7 @@ class CookieCutter(object):
         if recipes:
             self.recipes = recipes
         else:
-            self.recipes = available_recipes.keys()
+            self.recipes = list(available_recipes.keys())
         
     def tokenize_rawname(self):
         word_pat = re.compile('[A-Z][a-z]+|[0-9A-Z]+(?=[A-Z][a-z])|[0-9A-Z]{2,}|[a-z0-9]{2,}|[a-zA-Z0-9]')
