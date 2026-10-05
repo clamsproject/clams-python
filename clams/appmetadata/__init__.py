@@ -1,10 +1,11 @@
+import inspect
 import json
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Union, Dict, List, Optional, Literal, Any
+from typing import Union, Dict, List, Optional, Literal, Any, get_args
 
 import mmif
 import pydantic
@@ -22,7 +23,7 @@ map_param_kv_delimiter = ':'
 # dict to map app parameter data types to Python data types
 python_type = {"boolean": bool, "number": float, "integer": int, "string": str, "map": dict}
 
-param_value_types_values = param_value_types.__args__  # pytype: disable=attribute-error
+param_value_types_values = get_args(param_value_types)
 app_directory_baseurl = "http://apps.clams.ai"
 
 
@@ -42,7 +43,9 @@ def get_clams_pyver():
 
 def generate_app_version(cwd=None):
     gitcmd = shutil.which('git') 
-    gitdir = (Path(sys.modules["__main__"].__file__).parent.resolve() if cwd is None else Path(cwd)) / '.git'
+    if cwd is None:
+        cwd = Path(inspect.getfile(sys.modules["__main__"])).parent.resolve()
+    gitdir = Path(cwd) / '.git'
     if gitcmd is not None and gitdir.exists():
         try:
             proc = subprocess.run([gitcmd, '--git-dir', str(gitdir), 'describe', '--tags', '--always'], 
@@ -60,6 +63,12 @@ def get_mmif_specver():
     return mmif.__specver__
 
 
+# TODO (krim @ 10/05/26): in the 2.0.0 cycle, make the pydantic-specific
+# helpers in this module private (underscore-prefixed), as they are not
+# part of the developer-facing API: the schema adjusters (`pop_titles`,
+# `jsonschema_versioning`) and the validators (`validate_properties`,
+# `at_type_must_be_str`, `assign_versions`, `validate_gpu_memory`,
+# `append_version`).
 def pop_titles(js):
     for prop in js.get('properties', {}).values():
         prop.pop('title', None)
@@ -68,6 +77,11 @@ def pop_titles(js):
 def jsonschema_versioning(js):
     js['$schema'] = pydantic.json_schema.GenerateJsonSchema.schema_dialect
     js['$comment'] = f"clams-python SDK {get_clams_pyver()} was used to generate this schema"
+
+
+def _adjust_appmetadata_schema(js):
+    pop_titles(js)
+    jsonschema_versioning(js)
 
 
 class _BaseModel(pydantic.BaseModel):
@@ -381,7 +395,7 @@ class AppMetadata(pydantic.BaseModel):
         'title': 'CLAMS AppMetadata',
         'extra': 'forbid',
         'validate_by_name': True,
-        'json_schema_extra': lambda schema, model: [adjust(schema) for adjust in [pop_titles, jsonschema_versioning]],
+        'json_schema_extra': _adjust_appmetadata_schema,
     }
     
     @pydantic.model_validator(mode='after')

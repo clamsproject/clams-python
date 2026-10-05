@@ -11,7 +11,7 @@ from clams.envelop import create_envelope
 from clams.restify import Restifier
 from clams.ver import __version__
 
-__all__ = [AppMetadata, Restifier] + app_all
+__all__ = ['AppMetadata', 'Restifier'] + app_all
 version_template = "{} (based on MMIF spec: {})"
 
 
