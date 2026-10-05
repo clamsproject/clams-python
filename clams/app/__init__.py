@@ -1,3 +1,4 @@
+import inspect
 import json
 import logging
 import os
@@ -14,14 +15,14 @@ from urllib import parse as urlparser
 __all__ = ['ClamsApp', 'ClamsPromptableApp', 'ClamsHFPromptableApp',
            'PromptTask', 'ImagesPerPromptMode']
 
-from typing import Union, Any, Optional, Dict, List, Tuple, cast
+from typing import Union, Any, Optional, Dict, List, Mapping, Tuple, cast
 
 from mmif import Mmif, Document, DocumentTypes, View, AnnotationTypes
 from mmif.utils.video_document_helper import (
     SamplingMode, SAMPLING_MODE_DESCRIPTIONS, SAMPLING_MODE_DEFAULT,
     _sampling_mode,
 )
-from mmif.utils.workflow_helper import generate_param_hash  # pytype: disable=import-error
+from mmif.utils.workflow_helper import generate_param_hash
 from clams.appmetadata import AppMetadata, real_valued_primitives, python_type, map_param_kv_delimiter
 from clams.envelop import unwrap_if_envelope
 
@@ -106,7 +107,7 @@ class ClamsApp(ABC):
     # A set of "universal runtime parameters that can be used for both GET and POST anytime".
     # The behavioral changes based on these parameters must be implemented on the SDK level. 
     # This needs to stay as a list of dicts for compatibility with the metadata.py file (templated).
-    universal_parameters = [
+    universal_parameters: List[Dict[str, Any]] = [
         {
             'name': 'pretty', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
             'description': 'The JSON body of the HTTP response will be re-formatted with 2-space indentation',
@@ -181,10 +182,10 @@ class ClamsApp(ABC):
         For metadata specification, 
         see `https://clams.ai/clams-python/appmetadata.jsonschema <../appmetadata.jsonschema>`_. 
         """
-        cwd = pathlib.Path(sys.modules[self.__module__].__file__).parent
+        cwd = pathlib.Path(inspect.getfile(type(self))).parent
         
         if (cwd / 'metadata.py').exists():
-            import metadata as metadatapy  # pytype: disable=import-error
+            import metadata as metadatapy
             metadata = metadatapy.appmetadata()
         else:
             metadata = self._appmetadata()
@@ -224,7 +225,7 @@ class ClamsApp(ABC):
             mmif, runtime_params = unwrap_if_envelope(mmif, runtime_params)
             mmif = Mmif(mmif)
         existing_view_ids = {view.id for view in mmif.views}
-        issued_warnings = []
+        issued_warnings: List[Union[Warning, warnings.WarningMessage]] = []
         for key in runtime_params:
             if key not in self.annotate_param_spec:
                 issued_warnings.append(UserWarning(f'An undefined parameter "{key}" (value: "{runtime_params[key]}") is passed'))
@@ -258,7 +259,7 @@ class ClamsApp(ABC):
         td = run_id - t
         runningTime = refined.get('runningTime', False)
         hwFetch = refined.get('hwFetch', False)
-        runtime_recs = {}
+        runtime_recs: Dict[str, Any] = {}
         if hwFetch:
             import multiprocessing
             import platform, shutil, subprocess
@@ -281,7 +282,7 @@ class ClamsApp(ABC):
         for annotated_view in annotated.views:
             if annotated_view.id not in existing_view_ids and annotated_view.metadata.app == str(self.metadata.identifier):
                 annotated_view.metadata.timestamp = run_id
-                profiling_data = {}
+                profiling_data: Dict[str, Any] = {}
                 if runningTime:
                     profiling_data['runningTime'] = str(td)
                 if len(runtime_recs) > 0:
@@ -324,7 +325,7 @@ class ClamsApp(ABC):
         if self._RAW_PARAMS_KEY in runtime_params:
             # meaning the dict is already refined, just return it 
             return runtime_params
-        refined = {}
+        refined: Dict[str, Any] = {}
         
         casted = self.annotate_param_caster.cast(runtime_params)
         for parameter in self.metadata.parameters:
@@ -535,7 +536,7 @@ class ClamsApp(ABC):
 
         # Fallback to torch (only sees current process memory)
         try:
-            import torch  # pytype: disable=import-error
+            import torch
             if not torch.cuda.is_available():
                 return 0
 
@@ -639,7 +640,7 @@ class ClamsApp(ABC):
             available_before = {}
 
             try:
-                import torch  # pytype: disable=import-error
+                import torch
                 torch_available = True
                 cuda_available = torch.cuda.is_available()
                 device_count = torch.cuda.device_count()
@@ -700,11 +701,9 @@ class ClamsApp(ABC):
                         }
 
                     # Record peak memory for future requests (if GPU app)
-                    gpu_app = (
-                        hasattr(app_instance, 'metadata') and
-                        getattr(app_instance.metadata, 'est_gpu_mem_min', 0) > 0
-                    )
-                    if gpu_app and total_peak > 0:
+                    app_metadata = getattr(app_instance, 'metadata', None)
+                    gpu_app = getattr(app_metadata, 'est_gpu_mem_min', 0) > 0
+                    if app_instance is not None and gpu_app and total_peak > 0:
                         app_instance._record_vram_usage(kwargs, total_peak)
 
                 return result, cuda_profiler
@@ -786,7 +785,7 @@ class ClamsPromptableApp(ClamsApp):
     #: SDK-managed runtime parameters injected into every promptable app.
     #: These names are reserved; apps cannot redeclare them with
     #: customized specs.
-    promptable_parameters = [
+    promptable_parameters: List[Dict[str, Any]] = [
         {
             'name': 'prompt', 'type': 'string', 'multivalued': True,
             'description':
@@ -1059,7 +1058,7 @@ class ClamsPromptableApp(ClamsApp):
         if isinstance(prompt, str):
             prompts = [prompt]
         else:
-            prompts = list(prompt)
+            prompts = cast(List[str], list(prompt))
 
         if len(prompts) == 1:
             return self._build_single_turn(
@@ -1553,7 +1552,8 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
                 "non-empty dict (HF model id -> commit hash). Set "
                 "it on the ``AppMetadata`` constructor call before "
                 "invoking this helper.")
-        choices = list(analyzer_versions.keys())
+        choices: List[real_valued_primitives] = list(
+            analyzer_versions.keys())
         default = choices[0] if len(choices) == 1 else None
         metadata.add_parameter(
             name='model',
@@ -1661,7 +1661,7 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
             model_id, _, revision = model_id_or_with_rev.rpartition('@')
         else:
             model_id = model_id_or_with_rev
-            revision = self.metadata.analyzer_versions[model_id]
+            revision = (self.metadata.analyzer_versions or {})[model_id]
         cache_key = (model_id, revision)
         cached = self._model_cache.get(cache_key)
         if cached is not None:
@@ -1813,7 +1813,7 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
         ignores them, so subclasses can pass through the full
         ``**parameters`` dict from ``_annotate`` without filtering.
         """
-        gen_kwargs = {'max_new_tokens': max_new_tokens}
+        gen_kwargs: Dict[str, Any] = {'max_new_tokens': max_new_tokens}
         if temperature > 0:
             gen_kwargs.update({
                 'do_sample': True,
@@ -1851,7 +1851,7 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
 
 class ParameterCaster(object):
 
-    def __init__(self, param_spec: Dict[str, Tuple[str, bool]]):
+    def __init__(self, param_spec: Mapping[str, Tuple[str, bool]]):
         """
         A helper class to convert parameters passed by HTTP query strings to
         proper python data types.
@@ -1880,7 +1880,7 @@ class ParameterCaster(object):
                  With the third case, developers can further process the nested values into a more complex data types or
                  structures, but that is not in the scope of this Caster class. 
         """
-        casted = {}
+        casted: Dict[str, Any] = {}
         for k, vs in args.items():
             assert isinstance(vs, list), f"Expected a list of values for key {k}, but got {vs} of type {type(vs)}"
             assert all(isinstance(v, str) for v in vs), f"Expected a list of strings for key {k}, but got {vs} of types {[type(v) for v in vs]}"
@@ -1888,29 +1888,24 @@ class ParameterCaster(object):
                 valuetype, multivalued = self.param_spec[k]
                 for v in vs:
                     if multivalued or k not in casted:  # effectively only keeps the first value for non-multi params
+                        value: Any = v
                         if valuetype == bool:
-                            v = self.bool_param(v)
+                            value = self.bool_param(v)
                         elif valuetype == float:
-                            v = self.float_param(v)
+                            value = self.float_param(v)
                         elif valuetype == int:
-                            v = self.int_param(v)
+                            value = self.int_param(v)
                         elif valuetype == str:
-                            v = self.str_param(v)
+                            value = self.str_param(v)
                         elif valuetype == dict:
-                            v = self.kv_param(v)
+                            value = self.kv_param(v)
                         if multivalued:
                             if valuetype == dict:
-                                casted.setdefault(k, {}).update(v)
+                                casted.setdefault(k, {}).update(value)
                             else:
-                                # pytype will complain about the next line, but it is actually correct
-                                # casted.setdefault(k, []).append(v)
-                                # so doing it in a more explicit way
-                                if k in casted and isinstance(casted[k], list):
-                                    casted[k].append(v)
-                                else:
-                                    casted[k] = [v]
+                                casted.setdefault(k, []).append(value)
                         else: 
-                            casted[k] = v
+                            casted[k] = value
                 # when an empty value is passed (usually as a default value)
                 # just add an empty list or dict as a placeholder
                 # explicit check for `len == 0` is required to prevent 
@@ -1927,7 +1922,7 @@ class ParameterCaster(object):
                     casted[k] = vs[0]
                 else:
                     casted[k] = vs
-        return casted  # pytype: disable=bad-return-type
+        return casted
 
     @staticmethod
     def bool_param(value) -> bool:
