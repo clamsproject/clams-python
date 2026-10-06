@@ -1,4 +1,20 @@
 
+## releasing 1.8.0 (2026-10-06)
+### Overview
+Adds runtime parameters that cap the number of images per prompt in promptable apps, and updates `mmif-python` to 1.5.4.
+
+### Additions
+
+* `maxImagesPerPrompt` and `imagesPerPromptMode`: new runtime parameters for promptable apps. A TimeFrame with more images than the cap is split into several prompts, which bounds GPU memory for long scenes ( https://github.com/clamsproject/clams-python/issues/306).
+
+### Changes
+
+* `mmif-python` is updated to 1.5.4, which fixes image extraction from truncated or otherwise incomplete video files.
+* (for contributors) Test-time type checking moved from `pytype` to `mypy` (https://github.com/clamsproject/clams-python/issues/285).
+
+
+
+
 ## releasing 1.7.4 (2026-09-01)
 ### Overview
 
