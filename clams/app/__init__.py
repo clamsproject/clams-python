@@ -1,3 +1,4 @@
+import inspect
 import json
 import logging
 import os
@@ -6,19 +7,22 @@ import sys
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from dataclasses import dataclass
+from enum import Enum
 from datetime import datetime
 from urllib import parse as urlparser
 
-__all__ = ['ClamsApp', 'ClamsPromptableApp', 'ClamsHFPromptableApp']
+__all__ = ['ClamsApp', 'ClamsPromptableApp', 'ClamsHFPromptableApp',
+           'PromptTask', 'ImagesPerPromptMode']
 
-from typing import Union, Any, Optional, Dict, List, Tuple, cast
+from typing import Union, Any, Optional, Dict, List, Mapping, Tuple, cast
 
 from mmif import Mmif, Document, DocumentTypes, View, AnnotationTypes
 from mmif.utils.video_document_helper import (
     SamplingMode, SAMPLING_MODE_DESCRIPTIONS, SAMPLING_MODE_DEFAULT,
     _sampling_mode,
 )
-from mmif.utils.workflow_helper import generate_param_hash  # pytype: disable=import-error
+from mmif.utils.workflow_helper import generate_param_hash
 from clams.appmetadata import AppMetadata, real_valued_primitives, python_type, map_param_kv_delimiter
 from clams.envelop import unwrap_if_envelope
 
@@ -53,6 +57,47 @@ class EmptyOutputWarning(UserWarning):
     """Raised when an app's ``_annotate()`` produces no non-empty views."""
 
 
+class ImagesPerPromptMode(Enum):
+    """
+    How :py:meth:`ClamsPromptableApp.chunk_tasks` sizes the chunks of a
+    task that has more images than the cap. Both modes produce the same
+    number of chunks; they differ in how images are spread over them.
+    """
+    #: Fill each chunk to the cap; the last chunk holds the remainder.
+    MAX = 'max'
+    #: Spread images evenly, so chunk sizes differ by at most one.
+    BALANCED = 'balanced'
+
+
+@dataclass(frozen=True)
+class PromptTask:
+    """
+    One unit of promptable work: the images bundled into a single prompt,
+    the annotations they were drawn from, and the annotation the response
+    is anchored to.
+
+    ``images`` and ``origins`` are parallel: ``origins[i]`` is the ``id``
+    of the annotation (typically a ``TimePoint``) that ``images[i]`` was
+    extracted from. ``source`` is the ``id`` of the coarse anchor
+    (typically the parent ``TimeFrame``). The fields map directly onto
+    :py:meth:`ClamsPromptableApp.response_to_grounded_textdocument`.
+    ``source`` also serves as the join key for app-side data about the
+    anchor, such as the TimeFrame label.
+
+    :raises ValueError: if ``images`` and ``origins`` differ in length.
+    """
+    images: List[Any]
+    origins: List[str]
+    source: str
+
+    def __post_init__(self):
+        if len(self.images) != len(self.origins):
+            raise ValueError(
+                f"PromptTask images and origins must be parallel; got "
+                f"{len(self.images)} images and {len(self.origins)} "
+                f"origins for source {self.source!r}.")
+
+
 class ClamsApp(ABC):
     """
     An abstract class to define API's for ClamsApps. A CLAMS app should inherit
@@ -62,7 +107,7 @@ class ClamsApp(ABC):
     # A set of "universal runtime parameters that can be used for both GET and POST anytime".
     # The behavioral changes based on these parameters must be implemented on the SDK level. 
     # This needs to stay as a list of dicts for compatibility with the metadata.py file (templated).
-    universal_parameters = [
+    universal_parameters: List[Dict[str, Any]] = [
         {
             'name': 'pretty', 'type': 'boolean', 'choices': None, 'default': False, 'multivalued': False,
             'description': 'The JSON body of the HTTP response will be re-formatted with 2-space indentation',
@@ -137,10 +182,10 @@ class ClamsApp(ABC):
         For metadata specification, 
         see `https://clams.ai/clams-python/appmetadata.jsonschema <../appmetadata.jsonschema>`_. 
         """
-        cwd = pathlib.Path(sys.modules[self.__module__].__file__).parent
+        cwd = pathlib.Path(inspect.getfile(type(self))).parent
         
         if (cwd / 'metadata.py').exists():
-            import metadata as metadatapy  # pytype: disable=import-error
+            import metadata as metadatapy
             metadata = metadatapy.appmetadata()
         else:
             metadata = self._appmetadata()
@@ -180,7 +225,7 @@ class ClamsApp(ABC):
             mmif, runtime_params = unwrap_if_envelope(mmif, runtime_params)
             mmif = Mmif(mmif)
         existing_view_ids = {view.id for view in mmif.views}
-        issued_warnings = []
+        issued_warnings: List[Union[Warning, warnings.WarningMessage]] = []
         for key in runtime_params:
             if key not in self.annotate_param_spec:
                 issued_warnings.append(UserWarning(f'An undefined parameter "{key}" (value: "{runtime_params[key]}") is passed'))
@@ -214,7 +259,7 @@ class ClamsApp(ABC):
         td = run_id - t
         runningTime = refined.get('runningTime', False)
         hwFetch = refined.get('hwFetch', False)
-        runtime_recs = {}
+        runtime_recs: Dict[str, Any] = {}
         if hwFetch:
             import multiprocessing
             import platform, shutil, subprocess
@@ -237,7 +282,7 @@ class ClamsApp(ABC):
         for annotated_view in annotated.views:
             if annotated_view.id not in existing_view_ids and annotated_view.metadata.app == str(self.metadata.identifier):
                 annotated_view.metadata.timestamp = run_id
-                profiling_data = {}
+                profiling_data: Dict[str, Any] = {}
                 if runningTime:
                     profiling_data['runningTime'] = str(td)
                 if len(runtime_recs) > 0:
@@ -280,7 +325,7 @@ class ClamsApp(ABC):
         if self._RAW_PARAMS_KEY in runtime_params:
             # meaning the dict is already refined, just return it 
             return runtime_params
-        refined = {}
+        refined: Dict[str, Any] = {}
         
         casted = self.annotate_param_caster.cast(runtime_params)
         for parameter in self.metadata.parameters:
@@ -491,7 +536,7 @@ class ClamsApp(ABC):
 
         # Fallback to torch (only sees current process memory)
         try:
-            import torch  # pytype: disable=import-error
+            import torch
             if not torch.cuda.is_available():
                 return 0
 
@@ -595,7 +640,7 @@ class ClamsApp(ABC):
             available_before = {}
 
             try:
-                import torch  # pytype: disable=import-error
+                import torch
                 torch_available = True
                 cuda_available = torch.cuda.is_available()
                 device_count = torch.cuda.device_count()
@@ -656,11 +701,9 @@ class ClamsApp(ABC):
                         }
 
                     # Record peak memory for future requests (if GPU app)
-                    gpu_app = (
-                        hasattr(app_instance, 'metadata') and
-                        getattr(app_instance.metadata, 'est_gpu_mem_min', 0) > 0
-                    )
-                    if gpu_app and total_peak > 0:
+                    app_metadata = getattr(app_instance, 'metadata', None)
+                    gpu_app = getattr(app_metadata, 'est_gpu_mem_min', 0) > 0
+                    if app_instance is not None and gpu_app and total_peak > 0:
                         app_instance._record_vram_usage(kwargs, total_peak)
 
                 return result, cuda_profiler
@@ -729,6 +772,11 @@ class ClamsPromptableApp(ClamsApp):
       parameter set to ``AppMetadata``
     * :py:meth:`build_conversation` : assembles a chat-template-compatible
       message list from a prompt plus optional images/audios
+    * :py:meth:`chunk_tasks` : caps images per prompt by splitting
+      :class:`PromptTask`\\ s (``maxImagesPerPrompt``)
+    * :py:meth:`generate_batched` : runs :py:meth:`generate` in batches
+      of at most ``parallelPrompts`` prompts, reporting through
+      :py:meth:`report_progress`
     * :py:meth:`response_to_grounded_textdocument` : persists a
       generated response into a view as ``TextDocument`` +
       ``Alignment`` (+ optional ``origins`` / ``origination``)
@@ -737,7 +785,7 @@ class ClamsPromptableApp(ClamsApp):
     #: SDK-managed runtime parameters injected into every promptable app.
     #: These names are reserved; apps cannot redeclare them with
     #: customized specs.
-    promptable_parameters = [
+    promptable_parameters: List[Dict[str, Any]] = [
         {
             'name': 'prompt', 'type': 'string', 'multivalued': True,
             'description':
@@ -826,6 +874,38 @@ class ClamsPromptableApp(ClamsApp):
                 'in one forward pass (~1200 images), guaranteed OOM. '
                 'Keep at ``1`` on memory-tight setups; raise only when '
                 'per-prompt content is small and bounded.',
+        },
+        {
+            'name': 'maxImagesPerPrompt', 'type': 'integer', 'default': 0,
+            'description':
+                'Maximum number of images the app bundles into a single '
+                'prompt (one generation, one output TextDocument). ``0`` '
+                'means no limit, so all images for a TimeFrame go into one '
+                'prompt and yield one TextDocument. With a positive N, the '
+                'app splits a TimeFrame whose frames exceed N into '
+                'consecutive groups of at most N; each group produces its '
+                'own TextDocument aligned to the same TimeFrame and grounded '
+                'to its own source TimePoints via ``origins``. This bounds '
+                'GPU memory for long dynamic scenes. The value is '
+                'operator-set, so the number of output TextDocuments is '
+                'deterministic and does not vary by GPU. Composes with '
+                '``parallelPrompts``, which batches independent prompts '
+                'into one forward pass.',
+        },
+        {
+            'name': 'imagesPerPromptMode', 'type': 'string',
+            'choices': [m.value for m in ImagesPerPromptMode],
+            'default': ImagesPerPromptMode.MAX.value,
+            'description':
+                'How the images of a TimeFrame that exceeds '
+                '``maxImagesPerPrompt`` are spread over its prompts. Has '
+                'no effect when ``maxImagesPerPrompt`` is ``0``. Both '
+                'choices produce the same number of prompts. "max" fills '
+                'each prompt to the cap and puts the remainder in the '
+                'last one (33 images at a cap of 32 give 32 and 1). '
+                '"balanced" spreads the images evenly, so prompt sizes '
+                'differ by at most one (33 images at a cap of 32 give 17 '
+                'and 16).',
         },
     ]
 
@@ -978,7 +1058,7 @@ class ClamsPromptableApp(ClamsApp):
         if isinstance(prompt, str):
             prompts = [prompt]
         else:
-            prompts = list(prompt)
+            prompts = cast(List[str], list(prompt))
 
         if len(prompts) == 1:
             return self._build_single_turn(
@@ -1071,6 +1151,148 @@ class ClamsPromptableApp(ClamsApp):
             if i < len(prompts) - 1:
                 base.append({'role': 'assistant', 'content': None})
         return convs
+
+    def generate_batched(
+            self,
+            prompt: List[str],
+            system_prompt: str = '',
+            images: Optional[List[List[Any]]] = None,
+            audios: Optional[List[List[Any]]] = None,
+            prompt_mode: str = 'turn-taking',
+            parallel_prompts: int = 1,
+            **generation_params,
+    ) -> List[str]:
+        """
+        Run N prompts through :py:meth:`generate` in batches of at most
+        ``parallel_prompts`` prompts per call, and return N outputs in
+        input order. Apps typically pass the ``parallelPrompts`` runtime
+        parameter as ``parallel_prompts``.
+
+        The arguments other than ``parallel_prompts`` have the same
+        meaning as in :py:meth:`generate` and are forwarded to it. A
+        text-only call (``images`` and ``audios`` both ``None``) is one
+        prompt and runs as a single :py:meth:`generate` call.
+
+        Progress is reported through :py:meth:`report_progress`: once
+        before the first batch and once after each batch.
+
+        :param parallel_prompts: maximum number of prompts per
+            :py:meth:`generate` call.
+        :returns: one output per prompt, in input order.
+        :rtype: List[str]
+        :raises ValueError: if ``parallel_prompts`` is less than 1, or if
+            ``images`` and ``audios`` are both given with different outer
+            lengths.
+        """
+        if parallel_prompts < 1:
+            raise ValueError(
+                f"parallel_prompts must be at least 1; "
+                f"got {parallel_prompts}.")
+        if images is not None and audios is not None \
+                and len(images) != len(audios):
+            raise ValueError(
+                f"images and audios must have the same outer length "
+                f"when both are given; got "
+                f"{len(images)} vs {len(audios)}.")
+        groups = images if images is not None else audios
+        if groups is None:
+            self.report_progress(0, 1)
+            outputs = self.generate(
+                prompt, system_prompt=system_prompt,
+                prompt_mode=prompt_mode, **generation_params)
+            self.report_progress(1, 1)
+            return outputs
+        total = len(groups)
+        outputs = []
+        self.report_progress(0, total)
+        for start in range(0, total, parallel_prompts):
+            end = start + parallel_prompts
+            outputs.extend(self.generate(
+                prompt, system_prompt=system_prompt,
+                images=images[start:end] if images is not None else None,
+                audios=audios[start:end] if audios is not None else None,
+                prompt_mode=prompt_mode, **generation_params))
+            self.report_progress(min(end, total), total)
+        return outputs
+
+    def report_progress(self, done: int, total: int) -> None:
+        """
+        Receive generation progress from :py:meth:`generate_batched`,
+        which calls this once with ``done=0`` before the first batch and
+        once after each batch. The default implementation writes one
+        INFO log line. Override to report differently (another log
+        level or wording, a progress bar) or to stay silent.
+
+        The app instance serves all requests, so an override that keeps
+        state on ``self`` between calls is shared by concurrent
+        requests.
+
+        :param done: number of prompts generated so far.
+        :param total: number of prompts in this
+            :py:meth:`generate_batched` call.
+        """
+        self.logger.info(f"Generated {done}/{total} prompts")
+
+    @staticmethod
+    def chunk_tasks(
+            tasks: List[PromptTask],
+            max_images: int,
+            mode: Union[str, ImagesPerPromptMode] = ImagesPerPromptMode.MAX,
+    ) -> List[PromptTask]:
+        """
+        Split each task with more than ``max_images`` images into
+        consecutive tasks of at most ``max_images`` images, chunking
+        ``origins`` in step and keeping ``source``. Tasks at or under the
+        cap pass through unchanged, and task order is preserved. Apps
+        typically pass the ``maxImagesPerPrompt`` and
+        ``imagesPerPromptMode`` runtime parameters as ``max_images`` and
+        ``mode``.
+
+        Each resulting task yields one response and one ``TextDocument``,
+        so an over-cap TimeFrame produces several ``TextDocument``\\ s
+        aligned to the same ``source``, each grounded to its own
+        ``origins``.
+
+        :param tasks: the tasks to split.
+        :param max_images: maximum number of images per task. ``0`` means
+            no cap.
+        :param mode: how the images of an over-cap task are spread over
+            its chunks; see :class:`ImagesPerPromptMode`.
+        :returns: the capped tasks, in order.
+        :rtype: List[PromptTask]
+        :raises ValueError: if ``max_images`` is negative or ``mode`` is
+            not a valid :class:`ImagesPerPromptMode`.
+        """
+        mode = ImagesPerPromptMode(mode)
+        if max_images < 0:
+            raise ValueError(
+                f"max_images must be 0 (no cap) or positive; "
+                f"got {max_images}.")
+        if max_images == 0:
+            return list(tasks)
+        capped: List[PromptTask] = []
+        for task in tasks:
+            n_images = len(task.images)
+            if n_images <= max_images:
+                capped.append(task)
+                continue
+            n_chunks = -(-n_images // max_images)
+            if mode is ImagesPerPromptMode.BALANCED:
+                size, n_larger = divmod(n_images, n_chunks)
+                sizes = ([size + 1] * n_larger
+                         + [size] * (n_chunks - n_larger))
+            else:
+                sizes = [max_images] * (n_chunks - 1)
+                sizes.append(n_images - sum(sizes))
+            start = 0
+            for size in sizes:
+                end = start + size
+                capped.append(PromptTask(
+                    images=task.images[start:end],
+                    origins=task.origins[start:end],
+                    source=task.source))
+                start = end
+        return capped
 
     def response_to_grounded_textdocument(
             self,
@@ -1330,7 +1552,8 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
                 "non-empty dict (HF model id -> commit hash). Set "
                 "it on the ``AppMetadata`` constructor call before "
                 "invoking this helper.")
-        choices = list(analyzer_versions.keys())
+        choices: List[real_valued_primitives] = list(
+            analyzer_versions.keys())
         default = choices[0] if len(choices) == 1 else None
         metadata.add_parameter(
             name='model',
@@ -1438,7 +1661,7 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
             model_id, _, revision = model_id_or_with_rev.rpartition('@')
         else:
             model_id = model_id_or_with_rev
-            revision = self.metadata.analyzer_versions[model_id]
+            revision = (self.metadata.analyzer_versions or {})[model_id]
         cache_key = (model_id, revision)
         cached = self._model_cache.get(cache_key)
         if cached is not None:
@@ -1590,7 +1813,7 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
         ignores them, so subclasses can pass through the full
         ``**parameters`` dict from ``_annotate`` without filtering.
         """
-        gen_kwargs = {'max_new_tokens': max_new_tokens}
+        gen_kwargs: Dict[str, Any] = {'max_new_tokens': max_new_tokens}
         if temperature > 0:
             gen_kwargs.update({
                 'do_sample': True,
@@ -1628,7 +1851,7 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
 
 class ParameterCaster(object):
 
-    def __init__(self, param_spec: Dict[str, Tuple[str, bool]]):
+    def __init__(self, param_spec: Mapping[str, Tuple[str, bool]]):
         """
         A helper class to convert parameters passed by HTTP query strings to
         proper python data types.
@@ -1657,7 +1880,7 @@ class ParameterCaster(object):
                  With the third case, developers can further process the nested values into a more complex data types or
                  structures, but that is not in the scope of this Caster class. 
         """
-        casted = {}
+        casted: Dict[str, Any] = {}
         for k, vs in args.items():
             assert isinstance(vs, list), f"Expected a list of values for key {k}, but got {vs} of type {type(vs)}"
             assert all(isinstance(v, str) for v in vs), f"Expected a list of strings for key {k}, but got {vs} of types {[type(v) for v in vs]}"
@@ -1665,29 +1888,24 @@ class ParameterCaster(object):
                 valuetype, multivalued = self.param_spec[k]
                 for v in vs:
                     if multivalued or k not in casted:  # effectively only keeps the first value for non-multi params
+                        value: Any = v
                         if valuetype == bool:
-                            v = self.bool_param(v)
+                            value = self.bool_param(v)
                         elif valuetype == float:
-                            v = self.float_param(v)
+                            value = self.float_param(v)
                         elif valuetype == int:
-                            v = self.int_param(v)
+                            value = self.int_param(v)
                         elif valuetype == str:
-                            v = self.str_param(v)
+                            value = self.str_param(v)
                         elif valuetype == dict:
-                            v = self.kv_param(v)
+                            value = self.kv_param(v)
                         if multivalued:
                             if valuetype == dict:
-                                casted.setdefault(k, {}).update(v)
+                                casted.setdefault(k, {}).update(value)
                             else:
-                                # pytype will complain about the next line, but it is actually correct
-                                # casted.setdefault(k, []).append(v)
-                                # so doing it in a more explicit way
-                                if k in casted and isinstance(casted[k], list):
-                                    casted[k].append(v)
-                                else:
-                                    casted[k] = [v]
+                                casted.setdefault(k, []).append(value)
                         else: 
-                            casted[k] = v
+                            casted[k] = value
                 # when an empty value is passed (usually as a default value)
                 # just add an empty list or dict as a placeholder
                 # explicit check for `len == 0` is required to prevent 
@@ -1704,7 +1922,7 @@ class ParameterCaster(object):
                     casted[k] = vs[0]
                 else:
                     casted[k] = vs
-        return casted  # pytype: disable=bad-return-type
+        return casted
 
     @staticmethod
     def bool_param(value) -> bool:

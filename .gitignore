@@ -1,6 +1,6 @@
 # python test files 
 .coverage
-.pytype
+.mypy_cache
 
 # build time temp files
 VERSION*

@@ -112,14 +112,14 @@ def load_hf_model(
         installed. Install the ``[hf]`` extra to fix.
     """
     try:
-        import torch  # pytype: disable=import-error
+        import torch
     except ImportError as e:
         raise ImportError(
             "clams.backends.hf requires the `torch` package. "
             "Install with: pip install clams-python[hf]"
         ) from e
     try:
-        import transformers  # pytype: disable=import-error
+        import transformers
     except ImportError as e:
         raise ImportError(
             "clams.backends.hf requires the `transformers` package. "
@@ -212,14 +212,14 @@ def load_hf_pipeline(
         installed. Install the ``[hf]`` extra to fix.
     """
     try:
-        import torch  # pytype: disable=import-error
+        import torch
     except ImportError as e:
         raise ImportError(
             "clams.backends.hf requires the `torch` package. "
             "Install with: pip install clams-python[hf]"
         ) from e
     try:
-        from transformers import pipeline  # pytype: disable=import-error
+        from transformers import pipeline
     except ImportError as e:
         raise ImportError(
             "clams.backends.hf requires the `transformers` package. "

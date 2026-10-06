@@ -3,7 +3,7 @@ Run tests for the clams-python package.
 
 This script is equivalent to ``make test`` in the Makefile-based repos:
     pip install -e ".[test]"
-    pytype --config .pytype.cfg clams
+    python -m mypy
     python -m pytest --cov=clams --cov-report=xml
 """
 import argparse
@@ -50,10 +50,10 @@ def main():
             cwd=project_root,
         )
 
-    # Run pytype static analysis
-    print("\n--- Running pytype ---")
+    # Run mypy static analysis (configured in pyproject.toml)
+    print("\n--- Running mypy ---")
     run_command(
-        ["pytype", "--config", ".pytype.cfg", "clams"],
+        [sys.executable, "-m", "mypy"],
         cwd=project_root,
     )
 

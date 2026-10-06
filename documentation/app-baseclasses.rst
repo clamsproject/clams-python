@@ -213,6 +213,24 @@ from :class:`~clams.app.ClamsApp`. These names are reserved; see
        setups; see the parameter's own description in
        :py:attr:`~clams.app.ClamsPromptableApp.promptable_parameters`
        for an OOM-risk example.
+   * - ``maxImagesPerPrompt``
+     - integer
+     - ``0``
+     - no
+     - Maximum number of images the app bundles into a single prompt (one
+       generation, one output ``TextDocument``). ``0`` means no limit. With a
+       positive value, the app splits a TimeFrame with more frames into
+       consecutive capped groups, each producing its own ``TextDocument``
+       aligned to that TimeFrame and grounded via ``origins``. Bounds GPU
+       memory for long dynamic scenes; composes with ``parallelPrompts``.
+   * - ``imagesPerPromptMode``
+     - string
+     - ``max``
+     - no
+     - How the images of a TimeFrame over ``maxImagesPerPrompt`` are spread
+       over its prompts; no effect when the cap is ``0``. ``max`` fills each
+       prompt to the cap and leaves the remainder last. ``balanced`` spreads
+       the images evenly. Both give the same number of prompts.
 
 .. _promptable-customizing-defaults:
 
@@ -290,6 +308,31 @@ latter belongs in ``_annotate()`` (which calls ``self.generate()``).
 This separation lets HF-backed apps inherit the default ``generate()``
 without restating backend mechanics, and lets non-HF apps swap in a new
 ``generate()`` without rewriting their MMIF I/O.
+
+.. _promptable-grouping:
+
+From TimeFrames to forward passes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Three parameters group the visual input at three different steps. The
+documentation and the helper names use one word for each step.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 35 35
+
+   * - Step
+     - Parameter
+     - Word
+   * - TimeFrame to frames
+     - ``tfSamplingMode``
+     - sample
+   * - One TimeFrame's frames to prompts
+     - ``maxImagesPerPrompt``, ``imagesPerPromptMode``
+     - chunk
+   * - Prompts to forward passes
+     - ``parallelPrompts``
+     - batch
 
 .. _promptable-multiturn:
 
@@ -393,6 +436,28 @@ Helpers
     a pre-built ``List[dict]`` and returns it unchanged. Subclasses
     may override to access model-specific state (e.g.
     ``self.processor``) when formatting messages.
+
+:meth:`~clams.app.ClamsPromptableApp.chunk_tasks`
+    A static method that applies ``maxImagesPerPrompt``: splits each
+    :class:`~clams.app.PromptTask` (images, their ``origins``, and the
+    anchoring ``source``) with more images than the cap into consecutive
+    capped tasks. Each task yields one ``TextDocument``, so with a cap
+    set, one TimeFrame can yield several ``TextDocument`` annotations
+    aligned to it, each grounded to its own ``origins``. Consumers of
+    promptable-app output must not assume one ``TextDocument`` per
+    TimeFrame. ``imagesPerPromptMode``
+    (:class:`~clams.app.ImagesPerPromptMode`) selects how the images are
+    spread over the chunks.
+
+:meth:`~clams.app.ClamsPromptableApp.generate_batched`
+    Applies ``parallelPrompts``: calls ``generate()`` on batches of at
+    most that many prompts and returns one output per prompt, in order.
+
+:meth:`~clams.app.ClamsPromptableApp.report_progress`
+    Called by ``generate_batched()`` before the first batch and after
+    each batch with the number of prompts done and the total. The
+    default writes one INFO log line; override it to report differently
+    or to stay silent.
 
 :meth:`~clams.app.ClamsPromptableApp.response_to_grounded_textdocument`
     Writes a ``TextDocument`` plus an ``Alignment`` (``source -> TD``)

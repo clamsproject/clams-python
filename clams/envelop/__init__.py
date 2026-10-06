@@ -107,7 +107,7 @@ def unwrap_if_envelope(data, runtime_params):
             body = json.loads(raw)
         except (json.JSONDecodeError, ValueError):
             return data, runtime_params
-    if is_envelope(body):
+    if isinstance(body, dict) and is_envelope(body):
         inner_mmif, envelope_params = unwrap_envelope(body)
         return inner_mmif, {**envelope_params, **runtime_params}
     return data, runtime_params
