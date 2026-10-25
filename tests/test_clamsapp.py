@@ -5,7 +5,9 @@ import sys
 import tempfile
 import unittest
 import warnings
+from datetime import datetime, timezone
 from typing import Union
+from unittest.mock import patch
 
 import jsonschema
 import pytest
@@ -360,6 +362,31 @@ class TestClamsApp(unittest.TestCase):
             else:
                 self.assertEqual(second_timestamp, view.metadata.timestamp)
 
+    def test_run_id_reuses_mmif_timestamp(self):
+        # the run ID is the timestamp mmif-python assigned to the first view
+        # of the run; clams-python does not generate its own
+        sentinel = datetime(2001, 2, 3, 4, 5, 6, tzinfo=timezone.utc)
+        original_annotate = self.app._annotate
+
+        def _annotate(mmif, **kwargs):
+            out = original_annotate(mmif, **kwargs)
+            next(reversed(out.views)).metadata.timestamp = sentinel
+            return out
+
+        # serialize the sentinel the same way mmif-python does
+        ref = ExampleInputMMIF.get_rawmmif()
+        ref.new_view().metadata.timestamp = sentinel
+        expected = next(reversed(
+            Mmif(ref.serialize(), validate=False).views)).metadata.timestamp
+        with patch.object(self.app, '_annotate', new=_annotate):
+            out_mmif = Mmif(self.app.annotate(self.in_mmif))
+        app_views = [v for v in out_mmif.views
+                     if v.metadata.app == str(self.app.metadata.identifier)]
+        # one contentful view and one warning view
+        self.assertEqual(len(app_views), 2)
+        for view in app_views:
+            self.assertEqual(expected, view.metadata.timestamp)
+
     def test_annotate_returns_invalid_mmif(self):
         m = Mmif(self.in_mmif)
         v = m.new_view()
@@ -430,20 +457,37 @@ class TestClamsApp(unittest.TestCase):
             
     def test_error_handling(self):
         params = {'raise_error': ['true'], 'pretty': ['true']}
-        in_mmif = Mmif(self.in_mmif)
         try:
-            out_mmif = self.app.annotate(in_mmif, **params)
+            out_mmif = self.app.annotate(self.in_mmif, **params)
         except Exception as e:
-            out_mmif_from_str = self.app.set_error_view(self.in_mmif, **params)
-            out_mmif_from_mmif = self.app.set_error_view(in_mmif, **params)
-            self.assertEqual(
-                out_mmif_from_mmif.views.get_last_contentful_view(),
-                out_mmif_from_str.views.get_last_contentful_view())
-            out_mmif = out_mmif_from_str
+            out_mmif = self.app.set_error_view(self.in_mmif, **params)
         self.assertIsNotNone(out_mmif)
+        self.assertEqual(len(out_mmif.views), 1)
         last_view: View = next(reversed(out_mmif.views))
         self.assertEqual(len(last_view.metadata.contains), 0)
         self.assertEqual(len(last_view.metadata.error), 2)
+
+    def test_error_view_keeps_previous_run(self):
+        # an error in a later run of the same app must not overwrite
+        # the views from an earlier, successful run
+        first = Mmif(self.app.annotate(self.in_mmif))
+        params = {'raise_error': ['true']}
+        try:
+            self.app.annotate(first.serialize(), **params)
+        except Exception:
+            out_mmif = self.app.set_error_view(first.serialize(), **params)
+        self.assertEqual(len(out_mmif.views), len(first.views) + 1)
+        for before, after in zip(first.views, out_mmif.views):
+            self.assertEqual(before.id, after.id)
+            self.assertFalse(after.has_error())
+            self.assertEqual(len(before.annotations), len(after.annotations))
+            self.assertEqual(before.metadata.timestamp,
+                             after.metadata.timestamp)
+        error_view: View = next(reversed(out_mmif.views))
+        self.assertTrue(error_view.has_error())
+        self.assertEqual(len(error_view.annotations), 0)
+        self.assertNotIn(error_view.metadata.timestamp,
+                         [v.metadata.timestamp for v in first.views])
 
     def test_empty_view_becomes_warning_view(self):
         class EmptyClamsApp(clams.app.ClamsApp):
