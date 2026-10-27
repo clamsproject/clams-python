@@ -1,4 +1,18 @@
 
+## releasing 1.8.1 (2026-10-27)
+### Overview
+
+Updates `mmif-python` to 1.6.0, with many small fixes for the consistency of MMIF files and CLAMS workflows.
+
+### Changes
+
+* `mmif-python` is updated to 1.6.0 (https://github.com/clamsproject/clams-python/issues/314)
+* view timestamps: consistently in UTC now, instead of local time (https://github.com/clamsproject/clams-python/issues/312)
+* error views: fixed a bug where an error in a run overwrote the view of an earlier run of the same app (part of https://github.com/clamsproject/clams-python/pull/313, found during working on #312)
+* document properties: fixed a bug where the (capital) `Annotation` for properties added to an existing document was attached to a wrong view, when the app produced no other annotations (https://github.com/clamsproject/clams-python/issues/314)
+* `clams develop`: the `utl-tf` recipe is deprecated and no longer baked by default; its helpers are now provided by mmif-python 1.6.0 as `Mmif.get_annotations_of_labels()` and `mmif.utils.video_document_helper.iter_timeframe_images()` (https://github.com/clamsproject/clams-python/issues/314)
+
+
 ## releasing 1.8.0 (2026-10-06)
 ### Overview
 Adds runtime parameters that cap the number of images per prompt in promptable apps, and updates `mmif-python` to 1.5.4.
