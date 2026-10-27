@@ -240,8 +240,13 @@ class ClamsApp(ABC):
         t = datetime.now()
         with warnings.catch_warnings(record=True) as ws:
             annotated, cuda_profiler = self._profile_cuda_memory(self._annotate)(mmif, **refined)
+            # turn pending document properties into `Annotation`s now, so a
+            # view whose only output is document properties is not empty;
+            # `serialize()` repeats this later, skipping values already written
+            annotated.generate_capital_annotations()
             new_views = [v for v in annotated.views if v.id not in existing_view_ids]
-            is_empty = lambda v: len(v.annotations) == 0 and not v.has_error() and not v.has_warnings()
+            # an app-set error or warnings view has no annotations, but is kept
+            is_empty = lambda v: not (v.has_content() or v.has_error() or v.has_warnings())
             for v in new_views:
                 if is_empty(v):
                     del annotated.views._items[v.id]  # no public API to remove a view (mmif-python)
@@ -255,8 +260,7 @@ class ClamsApp(ABC):
             warnings_view = annotated.new_view()
             self.sign_view(warnings_view, refined)
             warnings_view.metadata.warnings = issued_warnings
-        run_id = datetime.now()
-        td = run_id - t
+        td = datetime.now() - t
         runningTime = refined.get('runningTime', False)
         hwFetch = refined.get('hwFetch', False)
         runtime_recs: Dict[str, Any] = {}
@@ -279,16 +283,23 @@ class ClamsApp(ABC):
                                           stdout=subprocess.PIPE).stdout.decode('utf-8').strip().split('\n'):
                     name, mem = gpu.split(', ')
                     runtime_recs['cuda'].append(self._cuda_device_name_concat(name, mem))
-        for annotated_view in annotated.views:
-            if annotated_view.id not in existing_view_ids and annotated_view.metadata.app == str(self.metadata.identifier):
+        new_app_views = [v for v in annotated.views
+                         if v.id not in existing_view_ids
+                         and v.metadata.app == str(self.metadata.identifier)]
+        # all views from this run share the timestamp that mmif-python
+        # assigned to the first of them, serving as the "run ID"
+        run_id = next((v.metadata.timestamp for v in new_app_views
+                       if v.metadata.timestamp is not None), None)
+        for annotated_view in new_app_views:
+            if run_id is not None:
                 annotated_view.metadata.timestamp = run_id
-                profiling_data: Dict[str, Any] = {}
-                if runningTime:
-                    profiling_data['runningTime'] = str(td)
-                if len(runtime_recs) > 0:
-                    profiling_data['hardware'] = runtime_recs
-                if profiling_data:
-                    annotated_view.metadata.set_additional_property('appProfiling', profiling_data)
+            profiling_data: Dict[str, Any] = {}
+            if runningTime:
+                profiling_data['runningTime'] = str(td)
+            if len(runtime_recs) > 0:
+                profiling_data['hardware'] = runtime_recs
+            if profiling_data:
+                annotated_view.metadata.set_additional_property('appProfiling', profiling_data)
                     
         return annotated.serialize(pretty=pretty, sanitize=True)
 
@@ -391,7 +402,9 @@ class ClamsApp(ABC):
         """
         view.metadata.app = str(self.metadata.identifier)
         if self.metadata.app_tags:
-            view.metadata.set_additional_property('appTags', list(self.metadata.app_tags))
+            # item assignment stores the tags in the declared `appTags` field
+            # when mmif-python has one, and as an additional property otherwise
+            view.metadata['appTags'] = list(self.metadata.app_tags)
         if self._RAW_PARAMS_KEY in runtime_conf:
             for k, v in runtime_conf.items():
                 if k == self._RAW_PARAMS_KEY:
@@ -436,9 +449,11 @@ class ClamsApp(ABC):
 
     def set_error_view(self, mmif: Union[str, dict, Mmif], **runtime_conf: List[str]) -> Mmif:
         """
-        A method to record an error instead of annotation results in the view
-        this app generated. For logging purpose, the runtime parameters used
-        when the error occurred must be passed as well.
+        A method to record an error instead of annotation results in a new
+        view appended to the input MMIF. Existing views are left untouched,
+        including views from earlier runs of the same app. For logging
+        purpose, the runtime parameters used when the error occurred must be
+        passed as well.
 
         :param mmif: input MMIF object
         :param runtime_conf: parameters passed to annotate when the app encountered the error
@@ -448,14 +463,8 @@ class ClamsApp(ABC):
         if isinstance(mmif, (bytes, str, dict)):
             mmif, runtime_conf = unwrap_if_envelope(mmif, runtime_conf)
             mmif = Mmif(mmif)
-        error_view: Optional[View] = None
-        for view in reversed(mmif.views):
-            if view.metadata.app == str(self.metadata.identifier):
-                error_view = view
-                break
-        if error_view is None:
-            error_view = mmif.new_view()
-            self.sign_view(error_view, runtime_conf)
+        error_view = mmif.new_view()
+        self.sign_view(error_view, runtime_conf)
         exc_info = sys.exc_info()
         error_view.set_error(f'{exc_info[0]}: {exc_info[1]}',
                              '\t\n'.join(traceback.format_tb(exc_info[2])))

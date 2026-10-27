@@ -5,7 +5,9 @@ import sys
 import tempfile
 import unittest
 import warnings
+from datetime import datetime, timezone
 from typing import Union
+from unittest.mock import patch
 
 import jsonschema
 import pytest
@@ -334,11 +336,6 @@ class TestClamsApp(unittest.TestCase):
                 self.assertEqual(len(v.metadata.parameters), 1)  # 'pretty` parameter was passed 
         out_mmif = Mmif(self.app.annotate(out_mmif))
         self.assertEqual(len(out_mmif.views), 4)
-        views = list(out_mmif.views)
-        # insertion order is kept
-        self.assertEqual(views[0].metadata.timestamp, views[1].metadata.timestamp)
-        self.assertEqual(views[2].metadata.timestamp, views[3].metadata.timestamp)
-        self.assertTrue(views[1].metadata.timestamp < views[2].metadata.timestamp)
 
     def test_run_id(self):
         # first run
@@ -359,6 +356,31 @@ class TestClamsApp(unittest.TestCase):
                 self.assertEqual(first_timestamp, view.metadata.timestamp)
             else:
                 self.assertEqual(second_timestamp, view.metadata.timestamp)
+
+    def test_run_id_reuses_mmif_timestamp(self):
+        # the run ID is the timestamp mmif-python assigned to the first view
+        # of the run; clams-python does not generate its own
+        sentinel = datetime(2001, 2, 3, 4, 5, 6, tzinfo=timezone.utc)
+        original_annotate = self.app._annotate
+
+        def _annotate(mmif, **kwargs):
+            out = original_annotate(mmif, **kwargs)
+            next(reversed(out.views)).metadata.timestamp = sentinel
+            return out
+
+        # serialize the sentinel the same way mmif-python does
+        ref = ExampleInputMMIF.get_rawmmif()
+        ref.new_view().metadata.timestamp = sentinel
+        expected = next(reversed(
+            Mmif(ref.serialize(), validate=False).views)).metadata.timestamp
+        with patch.object(self.app, '_annotate', new=_annotate):
+            out_mmif = Mmif(self.app.annotate(self.in_mmif))
+        app_views = [v for v in out_mmif.views
+                     if v.metadata.app == str(self.app.metadata.identifier)]
+        # one contentful view and one warning view
+        self.assertEqual(len(app_views), 2)
+        for view in app_views:
+            self.assertEqual(expected, view.metadata.timestamp)
 
     def test_annotate_returns_invalid_mmif(self):
         m = Mmif(self.in_mmif)
@@ -430,20 +452,37 @@ class TestClamsApp(unittest.TestCase):
             
     def test_error_handling(self):
         params = {'raise_error': ['true'], 'pretty': ['true']}
-        in_mmif = Mmif(self.in_mmif)
         try:
-            out_mmif = self.app.annotate(in_mmif, **params)
+            out_mmif = self.app.annotate(self.in_mmif, **params)
         except Exception as e:
-            out_mmif_from_str = self.app.set_error_view(self.in_mmif, **params)
-            out_mmif_from_mmif = self.app.set_error_view(in_mmif, **params)
-            self.assertEqual(
-                out_mmif_from_mmif.views.get_last_contentful_view(),
-                out_mmif_from_str.views.get_last_contentful_view())
-            out_mmif = out_mmif_from_str
+            out_mmif = self.app.set_error_view(self.in_mmif, **params)
         self.assertIsNotNone(out_mmif)
+        self.assertEqual(len(out_mmif.views), 1)
         last_view: View = next(reversed(out_mmif.views))
         self.assertEqual(len(last_view.metadata.contains), 0)
         self.assertEqual(len(last_view.metadata.error), 2)
+
+    def test_error_view_keeps_previous_run(self):
+        # an error in a later run of the same app must not overwrite
+        # the views from an earlier, successful run
+        first = Mmif(self.app.annotate(self.in_mmif))
+        params = {'raise_error': ['true']}
+        try:
+            self.app.annotate(first.serialize(), **params)
+        except Exception:
+            out_mmif = self.app.set_error_view(first.serialize(), **params)
+        self.assertEqual(len(out_mmif.views), len(first.views) + 1)
+        for before, after in zip(first.views, out_mmif.views):
+            self.assertEqual(before.id, after.id)
+            self.assertFalse(after.has_error())
+            self.assertEqual(len(before.annotations), len(after.annotations))
+            self.assertEqual(before.metadata.timestamp,
+                             after.metadata.timestamp)
+        error_view: View = next(reversed(out_mmif.views))
+        self.assertTrue(error_view.has_error())
+        self.assertEqual(len(error_view.annotations), 0)
+        self.assertNotIn(error_view.metadata.timestamp,
+                         [v.metadata.timestamp for v in first.views])
 
     def test_empty_view_becomes_warning_view(self):
         class EmptyClamsApp(clams.app.ClamsApp):
@@ -493,6 +532,53 @@ class TestClamsApp(unittest.TestCase):
         view = next(iter(out_mmif.views))
         self.assertTrue(view.has_error())
         self.assertFalse(view.has_warnings())
+
+    def test_self_reported_warning_view_is_not_pruned(self):
+        class WarningClamsApp(clams.app.ClamsApp):
+            def _appmetadata(self):
+                pass
+            def _annotate(self, mmif, **kwargs):
+                new_view = mmif.new_view()
+                self.sign_view(new_view, kwargs)
+                new_view.metadata.warnings = ['simulated warning']
+                return mmif
+        out_mmif = Mmif(WarningClamsApp().annotate(self.in_mmif))
+        self.assertEqual(len(out_mmif.views), 1)
+        view = next(iter(out_mmif.views))
+        self.assertEqual(view.metadata.warnings, ['simulated warning'])
+
+    def test_document_properties_stay_in_own_view(self):
+        # an app whose only output is document properties keeps its own view;
+        # the generated `Annotation`s must not go to an earlier app's view
+        class DocPropsClamsApp(clams.app.ClamsApp):
+            def _appmetadata(self):
+                pass
+            def _annotate(self, mmif, **kwargs):
+                new_view = mmif.new_view()
+                self.sign_view(new_view, kwargs)
+                mmif['v1'].add_property('duration', 1234)
+                mmif['t1'].add_property('author', 'me')
+                return mmif
+        in_mmif = Mmif(self.in_mmif)
+        earlier = in_mmif.new_view()
+        earlier.metadata.app = 'http://apps.clams.ai/earlier-app/v1'
+        earlier.new_annotation(AnnotationTypes.TimeFrame, start=0, end=10)
+        app = DocPropsClamsApp()
+        out_mmif = Mmif(app.annotate(in_mmif.serialize()))
+        self.assertEqual(
+            0, len(list(out_mmif[earlier.id].get_annotations(AnnotationTypes.Annotation))))
+        own_views = [v for v in out_mmif.views
+                     if v.metadata.app == str(app.metadata.identifier)]
+        self.assertEqual(len(own_views), 1)
+        self.assertFalse(own_views[0].has_warnings())
+        # one `Annotation` per document, even though `serialize()` converts
+        # the same pending properties a second time
+        anns = list(own_views[0].get_annotations(AnnotationTypes.Annotation))
+        self.assertEqual(len(anns), 2)
+        props = {a.get_property('document'):
+                 {k: v for k, v in a.properties.items() if k not in ('id', 'document')}
+                 for a in anns}
+        self.assertEqual({'v1': {'duration': 1234}, 't1': {'author': 'me'}}, props)
 
     def test_gpu_mem_fields_default_zero(self):
         """GPU memory fields default to 0."""
