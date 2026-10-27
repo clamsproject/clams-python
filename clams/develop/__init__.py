@@ -2,12 +2,15 @@ import argparse
 import pathlib
 import re
 import shutil
+import warnings
 from string import Template
 from typing import List
 
 import clams
 
 update_tmp_suffix = '.tmp'
+# Recipes with a ``deprecated`` message are left out of the default recipe
+# set and warn when baked on request.
 available_recipes = {
     'app': {
         'description': 'Skeleton code for a CLAMS app',
@@ -20,12 +23,18 @@ available_recipes = {
         'targetdir': '.github',
     },
     'utl-tf': {
-        'description': 'Local helper module for iterating TimeFrames and collecting per-TF frame tasks '
+        'description': 'DEPRECATED. Local helper module for iterating TimeFrames and collecting per-TF frame tasks '
                        '(baked into ``utils/timeframe.py``; backend-agnostic, safe to edit/delete)',
         'sourcedir': 'utl-tf',
         'targetdir': 'utils',
+        'deprecated': 'The `utl-tf` recipe is deprecated and is no longer baked by default. mmif-python now '
+                      'provides its functions: use `Mmif.get_annotations_of_labels()` to filter TimeFrames by '
+                      'label, and `mmif.utils.video_document_helper.iter_timeframe_images()` to sample images '
+                      'per TimeFrame with the TimePoint each image came from.',
     },
 }
+default_recipes = [name for name, recipe in available_recipes.items()
+                   if 'deprecated' not in recipe]
 
 
 class CookieCutter(object):
@@ -37,7 +46,13 @@ class CookieCutter(object):
         if recipes:
             self.recipes = recipes
         else:
-            self.recipes = list(available_recipes.keys())
+            self.recipes = list(default_recipes)
+        for recipe in self.recipes:
+            message = available_recipes.get(recipe, {}).get('deprecated')
+            if message:
+                # FutureWarning, unlike DeprecationWarning, is shown to CLI
+                # users by default
+                warnings.warn(message, FutureWarning, stacklevel=2)
         
     def tokenize_rawname(self):
         word_pat = re.compile('[A-Z][a-z]+|[0-9A-Z]+(?=[A-Z][a-z])|[0-9A-Z]{2,}|[a-z0-9]{2,}|[a-zA-Z0-9]')
@@ -158,7 +173,7 @@ def prep_argparser(**kwargs):
         action='store',
         nargs='+',
         default=[],
-        help=f"Pick recipes to bake. DEFAULT: {list(available_recipes.keys())}"
+        help=f"Pick recipes to bake. DEFAULT: {default_recipes}"
     )
     parser.add_argument(
         '-n', '--name',
