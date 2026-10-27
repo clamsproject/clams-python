@@ -7,6 +7,7 @@ import io
 import sys
 import tempfile
 import unittest
+import warnings
 from pathlib import Path
 from unittest import mock
 
@@ -16,12 +17,25 @@ from clams.app import PromptTask
 from clams.develop import CookieCutter
 
 
+class TestRecipeDefaults(unittest.TestCase):
+
+    def test_default_recipes_leave_out_deprecated(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            cutter = CookieCutter(
+                name='app', outdir=tempfile.gettempdir(), recipes=[])
+        self.assertTrue(cutter.recipes)
+        self.assertNotIn('utl-tf', cutter.recipes)
+
+
 class TestUtlTfRecipe(unittest.TestCase):
 
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        with contextlib.redirect_stdout(io.StringIO()):
+        # `utl-tf` is deprecated, and asking for it warns
+        with self.assertWarns(FutureWarning), \
+                contextlib.redirect_stdout(io.StringIO()):
             CookieCutter(
                 name='tfapp', outdir=tmp.name, recipes=['utl-tf']).bake()
         path = Path(tmp.name) / 'tfapp' / 'utils' / 'timeframe.py'

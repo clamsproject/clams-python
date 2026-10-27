@@ -240,8 +240,13 @@ class ClamsApp(ABC):
         t = datetime.now()
         with warnings.catch_warnings(record=True) as ws:
             annotated, cuda_profiler = self._profile_cuda_memory(self._annotate)(mmif, **refined)
+            # turn pending document properties into `Annotation`s now, so a
+            # view whose only output is document properties is not empty;
+            # `serialize()` repeats this later, skipping values already written
+            annotated.generate_capital_annotations()
             new_views = [v for v in annotated.views if v.id not in existing_view_ids]
-            is_empty = lambda v: len(v.annotations) == 0 and not v.has_error() and not v.has_warnings()
+            # an app-set error or warnings view has no annotations, but is kept
+            is_empty = lambda v: not (v.has_content() or v.has_error() or v.has_warnings())
             for v in new_views:
                 if is_empty(v):
                     del annotated.views._items[v.id]  # no public API to remove a view (mmif-python)
