@@ -391,7 +391,9 @@ class ClamsApp(ABC):
         """
         view.metadata.app = str(self.metadata.identifier)
         if self.metadata.app_tags:
-            view.metadata.set_additional_property('appTags', list(self.metadata.app_tags))
+            # item assignment stores the tags in the declared `appTags` field
+            # when mmif-python has one, and as an additional property otherwise
+            view.metadata['appTags'] = list(self.metadata.app_tags)
         if self._RAW_PARAMS_KEY in runtime_conf:
             for k, v in runtime_conf.items():
                 if k == self._RAW_PARAMS_KEY:
