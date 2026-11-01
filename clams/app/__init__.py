@@ -17,7 +17,9 @@ __all__ = ['ClamsApp', 'ClamsPromptableApp', 'ClamsHFPromptableApp',
 
 from typing import Union, Any, Optional, Dict, List, Mapping, Tuple, cast
 
-from mmif import Mmif, Document, DocumentTypes, View, AnnotationTypes
+from mmif import (
+    Mmif, Document, DocumentTypes, View, AnnotationTypes, EmptyOutputWarning,
+)
 from mmif.utils.video_document_helper import (
     SamplingMode, SAMPLING_MODE_DESCRIPTIONS, SAMPLING_MODE_DEFAULT,
     _sampling_mode,
@@ -51,10 +53,6 @@ falsy_values = [
     0, 
     False
 ]
-
-
-class EmptyOutputWarning(UserWarning):
-    """Raised when an app's ``_annotate()`` produces no non-empty views."""
 
 
 class ImagesPerPromptMode(Enum):
@@ -224,7 +222,6 @@ class ClamsApp(ABC):
         if not isinstance(mmif, Mmif):
             mmif, runtime_params = unwrap_if_envelope(mmif, runtime_params)
             mmif = Mmif(mmif)
-        existing_view_ids = {view.id for view in mmif.views}
         issued_warnings: List[Union[Warning, warnings.WarningMessage]] = []
         for key in runtime_params:
             if key not in self.annotate_param_spec:
@@ -238,70 +235,43 @@ class ClamsApp(ABC):
         if sampling_mode_str is not None:
             _sampling_mode.set(SamplingMode(sampling_mode_str))
         t = datetime.now()
-        with warnings.catch_warnings(record=True) as ws:
-            annotated, cuda_profiler = self._profile_cuda_memory(self._annotate)(mmif, **refined)
-            # turn pending document properties into `Annotation`s now, so a
-            # view whose only output is document properties is not empty;
-            # `serialize()` repeats this later, skipping values already written
-            annotated.generate_capital_annotations()
-            new_views = [v for v in annotated.views if v.id not in existing_view_ids]
-            # an app-set error or warnings view has no annotations, but is kept
-            is_empty = lambda v: not (v.has_content() or v.has_error() or v.has_warnings())
-            for v in new_views:
-                if is_empty(v):
-                    del annotated.views._items[v.id]  # no public API to remove a view (mmif-python)
-            if all(is_empty(v) for v in new_views):
-                warnings.warn(f'App "{self.metadata.identifier}" produced no annotations for this '
-                              f'input; the input may lack expected content, or there may genuinely '
-                              f'be nothing to annotate.', EmptyOutputWarning)
-            if ws:
-                issued_warnings.extend(ws)
-        if issued_warnings:
-            warnings_view = annotated.new_view()
-            self.sign_view(warnings_view, refined)
-            warnings_view.metadata.warnings = issued_warnings
-        td = datetime.now() - t
-        runningTime = refined.get('runningTime', False)
-        hwFetch = refined.get('hwFetch', False)
-        runtime_recs: Dict[str, Any] = {}
-        if hwFetch:
-            import multiprocessing
-            import platform, shutil, subprocess
-            runtime_recs['cpu'] = f"{platform.machine()}, {multiprocessing.cpu_count()} cores"
-            runtime_recs['cuda'] = []
-            # Use cuda_profiler data if available, otherwise fallback to nvidia-smi
-            if cuda_profiler:
-                for gpu_name, mem_info in cuda_profiler.items():
-                    total_str = self._cuda_memory_to_str(mem_info['total'])
-                    available_str = self._cuda_memory_to_str(mem_info['available_before'])
-                    peak_str = self._cuda_memory_to_str(mem_info['peak'])
-                    runtime_recs['cuda'].append(
-                        f"{gpu_name}, {total_str} total, {available_str} available, {peak_str} peak used"
-                    )
-            elif shutil.which('nvidia-smi'):
-                for gpu in subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader'], 
-                                          stdout=subprocess.PIPE).stdout.decode('utf-8').strip().split('\n'):
-                    name, mem = gpu.split(', ')
-                    runtime_recs['cuda'].append(self._cuda_device_name_concat(name, mem))
-        new_app_views = [v for v in annotated.views
-                         if v.id not in existing_view_ids
-                         and v.metadata.app == str(self.metadata.identifier)]
-        # all views from this run share the timestamp that mmif-python
-        # assigned to the first of them, serving as the "run ID"
-        run_id = next((v.metadata.timestamp for v in new_app_views
-                       if v.metadata.timestamp is not None), None)
-        for annotated_view in new_app_views:
-            if run_id is not None:
-                annotated_view.metadata.timestamp = run_id
+        signature = View()
+        self.sign_view(signature, refined)
+        with mmif.set_producer(signature) as producer:
+            with warnings.catch_warnings(record=True) as ws:
+                annotated, cuda_profiler = self._profile_cuda_memory(self._annotate)(mmif, **refined)
+            producer.add_warnings(*issued_warnings, *ws)
+            td = datetime.now() - t
+            runningTime = refined.get('runningTime', False)
+            hwFetch = refined.get('hwFetch', False)
+            runtime_recs: Dict[str, Any] = {}
+            if hwFetch:
+                import multiprocessing
+                import platform, shutil, subprocess
+                runtime_recs['cpu'] = f"{platform.machine()}, {multiprocessing.cpu_count()} cores"
+                runtime_recs['cuda'] = []
+                # Use cuda_profiler data if available, otherwise fallback to nvidia-smi
+                if cuda_profiler:
+                    for gpu_name, mem_info in cuda_profiler.items():
+                        total_str = self._cuda_memory_to_str(mem_info['total'])
+                        available_str = self._cuda_memory_to_str(mem_info['available_before'])
+                        peak_str = self._cuda_memory_to_str(mem_info['peak'])
+                        runtime_recs['cuda'].append(
+                            f"{gpu_name}, {total_str} total, {available_str} available, {peak_str} peak used"
+                        )
+                elif shutil.which('nvidia-smi'):
+                    for gpu in subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader'], 
+                                              stdout=subprocess.PIPE).stdout.decode('utf-8').strip().split('\n'):
+                        name, mem = gpu.split(', ')
+                        runtime_recs['cuda'].append(self._cuda_device_name_concat(name, mem))
             profiling_data: Dict[str, Any] = {}
             if runningTime:
                 profiling_data['runningTime'] = str(td)
             if len(runtime_recs) > 0:
                 profiling_data['hardware'] = runtime_recs
             if profiling_data:
-                annotated_view.metadata.set_additional_property('appProfiling', profiling_data)
-                    
-        return annotated.serialize(pretty=pretty, sanitize=True)
+                producer.set_view_metadata('appProfiling', profiling_data)
+            return annotated.serialize(pretty=pretty, sanitize=True)
 
     @abstractmethod
     def _annotate(self, mmif: Mmif, _raw_parameters=None, **refined_parameters) -> Mmif:
