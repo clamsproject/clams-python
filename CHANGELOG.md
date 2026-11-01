@@ -1,4 +1,14 @@
 
+## releasing 1.8.2 (2026-11-01)
+### Overview
+Updated to mmif-python 1.7.0
+
+
+### Changes
+* Updated to mmif-python 1.7.0, which comes with many bug fixes and guardrails for better handling MMIF serialization (https://github.com/clamsproject/clams-python/issues/317)
+
+
+
 ## releasing 1.8.1 (2026-10-27)
 ### Overview
 
