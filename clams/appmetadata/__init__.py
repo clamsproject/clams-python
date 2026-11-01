@@ -268,6 +268,29 @@ class RuntimeParameter(_BaseModel):
     }
         
         
+class RequiredEnv(_BaseModel):
+    """
+    Defines a data model that describes an environment variable that a CLAMS
+    app cannot run without, such as an access token for a gated model. Only
+    the name of the variable is part of the app metadata, never its value.
+    """
+    name: str = pydantic.Field(
+        ...,
+        pattern=r'^[A-Za-z_][A-Za-z0-9_]*$',
+        description="Name of the environment variable."
+    )
+    description: str = pydantic.Field(
+        ...,
+        description="Description of what the variable is for and how to "
+                    "obtain its value."
+    )
+
+    model_config = {
+        'title': 'CLAMS App Required Environment Variable',
+        'extra': 'forbid',
+    }
+
+
 class AppMetadata(pydantic.BaseModel):
     """
     Data model that describes a CLAMS app. 
@@ -378,6 +401,14 @@ class AppMetadata(pydantic.BaseModel):
                     "for selecting views; not a substitute for inspecting actual output types and properties. "
                     "The values declared here are propagated by the SDK into the ``appTags`` field of every view "
                     "the app signs."
+    )
+    required_env: List[RequiredEnv] = pydantic.Field(
+        [],
+        description="(optional) List of environment variables that the app "
+                    "cannot run without. Being listed here means the variable "
+                    "is required, so optional settings are left out. Values "
+                    "of these variables are never part of app metadata or "
+                    "output MMIF."
     )
     est_gpu_mem_min: int = pydantic.Field(
         0,
@@ -567,6 +598,23 @@ class AppMetadata(pydantic.BaseModel):
                 raise ValueError(f"'{key}' is already being used in the appmetadata!")
         else:
             raise ValueError("Key and value should not be empty!")
+
+    def add_required_env(self, name: str, description: str) -> RequiredEnv:
+        """
+        Helper method to declare an environment variable that the app cannot
+        run without.
+
+        :param name: name of the environment variable
+        :param description: what the variable is for and how to get its value
+        :returns: the newly added
+            :class:`~clams.appmetadata.RequiredEnv` object
+        :raises ValueError: if the name is invalid or is already declared
+        """
+        if any(env.name == name for env in self.required_env):
+            raise ValueError(f"'{name}' is already declared as required!")
+        new_env = RequiredEnv(name=name, description=description)
+        self.required_env.append(new_env)
+        return new_env
         
     def jsonify(self, pretty=False):
         """

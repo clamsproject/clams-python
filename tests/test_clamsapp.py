@@ -311,6 +311,17 @@ class TestClamsApp(unittest.TestCase):
             ['TemporalSegmentation', 'BarsDetection'],
         )
 
+    def test_add_required_env(self):
+        env = self.app.metadata.add_required_env('HF_TOKEN', 'hub token')
+        self.assertEqual('HF_TOKEN', env.name)
+        dumped = json.loads(self.app.appmetadata())
+        self.assertEqual([{'name': 'HF_TOKEN', 'description': 'hub token'}],
+                         dumped['required_env'])
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_required_env('HF_TOKEN', 'duplicate')
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_required_env('NOT A NAME', 'invalid')
+
     def test_add_app_tag_dedupes_and_validates(self):
         self.app.metadata.add_app_tag('foo', 'bar', 'foo')
         self.assertEqual(self.app.metadata.app_tags, ['foo', 'bar'])
