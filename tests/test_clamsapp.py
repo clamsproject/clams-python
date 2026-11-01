@@ -11,7 +11,10 @@ from unittest.mock import patch
 
 import jsonschema
 import pytest
-from mmif import Mmif, Document, DocumentTypes, AnnotationTypes, View, __specver__
+from mmif import (
+    Mmif, Document, DocumentTypes, AnnotationTypes, View, EmptyOutputWarning,
+    __specver__,
+)
 from mmif.serialize.mmif import ViewsList
 
 import clams.app
@@ -517,6 +520,65 @@ class TestClamsApp(unittest.TestCase):
         view = next(iter(out_mmif.views))
         self.assertEqual(len(view.annotations), 1)
         self.assertFalse(view.has_warnings())
+
+    def _in_mmif_with_earlier_view(self):
+        in_mmif = Mmif(self.in_mmif)
+        doc_id = next(iter(in_mmif.documents)).id
+        earlier = in_mmif.new_view()
+        earlier.metadata.app = 'http://apps.clams.ai/earlier-app/v1'
+        earlier.new_contain(AnnotationTypes.TimeFrame, document=doc_id)
+        earlier.new_annotation(AnnotationTypes.TimeFrame, start=0, end=1)
+        return in_mmif.serialize()
+
+    def test_document_properties_go_to_a_new_signed_view(self):
+        class DocPropClamsApp(clams.app.ClamsApp):
+            def _appmetadata(self):
+                pass
+            def _annotate(self, mmif, **kwargs):
+                next(iter(mmif.documents)).add_property('duration', 1000)
+                return mmif
+        app = DocPropClamsApp()
+        in_str = self._in_mmif_with_earlier_view()
+        out_str = app.annotate(in_str)
+        self.assertEqual(json.loads(in_str)['views'][0],
+                         json.loads(out_str)['views'][0])
+        out_views = list(Mmif(out_str).views)
+        self.assertEqual(len(out_views), 2)
+        self.assertEqual(out_views[1].metadata.app,
+                         str(app.metadata.identifier))
+        records = list(out_views[1].get_annotations(AnnotationTypes.Annotation))
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].get_property('duration'), 1000)
+        self.assertFalse(out_views[1].has_warnings())
+
+    def test_earlier_views_are_written_unchanged(self):
+        in_str = self._in_mmif_with_earlier_view()
+        out_str = self.app.annotate(in_str)
+        self.assertEqual(json.loads(in_str)['views'][0],
+                         json.loads(out_str)['views'][0])
+
+    def test_failed_run_leaves_mmif_reusable(self):
+        class FlakyClamsApp(clams.app.ClamsApp):
+            attempts = 0
+            def _appmetadata(self):
+                pass
+            def _annotate(self, mmif, **kwargs):
+                self.attempts += 1
+                if self.attempts == 1:
+                    raise ValueError('first attempt fails')
+                new_view = mmif.new_view()
+                self.sign_view(new_view, kwargs)
+                new_view.new_contain(AnnotationTypes.TimeFrame)
+                new_view.new_annotation(AnnotationTypes.TimeFrame, start=0, end=1)
+                return mmif
+        app = FlakyClamsApp()
+        in_mmif = Mmif(self.in_mmif)
+        with self.assertRaises(ValueError):
+            app.annotate(in_mmif)
+        self.assertEqual(len(Mmif(app.annotate(in_mmif)).views), 1)
+
+    def test_empty_output_warning_is_importable_from_clams(self):
+        self.assertIs(clams.app.EmptyOutputWarning, EmptyOutputWarning)
 
     def test_self_reported_error_view_is_not_pruned(self):
         class ErroringClamsApp(clams.app.ClamsApp):
