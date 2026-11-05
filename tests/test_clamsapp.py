@@ -86,6 +86,54 @@ class ExampleClamsApp(clams.app.ClamsApp):
         return mmif
 
 
+def requiring_env(*names):
+    """
+    Patch :class:`ExampleClamsApp` so that its metadata declares ``names``
+    as required environment variables.
+    """
+    original = ExampleClamsApp._load_appmetadata
+
+    def load(self):
+        metadata = original(self)
+        for name in names:
+            metadata.add_env_requirement(name, f'{name} for testing')
+        return metadata
+    return patch.object(ExampleClamsApp, '_load_appmetadata', load)
+
+
+class TestEnvRequirements(unittest.TestCase):
+
+    names = ('CLAMS_TEST_TOKEN_A', 'CLAMS_TEST_TOKEN_B')
+    secret = 'do-not-leak-1234'
+
+    def setUp(self):
+        patcher = patch.dict(os.environ)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        for name in self.names:
+            os.environ.pop(name, None)
+
+    def test_starts_when_all_set(self):
+        for name in self.names:
+            os.environ[name] = self.secret
+        with requiring_env(*self.names):
+            app = ExampleClamsApp()
+        self.assertNotIn(self.secret, app.appmetadata())
+
+    def test_fails_when_unset_or_empty(self):
+        os.environ['CLAMS_TEST_TOKEN_A'] = self.secret
+        os.environ['CLAMS_TEST_TOKEN_B'] = ''
+        with requiring_env(*self.names), self.assertRaises(RuntimeError) as e:
+            ExampleClamsApp()
+        message = str(e.exception)
+        self.assertIn('CLAMS_TEST_TOKEN_B', message)
+        self.assertNotIn('CLAMS_TEST_TOKEN_A', message)
+        self.assertNotIn(self.secret, message)
+
+    def test_no_declaration_needs_no_env(self):
+        ExampleClamsApp()
+
+
 class TestClamsApp(unittest.TestCase):
     
     def setUp(self):
@@ -313,6 +361,17 @@ class TestClamsApp(unittest.TestCase):
             v.metadata.get('appTags'),
             ['TemporalSegmentation', 'BarsDetection'],
         )
+
+    def test_add_env_requirement(self):
+        env = self.app.metadata.add_env_requirement('HF_TOKEN', 'hub token')
+        self.assertEqual('HF_TOKEN', env.name)
+        dumped = json.loads(self.app.appmetadata())
+        self.assertEqual([{'name': 'HF_TOKEN', 'description': 'hub token'}],
+                         dumped['env_requirements'])
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_env_requirement('HF_TOKEN', 'duplicate')
+        with self.assertRaises(ValueError):
+            self.app.metadata.add_env_requirement('NOT A NAME', 'invalid')
 
     def test_add_app_tag_dedupes_and_validates(self):
         self.app.metadata.add_app_tag('foo', 'bar', 'foo')

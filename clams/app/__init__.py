@@ -139,6 +139,7 @@ class ClamsApp(ABC):
 
     def __init__(self):
         self.metadata: AppMetadata = self._load_appmetadata()
+        self._check_env_requirements()
         super().__init__()
         
         # data type spec to be used in type caster
@@ -188,6 +189,30 @@ class ClamsApp(ABC):
         else:
             metadata = self._appmetadata()
         return metadata
+
+    def _check_env_requirements(self) -> None:
+        """
+        A private method to stop the app at startup when an environment
+        variable declared in ``env_requirements`` of the app metadata is unset
+        or empty. Only presence is checked, and the error message names the
+        missing variables. Values are never stored, logged, or included in the
+        message.
+
+        :raises RuntimeError: if any required environment variable is unset
+            or empty
+        """
+        # `os.environ.get` is used only for its truthiness, so no value is
+        # kept in a local variable (some traceback tools print locals)
+        missing = [env for env in self.metadata.env_requirements
+                   if not os.environ.get(env.name)]
+        if missing:
+            listing = '\n'.join(f'  {env.name}: {env.description}'
+                                 for env in missing)
+            raise RuntimeError(
+                f'{self.metadata.name} cannot start because these required '
+                f'environment variables are unset or empty:\n{listing}\n'
+                'See https://clams.ai/clams-python/clamsapp.html'
+                '#clamsapp-envvars for how to pass them.')
 
     @abstractmethod
     def _appmetadata(self) -> AppMetadata:
