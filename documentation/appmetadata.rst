@@ -222,6 +222,41 @@ section).
 Syntax for Parameter Specification in App Metadata
 --------------------------------------------------
 
+The ``parameters`` field is a list of objects. Each object must include
+``name``, ``description``, ``type``, and ``multivalued``. The ``type`` must be
+one of ``integer``, ``number``, ``string``, ``boolean``, or ``map``. The
+optional ``choices`` field lists accepted values, and ``default`` sets a
+default value (making the parameter optional). Defaults should be JSON values
+of the declared type; use a JSON array for a multivalued parameter.
+
+.. code-block:: json
+
+   {
+     "parameters": [
+       {
+         "name": "minFrameCount",
+         "description": "Minimum number of frames to process.",
+         "type": "integer",
+         "multivalued": false,
+         "default": 5,
+         "choices": [1, 5, 10]
+       },
+       {
+         "name": "labels",
+         "description": "Labels to include in the output.",
+         "type": "string",
+         "multivalued": true,
+         "default": ["PERSON", "ORG"]
+       }
+     ]
+   }
+
+``boolean`` parameters always use ``"multivalued": false``; ``map`` parameters
+always use ``"multivalued": true`` and represent each key-value pair as a
+colon-separated string (for example, ``"default": ["key1:value1"]``). See
+:ref:`runtime-params-detailed` for how parameter values are parsed and passed
+to the app.
+
 Required Environment Variables
 ==============================
 
@@ -244,8 +279,8 @@ Do not list optional settings, variables that have a usable default, or common s
 Do not take a secret as a runtime parameter: the SDK records runtime parameters in the ``metadata`` of every view the app signs, so the value ends up in the output MMIF.
 See :ref:`clamsapp-envvars` for how users pass these variables to an app.
 
-Metadata Schema
-===============
+Full Metadata JSON Schema
+=========================
 
 The schema for app metadata is as follows. 
 (You can also download the schema in `JSON Schema <https://json-schema.org/>`_ format from `here <appmetadata.jsonschema>`_.)
@@ -256,5 +291,3 @@ The schema for app metadata is as follows.
    :lift_definitions: True
    :auto_target: True
    :auto_reference: True
-
-
