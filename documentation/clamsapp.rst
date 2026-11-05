@@ -130,7 +130,7 @@ Passing environment variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some apps need environment variables to run, for example an access token for a gated model, or the address of a model server such as Ollama or vLLM.
-These apps list the variables in the ``required_env`` field of their app metadata.
+These apps list the variables in the ``env_requirements`` field of their app metadata.
 If one of them is unset or empty, the app stops at startup with an error that names the missing variables.
 To provide them, write a file with one ``NAME=value`` per line, usually named ``.env``.
 

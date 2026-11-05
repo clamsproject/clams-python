@@ -93,12 +93,12 @@ def requiring_env(*names):
     def load(self):
         metadata = original(self)
         for name in names:
-            metadata.add_required_env(name, f'{name} for testing')
+            metadata.add_env_requirement(name, f'{name} for testing')
         return metadata
     return patch.object(ExampleClamsApp, '_load_appmetadata', load)
 
 
-class TestRequiredEnv(unittest.TestCase):
+class TestEnvRequirements(unittest.TestCase):
 
     names = ('CLAMS_TEST_TOKEN_A', 'CLAMS_TEST_TOKEN_B')
     secret = 'do-not-leak-1234'
@@ -359,16 +359,16 @@ class TestClamsApp(unittest.TestCase):
             ['TemporalSegmentation', 'BarsDetection'],
         )
 
-    def test_add_required_env(self):
-        env = self.app.metadata.add_required_env('HF_TOKEN', 'hub token')
+    def test_add_env_requirement(self):
+        env = self.app.metadata.add_env_requirement('HF_TOKEN', 'hub token')
         self.assertEqual('HF_TOKEN', env.name)
         dumped = json.loads(self.app.appmetadata())
         self.assertEqual([{'name': 'HF_TOKEN', 'description': 'hub token'}],
-                         dumped['required_env'])
+                         dumped['env_requirements'])
         with self.assertRaises(ValueError):
-            self.app.metadata.add_required_env('HF_TOKEN', 'duplicate')
+            self.app.metadata.add_env_requirement('HF_TOKEN', 'duplicate')
         with self.assertRaises(ValueError):
-            self.app.metadata.add_required_env('NOT A NAME', 'invalid')
+            self.app.metadata.add_env_requirement('NOT A NAME', 'invalid')
 
     def test_add_app_tag_dedupes_and_validates(self):
         self.app.metadata.add_app_tag('foo', 'bar', 'foo')

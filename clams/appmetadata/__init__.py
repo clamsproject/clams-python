@@ -268,7 +268,7 @@ class RuntimeParameter(_BaseModel):
     }
         
         
-class RequiredEnv(_BaseModel):
+class EnvRequirement(_BaseModel):
     """
     Defines a data model that describes an environment variable that a CLAMS
     app cannot run without, such as an access token for a gated model. Only
@@ -286,7 +286,7 @@ class RequiredEnv(_BaseModel):
     )
 
     model_config = {
-        'title': 'CLAMS App Required Environment Variable',
+        'title': 'CLAMS App Environment Requirement',
         'extra': 'forbid',
     }
 
@@ -402,7 +402,7 @@ class AppMetadata(pydantic.BaseModel):
                     "The values declared here are propagated by the SDK into the ``appTags`` field of every view "
                     "the app signs."
     )
-    required_env: List[RequiredEnv] = pydantic.Field(
+    env_requirements: List[EnvRequirement] = pydantic.Field(
         [],
         description="(optional) List of environment variables that the app "
                     "cannot run without. Being listed here means the variable "
@@ -599,7 +599,8 @@ class AppMetadata(pydantic.BaseModel):
         else:
             raise ValueError("Key and value should not be empty!")
 
-    def add_required_env(self, name: str, description: str) -> RequiredEnv:
+    def add_env_requirement(self, name: str,
+                            description: str) -> EnvRequirement:
         """
         Helper method to declare an environment variable that the app cannot
         run without.
@@ -607,13 +608,13 @@ class AppMetadata(pydantic.BaseModel):
         :param name: name of the environment variable
         :param description: what the variable is for and how to get its value
         :returns: the newly added
-            :class:`~clams.appmetadata.RequiredEnv` object
+            :class:`~clams.appmetadata.EnvRequirement` object
         :raises ValueError: if the name is invalid or is already declared
         """
-        if any(env.name == name for env in self.required_env):
+        if any(env.name == name for env in self.env_requirements):
             raise ValueError(f"'{name}' is already declared as required!")
-        new_env = RequiredEnv(name=name, description=description)
-        self.required_env.append(new_env)
+        new_env = EnvRequirement(name=name, description=description)
+        self.env_requirements.append(new_env)
         return new_env
         
     def jsonify(self, pretty=False):
