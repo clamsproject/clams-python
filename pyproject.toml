@@ -42,6 +42,10 @@ test = ["mypy", "pytest", "pytest-cov", "pillow"]
 # Required for apps using the HuggingFace transformers backend
 # (clams.backends.hf). Heavy deps; opt-in only.
 hf = ["torch", "transformers", "pillow", "tqdm"]
+# Required for apps using the llama.cpp llama-server backend
+# (clams.backends.llamaserver). The llama-server binary itself is not a
+# python package; it comes from the base image or the system.
+llamaserver = ["huggingface_hub", "pillow"]
 
 [tool.setuptools.packages.find]
 where = ["."]

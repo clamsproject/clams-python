@@ -56,6 +56,12 @@ class Restifier(object):
             if 'CLAMS_GUNICORN_WORKERS' in os.environ:
                 return int(os.environ['CLAMS_GUNICORN_WORKERS'])
 
+            # apps that serve their model from one process shared by all
+            # workers (e.g. ClamsGGUFPromptableApp) declare the count
+            declared_workers = getattr(self.cla, 'PRODUCTION_WORKERS', None)
+            if declared_workers:
+                return int(declared_workers)
+
             cpu_workers = (multiprocessing.cpu_count() * 2) + 1
 
             # Get GPU memory requirement from app metadata
