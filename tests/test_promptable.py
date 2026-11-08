@@ -754,6 +754,50 @@ class TestTransportNeutralCasting(unittest.TestCase):
         self.assertEqual(refined['prompt'], ['only'])
 
 
+class TestPinnedModelHelpers(unittest.TestCase):
+    """
+    The opt-in ``model`` parameter helpers on plain
+    :class:`ClamsPromptableApp`.
+    """
+
+    AV = {'org/model-a': 'aaaaaaa', 'org/model-b': 'bbbbbbb'}
+
+    def test_plain_app_gets_no_model_parameter(self):
+        app = make_test_app(
+            make_metadata(call_helper=True, analyzer_versions=self.AV))
+        self.assertNotIn(
+            'model', {p.name for p in app.metadata.parameters})
+
+    def test_opt_in_model_parameter_pins_revision(self):
+        m = make_metadata(call_helper=True, analyzer_versions=self.AV)
+        ClamsPromptableApp._add_model_parameter(
+            m, helper_name='test', id_kind='model id', description='m')
+        app = make_test_app(m)
+        refined = app._refine_params(prompt=['hi'], model=['org/model-b'])
+        self.assertEqual(refined['model'], 'org/model-b@bbbbbbb')
+        self.assertEqual(app._split_model_ref('org/model-a'),
+                         ('org/model-a', 'aaaaaaa'))
+        self.assertEqual(app._split_model_ref('org/model-a@ccccccc'),
+                         ('org/model-a', 'ccccccc'))
+
+    def test_model_value_outside_analyzer_versions_is_untouched(self):
+        # e.g. a remote-API app with its own ``model`` parameter
+        m = make_metadata(call_helper=True,
+                          pre_declare={'name': 'model', 'type': 'string',
+                                       'default': 'remote-model',
+                                       'description': 'remote model'},
+                          analyzer_versions={'local/ocr': 'ddddddd'})
+        app = make_test_app(m)
+        refined = app._refine_params(prompt=['hi'])
+        self.assertEqual(refined['model'], 'remote-model')
+
+    def test_empty_analyzer_versions_raises(self):
+        with self.assertRaisesRegex(ValueError, 'analyzer_versions'):
+            ClamsPromptableApp._add_model_parameter(
+                make_metadata(call_helper=True), helper_name='test',
+                id_kind='model id', description='m')
+
+
 # ---------------------------------------------------------------------------
 # ClamsHFPromptableApp class-attribute validation
 # ---------------------------------------------------------------------------
