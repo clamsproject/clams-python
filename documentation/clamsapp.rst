@@ -447,7 +447,7 @@ When running in production mode, the following environment variables can be used
      - Logging verbosity level (``debug``, ``info``, ``warning``, ``error``)
      - ``warning``
 
-By default, the number of workers is calculated as ``(CPU cores x 2) + 1``. For GPU-based apps, see `GPU Memory Management <gpu-apps.html>`_ for details on automatic worker scaling and VRAM management.
+By default, the number of workers is calculated as ``(CPU cores x 2) + 1``, and each worker is replaced after one request. An app can fix both in code; see `GPU Memory Management <gpu-apps.html>`_ for the worker calculation, the recycling and the order of precedence between the environment, the app and the ``serve_production()`` call.
 
 ``metadata.py``: Getting app metadata
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
