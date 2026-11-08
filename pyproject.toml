@@ -69,6 +69,7 @@ module = ["mmif.*", "flask_restful.*", "gunicorn.*", "jsonschema.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-# optional backends (the `hf` extra) and the `metadata.py` of a running app
-module = ["torch.*", "transformers.*", "metadata"]
+# optional backends (the `hf` and `llamaserver` extras) and the
+# `metadata.py` of a running app
+module = ["torch.*", "transformers.*", "huggingface_hub.*", "metadata"]
 ignore_missing_imports = true

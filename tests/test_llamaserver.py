@@ -12,7 +12,9 @@ import stat
 import sys
 import tempfile
 import textwrap
+import types
 import unittest
+from unittest import mock
 
 import numpy as np
 from PIL import Image
@@ -611,29 +613,31 @@ class TestGGUFPromptableApp(FakeServerMixin, unittest.TestCase):
 class TestOfflineResolve(unittest.TestCase):
 
     def test_cached_snapshot_is_listed_when_hub_is_unreachable(self):
-        import huggingface_hub
         snapshot = tempfile.mkdtemp()
         for name in ('m-Q8_0-00001-of-00002.gguf',
                      'm-Q8_0-00002-of-00002.gguf', 'mmproj-m-f16.gguf'):
             open(os.path.join(snapshot, name), 'wb').close()
-        originals = (huggingface_hub.HfApi.list_repo_files,
-                     huggingface_hub.snapshot_download)
 
         def offline(*args, **kwargs):
             raise OSError('offline')
 
-        huggingface_hub.HfApi.list_repo_files = offline
-        huggingface_hub.snapshot_download = (
+        # a stand-in for huggingface_hub (not a test dependency): the Hub
+        # is unreachable, and the revision is in the local cache
+        hub = types.ModuleType('huggingface_hub')
+        hub.HfApi = type('HfApi', (), {'list_repo_files': offline})
+        hub.snapshot_download = (
             lambda *a, **kw: snapshot if kw.get('local_files_only') else
             offline())
         try:
-            self.assertEqual(
-                llamaserver.resolve_gguf_files('org/m-GGUF', 'abc', 'Q8_0'),
-                (['m-Q8_0-00001-of-00002.gguf', 'm-Q8_0-00002-of-00002.gguf'],
-                 'mmproj-m-f16.gguf'))
+            with mock.patch.dict(sys.modules, {'huggingface_hub': hub}):
+                self.assertEqual(
+                    llamaserver.resolve_gguf_files(
+                        'org/m-GGUF', 'abc', 'Q8_0'),
+                    (['m-Q8_0-00001-of-00002.gguf',
+                      'm-Q8_0-00002-of-00002.gguf'],
+                     'mmproj-m-f16.gguf'))
         finally:
-            (huggingface_hub.HfApi.list_repo_files,
-             huggingface_hub.snapshot_download) = originals
+            shutil.rmtree(snapshot, ignore_errors=True)
             shutil.rmtree(snapshot, ignore_errors=True)
 
 
