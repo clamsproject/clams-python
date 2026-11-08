@@ -27,13 +27,19 @@ found, in this order, from the ``binary`` argument, the
 
     pip install clams-python[llamaserver]
 
-Fitting the run to the hardware (GPU offload, context size, batch
-sizes, threads, tensor split) is left to ``llama-server``: its
-defaults place what fits on the GPUs and keep the rest in system
-memory. Whoever runs the app overrides them with llama.cpp's own
-``LLAMA_ARG_*`` environment variables (e.g. ``LLAMA_ARG_CTX_SIZE``,
-``LLAMA_ARG_THREADS``, ``LLAMA_ARG_N_GPU_LAYERS``), which the server
-reads for every argument not given on its command line.
+Server settings other than the model files and the address are
+llama.cpp's own ``LLAMA_ARG_*`` environment variables, which
+``llama-server`` reads for every argument not given on its command
+line. Their values come from, in increasing precedence:
+
+1. ``llama-server``'s defaults, which fit the run to the hardware:
+   they place what fits on the GPUs, keep the rest in system memory,
+   and size the context to the free memory;
+1. the ``llama_args`` of :class:`LlamaServer`, for what a model needs
+   (e.g. ``{'LLAMA_ARG_UBATCH': '2048'}``);
+1. the environment of the process that starts the server (e.g.
+   ``LLAMA_ARG_CTX_SIZE``, ``LLAMA_ARG_THREADS``,
+   ``LLAMA_ARG_N_GPU_LAYERS`` set by whoever runs the app).
 """
 
 import atexit
@@ -53,7 +59,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Deque, List, Optional, Sequence, Tuple
+from typing import Any, Deque, List, Mapping, Optional, Sequence, Tuple
 
 __all__ = ['LLAMA_SERVER_ENV', 'ContextSizeError', 'LlamaServer',
            'download_gguf', 'find_llama_server', 'resolve_gguf_files',
@@ -65,7 +71,7 @@ LLAMA_SERVER_ENV = 'LLAMA_SERVER'
 _SHARD_PATTERN = re.compile(r'-(\d{5})-of-(\d{5})\.gguf$')
 _DRAFT_PREFIXES = ('mtp-', 'dflash-', 'draft-')
 _LOG_TAIL_LINES = 40
-# llama.cpp reads these for the arguments the command line leaves out;
+_LLAMA_ARG_PREFIX = 'LLAMA_ARG_'
 # the server's address is always given on the command line, so these two
 # are dropped from its environment (the upstream image sets them)
 _ADDRESS_ENV = ('LLAMA_ARG_HOST', 'LLAMA_ARG_PORT')
@@ -324,14 +330,12 @@ class LlamaServer:
     :param host: interface to bind; keep the default so the server is
         reachable only from this machine.
     :param port: port to bind; a free port is chosen when ``None``.
-    :param extra_args: further ``llama-server`` command-line arguments,
-        for what a model needs (e.g. ``--ubatch-size`` for the image
-        token budget of a vision model). GPU offload, context size and
-        the other hardware settings are left to the server's defaults
-        and to ``LLAMA_ARG_*`` environment variables (see the module
-        docstring); the context size and slot count the server ends up
-        with are read after startup into :py:attr:`slot_context` and
-        :py:attr:`slots`.
+    :param llama_args: default values of ``LLAMA_ARG_*`` environment
+        variables for the server, e.g. ``{'LLAMA_ARG_UBATCH': '2048'}``.
+        A variable set in the environment of this process takes
+        precedence (see the module docstring). The context size and slot
+        count the server ends up with are read after startup into
+        :py:attr:`slot_context` and :py:attr:`slots`.
     :param startup_timeout: seconds to wait for the model to load. A
         large model on a slow disk needs more than the default (the
         server reads the whole file at startup).
@@ -339,6 +343,8 @@ class LlamaServer:
     :param logger: logger receiving the server's output: errors and
         warnings at WARNING, placement, load and timing lines at INFO,
         the rest at DEBUG.
+    :raises ValueError: if a ``llama_args`` key is not an
+        ``LLAMA_ARG_*`` variable, or names the server's address.
     """
 
     def __init__(
@@ -349,17 +355,26 @@ class LlamaServer:
             binary: Optional[str] = None,
             host: str = '127.0.0.1',
             port: Optional[int] = None,
-            extra_args: Sequence[str] = (),
+            llama_args: Optional[Mapping[str, Any]] = None,
             startup_timeout: float = 600.0,
             request_timeout: float = 1800.0,
             logger: Optional[logging.Logger] = None,
     ):
+        llama_args = dict(llama_args or {})
+        invalid = [k for k in llama_args
+                   if not k.startswith(_LLAMA_ARG_PREFIX)
+                   or k in _ADDRESS_ENV]
+        if invalid:
+            raise ValueError(
+                f"llama_args takes {_LLAMA_ARG_PREFIX}* environment "
+                f"variables other than {', '.join(_ADDRESS_ENV)}: "
+                f"{invalid}")
         self.model_path = model_path
         self.mmproj_path = mmproj_path
         self.binary = binary
         self.host = host
         self.port = port
-        self.extra_args = list(extra_args)
+        self.llama_args = {k: str(v) for k, v in llama_args.items()}
         self.startup_timeout = startup_timeout
         self.request_timeout = request_timeout
         self.logger = logger or logging.getLogger(__name__)
@@ -390,7 +405,23 @@ class LlamaServer:
                '--reasoning-format', 'none']
         if self.mmproj_path:
             cmd += ['--mmproj', self.mmproj_path]
-        return cmd + self.extra_args
+        return cmd
+
+    def _environment(self) -> Tuple[dict, List[str]]:
+        """
+        The server's environment: this process's, over the defaults in
+        :py:attr:`llama_args`, without the address variables. Also
+        returns the ``LLAMA_ARG_*`` settings in effect with their
+        source, for the log.
+        """
+        env = {**self.llama_args, **os.environ}
+        for key in _ADDRESS_ENV:
+            env.pop(key, None)
+        settings = [
+            f"{k}={env[k]} "
+            f"({'environment' if k in os.environ else 'app'})"
+            for k in sorted(env) if k.startswith(_LLAMA_ARG_PREFIX)]
+        return env, settings
 
     def owned_here(self) -> bool:
         """Whether this python process started (and may stop) the server."""
@@ -422,10 +453,9 @@ class LlamaServer:
         if self.port is None:
             self.port = _free_port(self.host)
         cmd = self._command()
-        env = {k: v for k, v in os.environ.items() if k not in _ADDRESS_ENV}
-        overrides = sorted(k for k in env if k.startswith('LLAMA_ARG_'))
+        env, settings = self._environment()
         self.logger.info(f"Starting llama-server: {' '.join(cmd)}"
-                         + (f" (environment: {overrides})" if overrides
+                         + (f"; {', '.join(settings)}" if settings
                             else ''))
         self._log_tail.clear()
         self._process = subprocess.Popen(

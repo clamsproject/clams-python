@@ -4,6 +4,7 @@ Tests for the llama-server backend (``clams.backends.llamaserver``) and
 HTTP server with the same command line and endpoints) stands in for
 llama.cpp, so no binary, GPU or network is needed.
 """
+import contextlib
 import json
 import os
 import shutil
@@ -101,6 +102,21 @@ FAKE_SERVER = textwrap.dedent('''\
     print('server is listening', flush=True)
     ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
 ''')
+
+
+@contextlib.contextmanager
+def _environ(values):
+    """Set environment variables for the block, then restore them."""
+    saved = {k: os.environ.get(k) for k in values}
+    os.environ.update(values)
+    try:
+        yield
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                del os.environ[k]
+            else:
+                os.environ[k] = v
 
 
 class FakeServerMixin:
@@ -226,8 +242,7 @@ class TestLlamaServer(FakeServerMixin, unittest.TestCase):
         return llamaserver.LlamaServer(self.model_file, **kwargs)
 
     def test_command_line(self):
-        server = self.make_server(mmproj_path=self.mmproj_file, port=1234,
-                                  extra_args=['--ubatch-size', '2048'])
+        server = self.make_server(mmproj_path=self.mmproj_file, port=1234)
         cmd = server._command()
         self.assertEqual(cmd[0], self.fake_binary)
         for flag, value in (('--model', self.model_file),
@@ -235,10 +250,9 @@ class TestLlamaServer(FakeServerMixin, unittest.TestCase):
                             ('--port', '1234'),
                             ('--reasoning-format', 'none')):
             self.assertEqual(cmd[cmd.index(flag) + 1], value)
-        self.assertEqual(cmd[-2:], ['--ubatch-size', '2048'])
-        # hardware settings are the server's: nothing of them in the command
+        # other settings go through the environment
         for flag in ('--ctx-size', '--parallel', '--n-gpu-layers',
-                     '--threads'):
+                     '--ubatch-size'):
             self.assertNotIn(flag, cmd)
 
     def test_start_chat_stop(self):
@@ -259,9 +273,7 @@ class TestLlamaServer(FakeServerMixin, unittest.TestCase):
         # address do not, since the command line sets it
         env = {'LLAMA_ARG_CTX_SIZE': '8192', 'LLAMA_ARG_N_PARALLEL': '2',
                'LLAMA_ARG_HOST': '0.0.0.0', 'LLAMA_ARG_PORT': '8080'}
-        saved = {k: os.environ.get(k) for k in env}
-        os.environ.update(env)
-        try:
+        with _environ(env):
             with self.make_server() as server:
                 self.assertEqual(server.slot_context, 4096)
                 self.assertEqual(server.slots, 2)
@@ -269,12 +281,30 @@ class TestLlamaServer(FakeServerMixin, unittest.TestCase):
                     [{'role': 'user', 'content': 'hello'}]))
                 self.assertEqual(reply['env'], ['LLAMA_ARG_CTX_SIZE',
                                                 'LLAMA_ARG_N_PARALLEL'])
-        finally:
-            for k, v in saved.items():
-                if v is None:
-                    del os.environ[k]
-                else:
-                    os.environ[k] = v
+
+    def test_llama_args_are_defaults_under_the_environment(self):
+        llama_args = {'LLAMA_ARG_CTX_SIZE': 8192, 'LLAMA_ARG_UBATCH': 2048}
+        with self.make_server(llama_args=llama_args) as server:
+            self.assertEqual(server.slot_context, 8192)
+            reply = json.loads(server.chat(
+                [{'role': 'user', 'content': 'hello'}]))
+            self.assertEqual(reply['env'], ['LLAMA_ARG_CTX_SIZE',
+                                            'LLAMA_ARG_UBATCH'])
+        # the environment of the app process wins over the defaults
+        with _environ({'LLAMA_ARG_CTX_SIZE': '4096'}):
+            server = self.make_server(llama_args=llama_args)
+            env, settings = server._environment()
+            self.assertEqual(env['LLAMA_ARG_CTX_SIZE'], '4096')
+            self.assertEqual(env['LLAMA_ARG_UBATCH'], '2048')
+            self.assertIn('LLAMA_ARG_CTX_SIZE=4096 (environment)', settings)
+            self.assertIn('LLAMA_ARG_UBATCH=2048 (app)', settings)
+            with server:
+                self.assertEqual(server.slot_context, 4096)
+
+    def test_llama_args_take_only_llama_arg_variables(self):
+        for key in ('UBATCH', 'LLAMA_ARG_PORT', 'HF_TOKEN'):
+            with self.assertRaisesRegex(ValueError, 'LLAMA_ARG_'):
+                self.make_server(llama_args={key: '1'})
 
     def test_startup_failure_reports_server_output(self):
         os.environ['FAKE_LLAMA_EXIT'] = '3'
@@ -463,7 +493,7 @@ class TestGGUFPromptableApp(FakeServerMixin, unittest.TestCase):
             cls()
 
     def test_generate_keeps_order_and_maps_params(self):
-        app = self.make_app(LLAMA_SERVER_ARGS=('--ubatch-size', '2048'))
+        app = self.make_app(LLAMA_ARGS={'LLAMA_ARG_UBATCH': '2048'})
         images = [[Image.new('RGB', (4, 4))],
                   [Image.new('RGB', (4, 4)), Image.new('RGB', (4, 4))],
                   [Image.new('RGB', (4, 4))]]
@@ -477,8 +507,7 @@ class TestGGUFPromptableApp(FakeServerMixin, unittest.TestCase):
             'max_tokens': 64, 'temperature': 0.0, 'top_p': 0.9,
             'top_k': 20, 'cache_prompt': False,
             'chat_template_kwargs': {'enable_thinking': True}})
-        argv = outputs[0]['argv']
-        self.assertEqual(argv[-2:], ['--ubatch-size', '2048'])
+        self.assertEqual(outputs[0]['env'], ['LLAMA_ARG_UBATCH'])
 
     def test_reasoning_is_off_unless_requested(self):
         app = self.make_app()
@@ -543,12 +572,6 @@ class TestGGUFPromptableApp(FakeServerMixin, unittest.TestCase):
         with self.assertRaisesRegex(ValueError,
                                     r'\(32768 tokens\).*maxImagesPerPrompt'):
             app.generate(['TOO_LONG'])
-
-    def test_timeouts_reach_the_server(self):
-        app = self.make_app(LLAMA_SERVER_STARTUP_TIMEOUT=123.0,
-                            LLAMA_SERVER_REQUEST_TIMEOUT=45.0)
-        self.assertEqual(app.server.startup_timeout, 123.0)
-        self.assertEqual(app.server.request_timeout, 45.0)
 
     def test_server_of_another_process_is_not_replaced(self):
         app = self.make_app(self.MULTI_AV)

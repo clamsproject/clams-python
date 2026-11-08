@@ -1988,27 +1988,19 @@ class ClamsGGUFPromptableApp(ClamsPromptableApp):
     #: list of shard files. Models not listed here are resolved from
     #: the repository file listing.
     MODEL_FILES: dict[str, dict[str, Any]] | None = None
-    # ``LLAMA_SERVER_*``: settings of the ``llama-server`` process that
-    # the default ``launch_server`` starts.
-    #
-    #: Seconds to wait for the server to load the model. The server
-    #: reads the whole model file at startup, so a large model on a slow
-    #: disk needs more (e.g. 65 GB at 150 MB/s takes about 7 minutes).
-    LLAMA_SERVER_STARTUP_TIMEOUT: float = 600.0
-    #: Seconds to wait for one chat completion.
-    LLAMA_SERVER_REQUEST_TIMEOUT: float = 1800.0
-    #: Further ``llama-server`` command-line arguments that the app's
-    #: models need, e.g. ``('--ubatch-size', '2048')`` for the token
-    #: budget per image of a vision model. Hardware settings (GPU
-    #: offload, context size, threads) are left to llama-server's
-    #: defaults and to the ``LLAMA_ARG_*`` environment variables of the
-    #: deployment; see :mod:`clams.backends.llamaserver`. The context
-    #: size and slot count in effect are logged at startup and kept in
-    #: ``self.server.slot_context`` and ``self.server.slots``. A prompt
-    #: (system and user text, images, and the generated tokens) that
-    #: does not fit in a slot fails the request with an error naming
-    #: the size.
-    LLAMA_SERVER_ARGS: tuple[str, ...] = ()
+    #: Default values of llama.cpp's ``LLAMA_ARG_*`` environment
+    #: variables for what the app's models need, e.g.
+    #: ``{'LLAMA_ARG_UBATCH': '2048'}`` for the token budget per image
+    #: of a vision model. A variable set in the environment of the app
+    #: process takes precedence, and settings not given here or there
+    #: (GPU offload, context size, threads) are left to llama-server's
+    #: defaults; see :mod:`clams.backends.llamaserver`. The settings in
+    #: effect are logged when the server starts, and the context size
+    #: and slot count are kept in ``self.server.slot_context`` and
+    #: ``self.server.slots``. A prompt (system and user text, images,
+    #: and the generated tokens) that does not fit in a slot fails the
+    #: request with an error naming the size.
+    LLAMA_ARGS: dict[str, str] = {}
 
     # ``RESTIFIER_*``: the HTTP wrapper constraints any app may declare
     # (see :class:`ClamsApp`); the model lives in a process this app
@@ -2128,22 +2120,16 @@ class ClamsGGUFPromptableApp(ClamsPromptableApp):
         repo_id, _, variant = model_id.partition(':')
         return resolve_gguf_files(repo_id, revision, variant)
 
-    def server_args(self, model_id: str, revision: str) -> List[str]:
-        """
-        Extra ``llama-server`` arguments for a SPECIFIC model. The base
-        implementation returns :py:attr:`LLAMA_SERVER_ARGS` for every model;
-        override for per-variant settings.
-        """
-        return list(self.LLAMA_SERVER_ARGS)
-
     def launch_server(self, model_id: str, revision: str) -> Any:
         """
         Download the pinned GGUF files and start ``llama-server`` on
-        localhost.
+        localhost, with :py:attr:`LLAMA_ARGS` as default settings.
 
-        Override to launch a different OpenAI-compatible server; the
-        returned object needs ``chat(messages, **params) -> str``,
-        ``is_running() -> bool`` and ``stop()``.
+        Override to launch a different OpenAI-compatible server, or to
+        pass other :class:`~clams.backends.llamaserver.LlamaServer`
+        arguments (e.g. longer timeouts); the returned object needs
+        ``chat(messages, **params) -> str``, ``is_running() -> bool``
+        and ``stop()``.
 
         :raises RuntimeError: if the server fails to start.
         """
@@ -2152,21 +2138,9 @@ class ClamsGGUFPromptableApp(ClamsPromptableApp):
         model_names, mmproj_name = self._model_files(model_id, revision)
         model_paths, mmproj_path = llamaserver.download_gguf(
             repo_id, revision, model_names, mmproj_name)
-        server = llamaserver.LlamaServer(
-            model_paths[0], mmproj_path,
-            extra_args=self.server_args(model_id, revision),
-            startup_timeout=self.LLAMA_SERVER_STARTUP_TIMEOUT,
-            request_timeout=self.LLAMA_SERVER_REQUEST_TIMEOUT,
-            logger=self.logger)
-        try:
-            return server.start()
-        except RuntimeError as e:
-            if 'did not become healthy' in str(e):
-                raise RuntimeError(
-                    f"{e}\nRaise LLAMA_SERVER_STARTUP_TIMEOUT (now "
-                    f"{self.LLAMA_SERVER_STARTUP_TIMEOUT} s) if the model "
-                    f"needs longer to load.") from e
-            raise
+        return llamaserver.LlamaServer(
+            model_paths[0], mmproj_path, llama_args=self.LLAMA_ARGS,
+            logger=self.logger).start()
 
     def generate(
             self,
@@ -2183,7 +2157,7 @@ class ClamsGGUFPromptableApp(ClamsPromptableApp):
         go to the server as base64 data URLs. A prompt that fails is
         logged and yields ``''``, as in the HF backend, except a prompt
         longer than the context of a server slot (see
-        :py:attr:`LLAMA_SERVER_ARGS`): that is a configuration problem, so it
+        :py:attr:`LLAMA_ARGS`): that is a configuration problem, so it
         fails the request.
 
         Generation parameters are mapped by :py:meth:`build_request_params`;

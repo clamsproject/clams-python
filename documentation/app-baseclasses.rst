@@ -716,17 +716,12 @@ Class-attribute hooks
        [shards], 'mmproj': '<file>'}}``. Models not listed are
        resolved from the repository listing.
      - no
-   * - ``LLAMA_SERVER_ARGS``
-     - Further ``llama-server`` arguments for what the app's models
-       need, e.g. ``('--ubatch-size', '2048')`` to raise the token
-       budget per image of a vision model.
-     - no
-   * - ``LLAMA_SERVER_STARTUP_TIMEOUT``
-     - Seconds to wait for the model to load (default 600). A large
-       model on a slow disk needs more.
-     - no
-   * - ``LLAMA_SERVER_REQUEST_TIMEOUT``
-     - Seconds to wait for one chat completion (default 1800).
+   * - ``LLAMA_ARGS``
+     - Default values of llama.cpp's ``LLAMA_ARG_*`` environment
+       variables for what the app's models need, e.g.
+       ``{'LLAMA_ARG_UBATCH': '2048'}`` to raise the token budget per
+       image of a vision model. The environment of the app process
+       takes precedence (see below).
      - no
    * - ``RESTIFIER_PRODUCTION_WORKERS``,
        ``RESTIFIER_PRODUCTION_MAX_REQUESTS``
@@ -738,18 +733,26 @@ Class-attribute hooks
        per worker.
      - no
 
-Hardware settings
-^^^^^^^^^^^^^^^^^
+Server settings
+^^^^^^^^^^^^^^^
 
-GPU offload, context size, batch sizes, threads and the split over
-several GPUs come from ``llama-server``'s defaults: it places what fits
-on the GPUs, keeps the rest in system memory, and sizes the context to
-the free memory. The context size and slot count in effect are logged
-at startup. To override a default, set llama.cpp's own ``LLAMA_ARG_*``
-environment variables (e.g. ``LLAMA_ARG_CTX_SIZE``,
-``LLAMA_ARG_THREADS``, ``LLAMA_ARG_N_GPU_LAYERS``) for the app process;
-the server reads them for every argument not on its command line, and
-the variables in effect are logged with the server command.
+The SDK gives ``llama-server`` only the model files, its address and
+the reasoning output format on the command line. Every other setting
+is one of llama.cpp's own ``LLAMA_ARG_*`` environment variables, which
+the server reads for every argument not on its command line. A value
+comes from, in increasing precedence:
+
+1. ``llama-server``'s defaults, which fit the run to the hardware: GPU
+   offload, context size, batch sizes, threads and the split over
+   several GPUs. The server places what fits on the GPUs, keeps the
+   rest in system memory, and sizes the context to the free memory.
+1. The app's ``LLAMA_ARGS``, for what its models need.
+1. The environment of the app process, set by whoever runs the app
+   (e.g. ``LLAMA_ARG_CTX_SIZE``, ``LLAMA_ARG_THREADS``,
+   ``LLAMA_ARG_N_GPU_LAYERS``).
+
+The settings in effect are logged with their source when the server
+starts, and the context size and slot count when it is ready.
 
 One prompt (system and user text, all its images, and the generated
 tokens) must fit in the context of a server slot. A prompt that does
