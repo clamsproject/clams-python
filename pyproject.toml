@@ -36,12 +36,16 @@ homepage = "https://clams.ai"
 source = "https://github.com/clamsproject/clams-python"
 
 [project.optional-dependencies]
-dev = ["mypy", "pytest", "pytest-cov", "pillow", "setuptools"]
+dev = ["mypy", "pytest", "pytest-cov", "pillow", "numpy", "setuptools"]
 docs = ["sphinx>=7.0,<8.0", "furo", "m2r2", "sphinx-jsonschema"]
-test = ["mypy", "pytest", "pytest-cov", "pillow"]
+test = ["mypy", "pytest", "pytest-cov", "pillow", "numpy"]
 # Required for apps using the HuggingFace transformers backend
 # (clams.backends.hf). Heavy deps; opt-in only.
 hf = ["torch", "transformers", "pillow", "tqdm"]
+# Required for apps using the llama.cpp llama-server backend
+# (clams.backends.llamaserver). The llama-server binary itself is not a
+# python package; it comes from the base image or the system.
+llamaserver = ["huggingface_hub", "pillow"]
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -65,6 +69,7 @@ module = ["mmif.*", "flask_restful.*", "gunicorn.*", "jsonschema.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-# optional backends (the `hf` extra) and the `metadata.py` of a running app
-module = ["torch.*", "transformers.*", "metadata"]
+# optional backends (the `hf` and `llamaserver` extras) and the
+# `metadata.py` of a running app
+module = ["torch.*", "transformers.*", "huggingface_hub.*", "metadata"]
 ignore_missing_imports = true

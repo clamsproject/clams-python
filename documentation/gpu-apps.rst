@@ -77,6 +77,39 @@ By default, workers are recycled after each request (``max_requests=1``) to full
 
    restifier.serve_production(max_requests=0)  # Workers persist
 
+Who sets the worker count and recycling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Three parties can set these two values, and the first match wins:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 22 39 39
+
+   * - Party
+     - Workers
+     - Recycling (``max_requests``)
+   * - The deployment (``app.py``, or whoever starts the server)
+     - ``serve_production(workers=N)``, else the
+       ``CLAMS_GUNICORN_WORKERS`` environment variable
+     - ``serve_production(max_requests=N)``
+   * - The app class
+     - ``RESTIFIER_PRODUCTION_WORKERS`` class attribute
+     - ``RESTIFIER_PRODUCTION_MAX_REQUESTS`` class attribute
+   * - The SDK default
+     - the calculation above
+     - ``1``
+
+An app declares the class attributes when it holds something that must
+not be forked or restarted with the worker. For example,
+:class:`~clams.app.ClamsGGUFPromptableApp` loads its model in a
+``llama-server`` child process, so it declares one worker and no
+recycling: a fork would duplicate the model, and a worker replacement
+would restart it on every request. Any :class:`~clams.app.ClamsApp`
+subclass may declare them; only
+:meth:`~clams.restify.Restifier.serve_production` reads them. The
+attribute names are constants in :mod:`clams.restify`.
+
 NVIDIA Memory Oversubscription
 ------------------------------
 

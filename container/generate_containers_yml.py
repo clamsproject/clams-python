@@ -5,27 +5,43 @@ def scan_container_files(directory):
     container_files = [f.name for f in Path(directory).iterdir() if f.is_file() and (f.name.endswith('.containerfile') or f.name == 'Containerfile')]
     return container_files
 
+IMAGE_PREFIX = "ghcr.io/clamsproject/clams-python"
+
+
+def job_name_of(file):
+    return 'base' if file == 'Containerfile' else file.replace('.containerfile', '')
+
+
+def image_job(image):
+    """Job name that builds a clams-python image reference, or None for other images."""
+    name = image.split(':')[0]
+    if not name.startswith(IMAGE_PREFIX):
+        return None
+    suffix = name[len(IMAGE_PREFIX):]
+    return 'base' if suffix == '' else suffix.lstrip('-')
+
+
 def determine_dependencies(container_files):
-    """Determine dependencies based on the `FROM` line in the file content."""
+    """
+    Determine dependencies from every `FROM` line that names a clams-python image.
+    A multi-stage file can name several and then depends on all of them. `FROM`
+    lines of other images (e.g. `llamaserver` builds on llama.cpp's image) are ignored.
+    """
     dependencies = {}
     for file in container_files:
         file_path = Path(__file__).parent / file
+        deps = []
         with open(file_path, 'r') as f:
             for line in f:
                 if line.startswith('FROM'):
-                    base_image = line.split()[1].strip()
-                    # common prefix: ghcr.io/clamsproject/clams-python
-                    # common suffix: :#clams_version
-                    # just get the middle 
-                    base_image = base_image[len("ghcr.io/clamsproject/clams-python"):-len(":#clams_version")]
-                    if len(base_image) == 0:
-                        dependencies[file] = []
-                    else:
-                        dependencies[file] = base_image.split('-')[1:]  # assuming suffix starts with a dash
-                    break
+                    job = image_job(line.split()[1].strip())
+                    if job is not None and job not in deps:
+                        deps.append(job)
+        dependencies[file] = deps
     for k in sorted(dependencies.keys()):
         print(f"{k}: {dependencies[k]}")  # Debugging output to check dependencies
     return dependencies
+
 
 def generate_workflow(container_files, dependencies, output_file):
     """Generate the containers.yml workflow file."""
@@ -68,23 +84,23 @@ def generate_workflow(container_files, dependencies, output_file):
         f.write("        timeout: 1200000\n")
         f.write("        interval: 5000\n")
 
-        # Sort jobs: base first, then by dependency length and filename
+        # Sort jobs: base first, then by number of dependencies, dependencies and filename
         sorted_files = sorted(container_files, key=lambda x: (x != 'Containerfile', len(dependencies.get(x, [])), '-'.join(dependencies.get(x, [])), x))
 
         for file in sorted_files:
-            job_name = 'base' if file == 'Containerfile' else file.replace('.containerfile', '')
+            job_name = job_name_of(file)
             f.write(f"\n  call-build-{job_name}:\n")
             human_friendly_job_name = "the base" if job_name == 'base' else f"`{job_name}`"
             f.write(f"    name: \"🤙 Call container workflow with {human_friendly_job_name}\"\n")
-            dependency_job = dependencies.get(file, None)
-            print(job_name, dependency_job)
-            if len(dependency_job) > 0:
-                f.write(f"    needs: ['set-version', 'call-build-{'-'.join(dependency_job)}']\n")
+            dependency_jobs = dependencies.get(file, [])
+            print(job_name, dependency_jobs)
+            if len(dependency_jobs) > 0:
+                needs = ', '.join(f"'call-build-{d}'" for d in dependency_jobs)
+                f.write(f"    needs: ['set-version', {needs}]\n")
             else:
-                if job_name == 'base':
-                    f.write(f"    needs: ['set-version', 'check-deployment']\n")
-                else:
-                    f.write(f"    needs: ['set-version', 'call-build-base']\n")
+                # the base image, or an image built on a non-clams image:
+                # both pip-install clams-python, so both wait for PyPI
+                f.write(f"    needs: ['set-version', 'check-deployment']\n")
             f.write("    uses: ./.github/workflows/container.yml\n")
             f.write("    secrets: inherit\n")
             f.write("    with:\n")

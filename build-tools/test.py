@@ -38,6 +38,10 @@ def main():
              "(useful if already installed)."
     )
     args = parser.parse_args()
+    # print each line at once: in CI stdout is a pipe, where python
+    # would hold these lines until exit, after the output of the
+    # commands they introduce
+    sys.stdout.reconfigure(line_buffering=True)
 
     project_root = SCRIPT_DIR.parent
 

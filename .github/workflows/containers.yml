@@ -53,6 +53,15 @@ jobs:
       buildfilename: './container/Containerfile'
       version: ${{ needs.set-version.outputs.version }}
 
+  call-build-llamaserver:
+    name: "🤙 Call container workflow with `llamaserver`"
+    needs: ['set-version', 'check-deployment']
+    uses: ./.github/workflows/container.yml
+    secrets: inherit
+    with:
+      buildfilename: './container/llamaserver.containerfile'
+      version: ${{ needs.set-version.outputs.version }}
+
   call-build-ffmpeg:
     name: "🤙 Call container workflow with `ffmpeg`"
     needs: ['set-version', 'call-build-base']
