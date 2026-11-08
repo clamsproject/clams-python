@@ -911,8 +911,8 @@ class ClamsPromptableApp(ClamsApp):
                 'GPU memory for long dynamic scenes. The value is '
                 'operator-set, so the number of output TextDocuments is '
                 'deterministic and does not vary by GPU. Composes with '
-                '``parallelPrompts``, which batches independent prompts '
-                'into one forward pass.',
+                'the number of prompts the backend runs together '
+                '(``parallelPrompts`` in apps that offer it).',
         },
         {
             'name': 'imagesPerPromptMode', 'type': 'string',
@@ -1989,17 +1989,18 @@ class ClamsGGUFPromptableApp(ClamsPromptableApp):
     #: the repository file listing.
     MODEL_FILES: dict[str, dict[str, Any]] | None = None
     #: Default values of llama.cpp's ``LLAMA_ARG_*`` environment
-    #: variables for what the app's models need, e.g.
-    #: ``{'LLAMA_ARG_UBATCH': '2048'}`` for the token budget per image
-    #: of a vision model. A variable set in the environment of the app
-    #: process takes precedence, and settings not given here or there
-    #: (GPU offload, context size, threads) are left to llama-server's
+    #: variables, for the server settings the app's models need (see
+    #: the llama.cpp documentation for the variables and their
+    #: defaults, which change between llama.cpp releases). A variable
+    #: set in the environment of the app process takes precedence, and
+    #: settings not given here or there are left to llama-server's
     #: defaults; see :mod:`clams.backends.llamaserver`. The settings in
     #: effect are logged when the server starts, and the context size
     #: and slot count are kept in ``self.server.slot_context`` and
     #: ``self.server.slots``. A prompt (system and user text, images,
     #: and the generated tokens) that does not fit in a slot fails the
-    #: request with an error naming the size.
+    #: request with an error naming the size. For the recommended slot
+    #: count, see :ref:`gguf-promptable`.
     LLAMA_ARGS: dict[str, str] = {}
 
     # ``RESTIFIER_*``: the HTTP wrapper constraints any app may declare
@@ -2169,26 +2170,25 @@ class ClamsGGUFPromptableApp(ClamsPromptableApp):
             **generation_params,
     ) -> List[str]:
         """
-        Run N prompts through :py:meth:`generate` in batches of the
-        server's slot count (``LLAMA_ARG_N_PARALLEL``, 1 by default), so
-        every batch fills the slots, and return N outputs in input
-        order. The other arguments are as in
-        :py:meth:`ClamsPromptableApp.generate_batched`.
+        Run N prompts as :py:meth:`generate` does, keeping every server
+        slot busy (a prompt starts as soon as a slot is free), and
+        report progress through :py:meth:`report_progress` as each
+        prompt finishes. Returns N outputs in input order. The other
+        arguments are as in :py:meth:`ClamsPromptableApp.generate_batched`.
 
         :param parallel_prompts: not accepted; the server's slot count
-            sets the batch size.
-        :raises ValueError: if ``parallel_prompts`` is given.
+            sets how many prompts run together.
+        :raises ValueError: if ``parallel_prompts`` is given, or as in
+            :py:meth:`generate`.
         """
         if parallel_prompts is not None:
             raise ValueError(
                 f"{type(self).__name__} takes no parallel_prompts: "
                 f"llama-server decodes as many prompts together as it has "
-                f"slots; set LLAMA_ARG_N_PARALLEL to change that.")
-        return super().generate_batched(
-            prompt, system_prompt=system_prompt, images=images,
-            audios=audios, prompt_mode=prompt_mode,
-            parallel_prompts=getattr(self.server, 'slots', 1),
-            **generation_params)
+                f"slots, a server setting.")
+        return self._run_prompts(
+            prompt, system_prompt, images, audios, prompt_mode,
+            generation_params, report=True)
 
     def generate(
             self,
@@ -2217,8 +2217,25 @@ class ClamsGGUFPromptableApp(ClamsPromptableApp):
         :raises RuntimeError: if no model is loaded.
         :raises ValueError: for audio input, which this backend does
             not support yet, or a prompt that does not fit in the
-            context of a server slot.
+            context of a server slot; the prompts not yet sent are
+            then dropped.
         """
+        return self._run_prompts(
+            prompt, system_prompt, images, audios, prompt_mode,
+            generation_params, report=False)
+
+    def _run_prompts(self, prompt: List[str], system_prompt: str,
+                     images: Optional[List[List[Any]]],
+                     audios: Optional[List[List[Any]]], prompt_mode: str,
+                     generation_params: Dict[str, Any],
+                     report: bool) -> List[str]:
+        """
+        Send the prompts of :py:meth:`generate` to the server, as many
+        at a time as it has slots, and return the outputs in input
+        order; with ``report``, call :py:meth:`report_progress` before
+        the first and after each finished prompt.
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
         from clams.backends.llamaserver import ContextSizeError
         if audios is not None:
             raise ValueError(
@@ -2248,20 +2265,31 @@ class ClamsGGUFPromptableApp(ClamsPromptableApp):
                     f"A prompt with {n_images} images does not fit in "
                     f"the context of a server slot "
                     f"({slot or 'unknown'} tokens). Lower "
-                    f"maxImagesPerPrompt, free GPU memory, or set the "
-                    f"context size with LLAMA_ARG_CTX_SIZE. Server "
+                    f"maxImagesPerPrompt, or give the server a larger "
+                    f"context (see the llama.cpp documentation). Server "
                     f"message: {e}") from e
             except Exception as e:
                 self.logger.error(
                     f"Error processing prompt {i}: {e}", exc_info=True)
                 return ''
 
-        if n == 1:
-            return [run_one(0)]
-        from concurrent.futures import ThreadPoolExecutor
+        if report:
+            self.report_progress(0, n)
+        outputs = [''] * n
         slots = getattr(self.server, 'slots', 1)
         with ThreadPoolExecutor(max_workers=max(1, min(n, slots))) as pool:
-            return list(pool.map(run_one, range(n)))
+            futures = {pool.submit(run_one, i): i for i in range(n)}
+            try:
+                for done, future in enumerate(as_completed(futures), 1):
+                    outputs[futures[future]] = future.result()
+                    if report:
+                        self.report_progress(done, n)
+            except BaseException:
+                # leave the prompts not yet sent unsent
+                for future in futures:
+                    future.cancel()
+                raise
+        return outputs
 
     def _chat(self, conversation: Union[List[dict], List[List[dict]]],
               params: dict) -> str:

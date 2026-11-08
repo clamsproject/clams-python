@@ -703,11 +703,17 @@ Audio input is not supported yet.
 
 GGUF apps have no ``parallelPrompts`` parameter. ``llama-server``
 decodes at most as many requests together as it has slots, a number
-fixed when the server starts, so
-:meth:`~clams.app.ClamsGGUFPromptableApp.generate_batched` always
-sends that many prompts at a time. The slot count is a server setting
-(``LLAMA_ARG_N_PARALLEL``, see below); more slots split the same
-context into smaller parts.
+fixed when the server starts, and
+:meth:`~clams.app.ClamsGGUFPromptableApp.generate_batched` keeps every
+slot busy. The slot count is a server setting (see below), and its
+default, like the way slots share the context, belongs to llama.cpp
+and changes between its releases; see the llama.cpp documentation. The
+startup log reports the slot count and the context of a slot.
+
+We recommend one slot, set in the app's ``LLAMA_ARGS``. The server
+decodes the prompts in its slots together, so with more slots an
+output can change with the other prompts in flight. In our tests on
+Maxwell and Pascal GPUs, more slots were also no faster.
 
 Class-attribute hooks
 ^^^^^^^^^^^^^^^^^^^^^
@@ -726,10 +732,10 @@ Class-attribute hooks
      - no
    * - ``LLAMA_ARGS``
      - Default values of llama.cpp's ``LLAMA_ARG_*`` environment
-       variables for what the app's models need, e.g.
-       ``{'LLAMA_ARG_UBATCH': '2048'}`` to raise the token budget per
-       image of a vision model. The environment of the app process
-       takes precedence (see below).
+       variables for what the app's models need, e.g. a larger batch
+       size for the image tokens of a vision model, or the slot count.
+       The environment of the app process takes precedence (see
+       below).
      - no
    * - ``RESTIFIER_PRODUCTION_WORKERS``,
        ``RESTIFIER_PRODUCTION_MAX_REQUESTS``
@@ -755,17 +761,17 @@ comes from, in increasing precedence:
    several GPUs. The server places what fits on the GPUs, keeps the
    rest in system memory, and sizes the context to the free memory.
 1. The app's ``LLAMA_ARGS``, for what its models need.
-1. The environment of the app process, set by whoever runs the app
-   (e.g. ``LLAMA_ARG_CTX_SIZE``, ``LLAMA_ARG_THREADS``,
-   ``LLAMA_ARG_N_GPU_LAYERS``).
+1. The environment of the app process, set by whoever runs the app.
 
-The settings in effect are logged with their source when the server
-starts, and the context size and slot count when it is ready.
+The variables and their defaults belong to llama.cpp and change
+between its releases; see the llama.cpp documentation. The settings in
+effect are logged with their source when the server starts, and the
+context size and slot count when it is ready.
 
 One prompt (system and user text, all its images, and the generated
 tokens) must fit in the context of a server slot. A prompt that does
 not fails the request with an error naming the size, so a caller can
-lower ``maxImagesPerPrompt`` or raise ``LLAMA_ARG_CTX_SIZE``.
+lower ``maxImagesPerPrompt`` or give the server a larger context.
 
 Installation and containers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
