@@ -961,7 +961,7 @@ class ClamsPromptableApp(ClamsApp):
         # here. We only validate that the helper was actually called.
         super().__init__()
         declared = {p.name for p in self.metadata.parameters}
-        expected = {p['name'] for p in ClamsPromptableApp.promptable_parameters}
+        expected = {p['name'] for p in self.promptable_parameters}
         missing = expected - declared
         if missing:
             raise ValueError(
@@ -2017,18 +2017,29 @@ class ClamsGGUFPromptableApp(ClamsPromptableApp):
     #: server, and reload the model, on every request.
     RESTIFIER_PRODUCTION_MAX_REQUESTS: int = 0
 
+    #: The promptable parameters of
+    #: :py:attr:`ClamsPromptableApp.promptable_parameters` except
+    #: ``parallelPrompts``: llama-server decodes at most as many requests
+    #: together as it has slots, so :py:meth:`generate_batched` always
+    #: sends that many at a time.
+    promptable_parameters = [
+        p for p in ClamsPromptableApp.promptable_parameters
+        if p['name'] != 'parallelPrompts']
+
     @staticmethod
     def inject_promptable_parameters(metadata: AppMetadata) -> None:
         """
-        Add the SDK-managed promptable parameters AND a ``model``
-        parameter derived from ``metadata.analyzer_versions``. Call
-        this at the end of ``appmetadata()`` in ``metadata.py`` if your
-        app subclasses :py:class:`ClamsGGUFPromptableApp`.
+        Add the SDK-managed promptable parameters (see
+        :py:attr:`promptable_parameters`) AND a ``model`` parameter
+        derived from ``metadata.analyzer_versions``. Call this at the end
+        of ``appmetadata()`` in ``metadata.py`` if your app subclasses
+        :py:class:`ClamsGGUFPromptableApp`.
 
         :raises ValueError: if ``metadata.analyzer_versions`` is
             missing or empty.
         """
-        ClamsPromptableApp.inject_promptable_parameters(metadata)
+        for param in ClamsGGUFPromptableApp.promptable_parameters:
+            metadata.add_parameter(**param)
         ClamsPromptableApp._add_model_parameter(
             metadata,
             helper_name=(
@@ -2138,9 +2149,46 @@ class ClamsGGUFPromptableApp(ClamsPromptableApp):
         model_names, mmproj_name = self._model_files(model_id, revision)
         model_paths, mmproj_path = llamaserver.download_gguf(
             repo_id, revision, model_names, mmproj_name)
+        # TODO: record the server's slot count, context per slot and
+        #   llama.cpp build (``/props``) in the view's ``appProfiling``;
+        #   the slot count can change outputs. ``hwFetch`` reports no GPU
+        #   memory for this backend: ``_profile_cuda_memory`` needs torch
+        #   and cannot see the server process.
         return llamaserver.LlamaServer(
             model_paths[0], mmproj_path, llama_args=self.LLAMA_ARGS,
             logger=self.logger).start()
+
+    def generate_batched(
+            self,
+            prompt: List[str],
+            system_prompt: str = '',
+            images: Optional[List[List[Any]]] = None,
+            audios: Optional[List[List[Any]]] = None,
+            prompt_mode: str = 'turn-taking',
+            parallel_prompts: Optional[int] = None,
+            **generation_params,
+    ) -> List[str]:
+        """
+        Run N prompts through :py:meth:`generate` in batches of the
+        server's slot count (``LLAMA_ARG_N_PARALLEL``, 1 by default), so
+        every batch fills the slots, and return N outputs in input
+        order. The other arguments are as in
+        :py:meth:`ClamsPromptableApp.generate_batched`.
+
+        :param parallel_prompts: not accepted; the server's slot count
+            sets the batch size.
+        :raises ValueError: if ``parallel_prompts`` is given.
+        """
+        if parallel_prompts is not None:
+            raise ValueError(
+                f"{type(self).__name__} takes no parallel_prompts: "
+                f"llama-server decodes as many prompts together as it has "
+                f"slots; set LLAMA_ARG_N_PARALLEL to change that.")
+        return super().generate_batched(
+            prompt, system_prompt=system_prompt, images=images,
+            audios=audios, prompt_mode=prompt_mode,
+            parallel_prompts=getattr(self.server, 'slots', 1),
+            **generation_params)
 
     def generate(
             self,

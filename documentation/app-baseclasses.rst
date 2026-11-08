@@ -701,6 +701,14 @@ The ``model`` parameter, family and singleton handling, and the
 ``model`` refinement into ``appConfiguration`` work as for HF apps.
 Audio input is not supported yet.
 
+GGUF apps have no ``parallelPrompts`` parameter. ``llama-server``
+decodes at most as many requests together as it has slots, a number
+fixed when the server starts, so
+:meth:`~clams.app.ClamsGGUFPromptableApp.generate_batched` always
+sends that many prompts at a time. The slot count is a server setting
+(``LLAMA_ARG_N_PARALLEL``, see below); more slots split the same
+context into smaller parts.
+
 Class-attribute hooks
 ^^^^^^^^^^^^^^^^^^^^^
 

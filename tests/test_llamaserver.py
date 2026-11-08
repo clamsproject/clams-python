@@ -529,6 +529,25 @@ class TestGGUFPromptableApp(FakeServerMixin, unittest.TestCase):
         self.assertEqual(app.RESTIFIER_PRODUCTION_WORKERS, 1)
         self.assertEqual(app.RESTIFIER_PRODUCTION_MAX_REQUESTS, 0)
 
+    def test_no_parallel_prompts_parameter(self):
+        app = self.make_app()
+        names = {p.name for p in app.metadata.parameters}
+        self.assertNotIn('parallelPrompts', names)
+        self.assertIn('maxImagesPerPrompt', names)
+        with self.assertRaisesRegex(ValueError, 'LLAMA_ARG_N_PARALLEL'):
+            app.generate_batched(['hi'], images=[[]], parallel_prompts=2)
+
+    def test_batches_follow_the_server_slots(self):
+        app = self.make_app(LLAMA_ARGS={'LLAMA_ARG_N_PARALLEL': '2'})
+        self.assertEqual(app.server.slots, 2)
+        progress = []
+        app.report_progress = lambda done, total: progress.append(done)
+        images = [[Image.new('RGB', (4, 4))] * k for k in (1, 2, 3)]
+        outputs = [json.loads(o) for o in app.generate_batched(
+            ['describe'], images=images)]
+        self.assertEqual([o['images'] for o in outputs], [1, 2, 3])
+        self.assertEqual(progress, [0, 2, 3])
+
     def test_text_only_prompt_runs_once(self):
         app = self.make_app()
         outputs = app.generate(['hello'])
