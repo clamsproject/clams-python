@@ -4,6 +4,7 @@ import logging
 import os
 import pathlib
 import sys
+import threading
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -13,7 +14,7 @@ from datetime import datetime
 from urllib import parse as urlparser
 
 __all__ = ['ClamsApp', 'ClamsPromptableApp', 'ClamsHFPromptableApp',
-           'PromptTask', 'ImagesPerPromptMode']
+           'ClamsGGUFPromptableApp', 'PromptTask', 'ImagesPerPromptMode']
 
 from typing import Union, Any, Optional, Dict, List, Mapping, Tuple, cast
 
@@ -101,6 +102,19 @@ class ClamsApp(ABC):
     An abstract class to define API's for ClamsApps. A CLAMS app should inherit
     this class and then can be used with classes in :mod:`.restify` to work as
     web applications.
+
+    Optional class attributes read by
+    :meth:`clams.restify.Restifier.serve_production` (see :mod:`clams.restify`
+    for their precedence):
+
+    * ``RESTIFIER_PRODUCTION_WORKERS``: number of gunicorn workers.
+    * ``RESTIFIER_PRODUCTION_MAX_REQUESTS``: requests a worker serves before
+      it is replaced; ``0`` keeps workers.
+
+    Declare them when the app holds something that must not be forked or
+    restarted with the worker, e.g. a model loaded in a child process in 
+    GGUF subclass of :class:`~clams.app.ClamsHFPromptableApp`. Also note that
+    gunicorn configuration can be overridden with environment variables. 
     """
     # A set of "universal runtime parameters that can be used for both GET and POST anytime".
     # The behavioral changes based on these parameters must be implemented on the SDK level. 
@@ -139,6 +153,7 @@ class ClamsApp(ABC):
 
     def __init__(self):
         self.metadata: AppMetadata = self._load_appmetadata()
+        self._check_env_requirements()
         super().__init__()
         
         # data type spec to be used in type caster
@@ -188,6 +203,30 @@ class ClamsApp(ABC):
         else:
             metadata = self._appmetadata()
         return metadata
+
+    def _check_env_requirements(self) -> None:
+        """
+        A private method to stop the app at startup when an environment
+        variable declared in ``env_requirements`` of the app metadata is unset
+        or empty. Only presence is checked, and the error message names the
+        missing variables. Values are never stored, logged, or included in the
+        message.
+
+        :raises RuntimeError: if any required environment variable is unset
+            or empty
+        """
+        # `os.environ.get` is used only for its truthiness, so no value is
+        # kept in a local variable (some traceback tools print locals)
+        missing = [env for env in self.metadata.env_requirements
+                   if not os.environ.get(env.name)]
+        if missing:
+            listing = '\n'.join(f'  {env.name}: {env.description}'
+                                 for env in missing)
+            raise RuntimeError(
+                f'{self.metadata.name} cannot start because these required '
+                f'environment variables are unset or empty:\n{listing}\n'
+                'See https://clams.ai/clams-python/clamsapp.html'
+                '#clamsapp-envvars for how to pass them.')
 
     @abstractmethod
     def _appmetadata(self) -> AppMetadata:
@@ -759,6 +798,10 @@ class ClamsPromptableApp(ClamsApp):
     * :py:meth:`response_to_grounded_textdocument` : persists a
       generated response into a view as ``TextDocument`` +
       ``Alignment`` (+ optional ``origins`` / ``origination``)
+    * an opt-in ``model`` parameter for apps whose models are pinned in
+      ``analyzer_versions`` (used by the HF and GGUF backends); once it
+      is added, parameter refinement records the pinned revision as
+      ``<model id>@<revision>`` in the view's ``appConfiguration``
     """
 
     #: SDK-managed runtime parameters injected into every promptable app.
@@ -868,8 +911,8 @@ class ClamsPromptableApp(ClamsApp):
                 'GPU memory for long dynamic scenes. The value is '
                 'operator-set, so the number of output TextDocuments is '
                 'deterministic and does not vary by GPU. Composes with '
-                '``parallelPrompts``, which batches independent prompts '
-                'into one forward pass.',
+                'the number of prompts the backend runs together '
+                '(``parallelPrompts`` in apps that offer it).',
         },
         {
             'name': 'imagesPerPromptMode', 'type': 'string',
@@ -918,7 +961,7 @@ class ClamsPromptableApp(ClamsApp):
         # here. We only validate that the helper was actually called.
         super().__init__()
         declared = {p.name for p in self.metadata.parameters}
-        expected = {p['name'] for p in ClamsPromptableApp.promptable_parameters}
+        expected = {p['name'] for p in self.promptable_parameters}
         missing = expected - declared
         if missing:
             raise ValueError(
@@ -1415,7 +1458,10 @@ class ClamsPromptableApp(ClamsApp):
 
         Only the inline-tag style is handled; models that isolate reasoning in
         a separate token-delimited channel (e.g. gpt-oss, Gemma) need their own
-        parsing in the app.
+        parsing in the app when their channel markers are stripped from the
+        decoded text. With :class:`ClamsGGUFPromptableApp`, llama-server keeps
+        the markers in the text, so Gemma 4's trace splits with
+        ``open_tag='<|channel>thought'`` and ``close_tag='<channel|>'``.
 
         :param text: raw decoded model output.
         :param open_tag: opening marker of the inline reasoning block.
@@ -1440,6 +1486,120 @@ class ClamsPromptableApp(ClamsApp):
         else:
             trace = None
         return answer, trace
+
+    # ``model`` parameter for apps whose models are pinned in
+    # ``metadata.analyzer_versions`` (model id --> immutable reference,
+    # e.g. a Hugging Face commit hash). Opt-in: only apps that call
+    # ``_add_model_parameter`` get the parameter, and ``_refine_params``
+    # touches a ``model`` value only when it is a key of
+    # ``analyzer_versions``.
+
+    @staticmethod
+    def _add_model_parameter(metadata: AppMetadata, helper_name: str,
+                             id_kind: str, description: str) -> None:
+        """
+        Add a ``model`` runtime parameter whose choices are the keys of
+        ``metadata.analyzer_versions``. A singleton family defaults to
+        its only member; a multi-member family has no default. Called
+        by backend helpers such as
+        :py:meth:`ClamsHFPromptableApp.inject_promptable_parameters`.
+
+        :param metadata: the :class:`AppMetadata` being built.
+        :param helper_name: name of the calling helper, for the error
+            message.
+        :param id_kind: what a key is (e.g. ``'HF model id'``), for the
+            error message.
+        :param description: description of the ``model`` parameter.
+        :raises ValueError: if ``metadata.analyzer_versions`` is
+            missing or empty.
+        """
+        analyzer_versions = metadata.analyzer_versions or {}
+        if not analyzer_versions:
+            raise ValueError(
+                f"{helper_name} "
+                f"requires ``metadata.analyzer_versions`` to be a "
+                f"non-empty dict ({id_kind} -> commit hash). Set "
+                f"it on the ``AppMetadata`` constructor call before "
+                f"invoking this helper.")
+        choices: List[real_valued_primitives] = list(
+            analyzer_versions.keys())
+        default = choices[0] if len(choices) == 1 else None
+        metadata.add_parameter(
+            name='model',
+            type='string',
+            choices=choices,
+            default=default,
+            multivalued=False,
+            description=description,
+        )
+
+    def _check_model_family(self, helper_name: str,
+                            id_kind: str) -> Dict[str, str]:
+        """
+        Validate at app init that ``analyzer_versions`` is declared and
+        that the ``model`` parameter was injected. Backends that require
+        pinned models call this from ``__init__``.
+
+        :return: ``self.metadata.analyzer_versions``.
+        :raises ValueError: if either is missing.
+        """
+        cls_name = type(self).__name__
+        metadata = self.metadata
+        analyzer_versions = metadata.analyzer_versions
+        if not analyzer_versions:
+            raise ValueError(
+                f"{cls_name} must declare ``analyzer_versions`` in "
+                f"``metadata.py`` as a non-empty Dict[str, str] "
+                f"mapping {id_kind} to pinned commit "
+                f"hashes (7-char abbreviation is sufficient). This is "
+                f"required for reproducibility: an unpinned download "
+                f"silently floats on whatever ``main`` points at and "
+                f"cannot be reproduced. Singleton families (one "
+                f"entry) are fine; multi-model families list every "
+                f"member.")
+        if 'model' not in {p.name for p in metadata.parameters}:
+            raise ValueError(
+                f"{cls_name} must call "
+                f"``{helper_name}"
+                f"(metadata)`` (the override that also adds the "
+                f"``model`` parameter) inside ``appmetadata()`` in "
+                f"``metadata.py``; calling "
+                f"``ClamsPromptableApp.inject_promptable_parameters`` "
+                f"directly skips the ``model`` parameter and trips "
+                f"this check.")
+        return analyzer_versions
+
+    def _refine_params(self, **runtime_params):
+        """
+        Refine as :py:meth:`ClamsApp._refine_params` does, then expand a
+        ``model`` value that is a key of ``analyzer_versions`` to
+        ``<model id>@<revision>``, so the resolved revision lands in
+        ``view.metadata.appConfiguration['model']``. Other ``model``
+        values (e.g. a remote API's model name) are left as they are.
+        """
+        refined = super()._refine_params(**runtime_params)
+        model_id = refined.get('model')
+        if isinstance(model_id, str) and '@' not in model_id:
+            revision = (self.metadata.analyzer_versions or {}).get(model_id)
+            if revision is not None:
+                refined['model'] = f"{model_id}@{revision}"
+        return refined
+
+    def _split_model_ref(self, model_ref: str) -> Tuple[str, str]:
+        """
+        Parse ``<model id>@<revision>`` or a raw ``<model id>`` (whose
+        revision is looked up in ``analyzer_versions``) into
+        ``(model_id, revision)``.
+
+        :raises KeyError: if a raw model id is not in
+            ``analyzer_versions``.
+        """
+        if '@' in model_ref:
+            model_id, _, revision = model_ref.rpartition('@')
+            return model_id, revision
+        return model_ref, (self.metadata.analyzer_versions or {})[model_ref]
+
+
 class ClamsHFPromptableApp(ClamsPromptableApp):
     """
     Base class for promptable CLAMS apps backed by a local
@@ -1523,23 +1683,10 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
             missing or empty.
         """
         ClamsPromptableApp.inject_promptable_parameters(metadata)
-        analyzer_versions = metadata.analyzer_versions or {}
-        if not analyzer_versions:
-            raise ValueError(
-                "ClamsHFPromptableApp.inject_promptable_parameters "
-                "requires ``metadata.analyzer_versions`` to be a "
-                "non-empty dict (HF model id -> commit hash). Set "
-                "it on the ``AppMetadata`` constructor call before "
-                "invoking this helper.")
-        choices: List[real_valued_primitives] = list(
-            analyzer_versions.keys())
-        default = choices[0] if len(choices) == 1 else None
-        metadata.add_parameter(
-            name='model',
-            type='string',
-            choices=choices,
-            default=default,
-            multivalued=False,
+        ClamsPromptableApp._add_model_parameter(
+            metadata,
+            helper_name='ClamsHFPromptableApp.inject_promptable_parameters',
+            id_kind='HF model id',
             description=(
                 "HuggingFace model identifier to use for this "
                 "request. Must be one of the model ids declared in "
@@ -1560,28 +1707,9 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
             raise ValueError(
                 f"{cls_name} must set the ``MODEL_CLS`` class attribute "
                 f"(a ``transformers`` model class).")
-        analyzer_versions = self.metadata.analyzer_versions
-        if not analyzer_versions:
-            raise ValueError(
-                f"{cls_name} must declare ``analyzer_versions`` in "
-                f"``metadata.py`` as a non-empty Dict[str, str] "
-                f"mapping HuggingFace model ids to pinned commit "
-                f"hashes (7-char abbreviation is sufficient). This is "
-                f"required for reproducibility: an unpinned download "
-                f"silently floats on whatever ``main`` points at and "
-                f"cannot be reproduced. Singleton families (one "
-                f"entry) are fine; multi-model families list every "
-                f"member.")
-        if 'model' not in {p.name for p in self.metadata.parameters}:
-            raise ValueError(
-                f"{cls_name} must call "
-                f"``ClamsHFPromptableApp.inject_promptable_parameters"
-                f"(metadata)`` (the HF override that also adds the "
-                f"``model`` parameter) inside ``appmetadata()`` in "
-                f"``metadata.py``; calling "
-                f"``ClamsPromptableApp.inject_promptable_parameters`` "
-                f"directly skips the ``model`` parameter and trips "
-                f"this check.")
+        analyzer_versions = self._check_model_family(
+            helper_name='ClamsHFPromptableApp.inject_promptable_parameters',
+            id_kind='HuggingFace model ids')
         #: Per-(model_id, revision) cache of loaded
         #: ``(processor, model, device)`` triples. Populated by
         #: :py:meth:`load_model`; survives for the lifetime of this
@@ -1601,20 +1729,6 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
         if len(analyzer_versions) == 1:
             only_model_id = next(iter(analyzer_versions.keys()))
             self.load_model(only_model_id)
-
-    def _refine_params(self, **runtime_params):
-        """
-        Expand ``model`` from the raw HF id (``org/name``) to
-        ``org/name@<revision>`` so the resolved revision lands in
-        ``view.metadata.appConfiguration['model']``.
-        """
-        refined = super()._refine_params(**runtime_params)
-        model_id = refined.get('model')
-        if isinstance(model_id, str) and '@' not in model_id:
-            revision = (self.metadata.analyzer_versions or {}).get(model_id)
-            if revision is not None:
-                refined['model'] = f"{model_id}@{revision}"
-        return refined
 
     def load_model(
             self, model_id_or_with_rev: str,
@@ -1636,11 +1750,7 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
         :raises KeyError: if a raw model id is passed and is not in
             ``analyzer_versions``.
         """
-        if '@' in model_id_or_with_rev:
-            model_id, _, revision = model_id_or_with_rev.rpartition('@')
-        else:
-            model_id = model_id_or_with_rev
-            revision = (self.metadata.analyzer_versions or {})[model_id]
+        model_id, revision = self._split_model_ref(model_id_or_with_rev)
         cache_key = (model_id, revision)
         cached = self._model_cache.get(cache_key)
         if cached is not None:
@@ -1826,6 +1936,421 @@ class ClamsHFPromptableApp(ClamsPromptableApp):
         a template that does not reference them simply ignores them.
         """
         return {}
+
+
+class ClamsGGUFPromptableApp(ClamsPromptableApp):
+    """
+    Base class for promptable CLAMS apps that run a GGUF model with
+    llama.cpp (experimental). The model runs in a private inference
+    server that the app owns: the app picks the pinned model, starts
+    the server on localhost, talks to it through the OpenAI-compatible
+    chat API, and stops it on exit. It never connects to a server it
+    did not start.
+
+    The default launcher (:py:meth:`launch_server`) runs llama.cpp's
+    ``llama-server`` on a GGUF model from the Hugging Face Hub, via
+    :mod:`clams.backends.llamaserver`. A subclass can override
+    :py:meth:`launch_server` to start another OpenAI-compatible server;
+    :py:meth:`generate` only needs the returned object's ``chat()``.
+
+    Models are declared like :class:`ClamsHFPromptableApp` families:
+    ``analyzer_versions`` maps each model id to a pinned commit hash,
+    and the SDK derives the ``model`` runtime parameter from it. For
+    the llama-server launcher, a model id is ``<hub repo>`` or
+    ``<hub repo>:<quantization>``; the variant picks the GGUF file
+    (and the repo's ``mmproj`` file, for vision input) by name.
+    :py:attr:`MODEL_FILES` names the files explicitly when that is
+    ambiguous. Example::
+
+        class MyGGUFCaptioner(ClamsGGUFPromptableApp):
+            # In metadata.py:
+            #     analyzer_versions={
+            #         "ggml-org/gemma-3-4b-it-GGUF:Q8_0": "<commit>",
+            #     }
+            # plus a call to
+            # ClamsGGUFPromptableApp.inject_promptable_parameters(
+            #     metadata).
+
+            def _annotate(self, mmif, **parameters):
+                self.load_model(parameters['model'])
+                # ... self.generate_batched(prompt, images=..., ...)
+                # ... self.response_to_grounded_textdocument(...)
+                ...
+
+    Requires the ``[llamaserver]`` extra and a ``llama-server``
+    executable (see :func:`clams.backends.llamaserver.find_llama_server`).
+    """
+
+    #: Explicit file names per model id, for repositories where the
+    #: quantization tag does not pick exactly one file, e.g.
+    #: ``{'org/repo-GGUF:Q8_0': {'model': 'm-Q8_0.gguf',
+    #: 'mmproj': 'mmproj-m-f16.gguf'}}``. ``'model'`` may also be a
+    #: list of shard files. Models not listed here are resolved from
+    #: the repository file listing.
+    MODEL_FILES: dict[str, dict[str, Any]] | None = None
+    #: Default values of llama.cpp's ``LLAMA_ARG_*`` environment
+    #: variables, for the server settings the app's models need (see
+    #: the llama.cpp documentation for the variables and their
+    #: defaults, which change between llama.cpp releases). A variable
+    #: set in the environment of the app process takes precedence, and
+    #: settings not given here or there are left to llama-server's
+    #: defaults; see :mod:`clams.backends.llamaserver`. The settings in
+    #: effect are logged when the server starts, and the context size
+    #: and slot count are kept in ``self.server.slot_context`` and
+    #: ``self.server.slots``. A prompt (system and user text, images,
+    #: and the generated tokens) that does not fit in a slot fails the
+    #: request with an error naming the size. For the recommended slot
+    #: count, see :ref:`gguf-promptable`.
+    LLAMA_ARGS: dict[str, str] = {}
+
+    # ``RESTIFIER_*``: the HTTP wrapper constraints any app may declare
+    # (see :class:`ClamsApp`); the model lives in a process this app
+    # owns, so the serving process must not be forked or restarted
+    # around it.
+    #
+    #: One worker. A singleton family starts its server when the app is
+    #: created, before gunicorn forks, so all workers would share that
+    #: one server; a multi-member family starts the server on first use
+    #: inside a worker, so each worker would hold its own copy of the
+    #: model. Raise this only if the GPUs can hold one model per worker.
+    RESTIFIER_PRODUCTION_WORKERS: int = 1
+    #: Never replace a worker: a replacement would stop and restart the
+    #: server, and reload the model, on every request.
+    RESTIFIER_PRODUCTION_MAX_REQUESTS: int = 0
+
+    #: The promptable parameters of
+    #: :py:attr:`ClamsPromptableApp.promptable_parameters` except
+    #: ``parallelPrompts``: llama-server decodes at most as many requests
+    #: together as it has slots, so :py:meth:`generate_batched` always
+    #: sends that many at a time.
+    promptable_parameters = [
+        p for p in ClamsPromptableApp.promptable_parameters
+        if p['name'] != 'parallelPrompts']
+
+    @staticmethod
+    def inject_promptable_parameters(metadata: AppMetadata) -> None:
+        """
+        Add the SDK-managed promptable parameters (see
+        :py:attr:`promptable_parameters`) AND a ``model`` parameter
+        derived from ``metadata.analyzer_versions``. Call this at the end
+        of ``appmetadata()`` in ``metadata.py`` if your app subclasses
+        :py:class:`ClamsGGUFPromptableApp`.
+
+        :raises ValueError: if ``metadata.analyzer_versions`` is
+            missing or empty.
+        """
+        for param in ClamsGGUFPromptableApp.promptable_parameters:
+            metadata.add_parameter(**param)
+        ClamsPromptableApp._add_model_parameter(
+            metadata,
+            helper_name=(
+                'ClamsGGUFPromptableApp.inject_promptable_parameters'),
+            id_kind='model id',
+            description=(
+                "Model to use for this request. Must be one of the "
+                "model ids declared in this app's "
+                "``analyzer_versions``; the SDK pins the corresponding "
+                "commit hash at load time. A model id is a Hugging "
+                "Face repository, optionally followed by "
+                "``:<quantization>`` (e.g. ``org/repo-GGUF:Q8_0``). "
+                "When the app ships a single model, this parameter "
+                "defaults to it and can be omitted."
+            ),
+        )
+
+    def __init__(self):
+        super().__init__()
+        analyzer_versions = self._check_model_family(
+            helper_name=(
+                'ClamsGGUFPromptableApp.inject_promptable_parameters'),
+            id_kind='model ids')
+        #: The running server (``None`` until :py:meth:`load_model`).
+        self.server: Any = None
+        #: ``(model_id, revision)`` the running server serves.
+        self.loaded_model: Optional[Tuple[str, str]] = None
+        self._load_lock = threading.Lock()
+        # singleton families start their server at init, like the HF
+        # backend pre-loads; multi-member families start on first use
+        if len(analyzer_versions) == 1:
+            self.load_model(next(iter(analyzer_versions.keys())))
+
+    def load_model(self, model_id_or_with_rev: str) -> Any:
+        """
+        Make sure the server for the given model is running, stopping
+        the server of a previously loaded model first, so one model
+        holds GPU memory at a time. Accepts both refined
+        (``<model id>@<rev>``) and raw (``<model id>``) forms.
+
+        A server started by another process (the gunicorn master, for a
+        singleton family that starts its server before the fork) is
+        used as it is: this process cannot stop or replace it.
+
+        :return: the server object (also stored on ``self.server``).
+        :raises RuntimeError: if a server owned by another process
+            serves a different model, or has stopped.
+        """
+        model_id, revision = self._split_model_ref(model_id_or_with_rev)
+        with self._load_lock:
+            if (self.loaded_model == (model_id, revision)
+                    and self.server is not None
+                    and self.server.is_running()):
+                return self.server
+            owned = getattr(self.server, 'owned_here', lambda: True)()
+            if self.server is not None and not owned:
+                state = ('is not running'
+                         if self.loaded_model == (model_id, revision)
+                         else 'serves a different model')
+                raise RuntimeError(
+                    f"The model server was started by another process "
+                    f"for {self.loaded_model} and {state}; this process "
+                    f"cannot replace it. Restart the app.")
+            if self.server is not None:
+                self.logger.info(
+                    f"Stopping server for {self.loaded_model}")
+                self.server.stop()
+                self.server = None
+                self.loaded_model = None
+            self.logger.info(
+                f"Starting server for {model_id} @ {revision}")
+            self.server = self.launch_server(model_id, revision)
+            self.loaded_model = (model_id, revision)
+            return self.server
+
+    def _model_files(self, model_id: str,
+                     revision: str) -> Tuple[List[str], Optional[str]]:
+        """
+        File names of the given model in its repository:
+        ``(model_files, mmproj_file)``. Uses :py:attr:`MODEL_FILES`
+        when it lists the model, the repository file listing otherwise.
+        """
+        explicit = (self.MODEL_FILES or {}).get(model_id)
+        if explicit is not None:
+            files = explicit['model']
+            files = [files] if isinstance(files, str) else list(files)
+            return files, explicit.get('mmproj')
+        from clams.backends.llamaserver import resolve_gguf_files
+        repo_id, _, variant = model_id.partition(':')
+        return resolve_gguf_files(repo_id, revision, variant)
+
+    def launch_server(self, model_id: str, revision: str) -> Any:
+        """
+        Download the pinned GGUF files and start ``llama-server`` on
+        localhost, with :py:attr:`LLAMA_ARGS` as default settings.
+
+        Override to launch a different OpenAI-compatible server, or to
+        pass other :class:`~clams.backends.llamaserver.LlamaServer`
+        arguments (e.g. longer timeouts); the returned object needs
+        ``chat(messages, **params) -> str``, ``is_running() -> bool``
+        and ``stop()``.
+
+        :raises RuntimeError: if the server fails to start.
+        """
+        from clams.backends import llamaserver
+        repo_id = model_id.partition(':')[0]
+        model_names, mmproj_name = self._model_files(model_id, revision)
+        model_paths, mmproj_path = llamaserver.download_gguf(
+            repo_id, revision, model_names, mmproj_name)
+        # TODO: record the server's slot count, context per slot and
+        #   llama.cpp build (``/props``) in the view's ``appProfiling``;
+        #   the slot count can change outputs. ``hwFetch`` reports no GPU
+        #   memory for this backend: ``_profile_cuda_memory`` needs torch
+        #   and cannot see the server process.
+        return llamaserver.LlamaServer(
+            model_paths[0], mmproj_path, llama_args=self.LLAMA_ARGS,
+            logger=self.logger).start()
+
+    def generate_batched(
+            self,
+            prompt: List[str],
+            system_prompt: str = '',
+            images: Optional[List[List[Any]]] = None,
+            audios: Optional[List[List[Any]]] = None,
+            prompt_mode: str = 'turn-taking',
+            parallel_prompts: Optional[int] = None,
+            **generation_params,
+    ) -> List[str]:
+        """
+        Run N prompts as :py:meth:`generate` does, keeping every server
+        slot busy (a prompt starts as soon as a slot is free), and
+        report progress through :py:meth:`report_progress` as each
+        prompt finishes. Returns N outputs in input order. The other
+        arguments are as in :py:meth:`ClamsPromptableApp.generate_batched`.
+
+        :param parallel_prompts: not accepted; the server's slot count
+            sets how many prompts run together.
+        :raises ValueError: if ``parallel_prompts`` is given, or as in
+            :py:meth:`generate`.
+        """
+        if parallel_prompts is not None:
+            raise ValueError(
+                f"{type(self).__name__} takes no parallel_prompts: "
+                f"llama-server decodes as many prompts together as it has "
+                f"slots, a server setting.")
+        return self._run_prompts(
+            prompt, system_prompt, images, audios, prompt_mode,
+            generation_params, report=True)
+
+    def generate(
+            self,
+            prompt: List[str],
+            system_prompt: str = '',
+            images: Optional[List[List[Any]]] = None,
+            audios: Optional[List[List[Any]]] = None,
+            prompt_mode: str = 'turn-taking',
+            **generation_params,
+    ) -> List[str]:
+        """
+        Run N independent prompts against the server, as many at a time
+        as the server has slots, and return N outputs in order. Images
+        go to the server as base64 data URLs. A prompt that fails is
+        logged and yields ``''``, as in the HF backend, except a prompt
+        longer than the context of a server slot (see
+        :py:attr:`LLAMA_ARGS`): that is a configuration problem, so it
+        fails the request.
+
+        Generation parameters are mapped by :py:meth:`build_request_params`;
+        :py:meth:`build_template_kwargs` adds ``chat_template_kwargs``
+        (e.g. a reasoning switch). In ``user-only`` multi-turn mode,
+        each user turn is sent in sequence with the earlier replies
+        filled in, and the last reply is returned.
+
+        :raises RuntimeError: if no model is loaded.
+        :raises ValueError: for audio input, which this backend does
+            not support yet, or a prompt that does not fit in the
+            context of a server slot; the prompts not yet sent are
+            then dropped.
+        """
+        return self._run_prompts(
+            prompt, system_prompt, images, audios, prompt_mode,
+            generation_params, report=False)
+
+    def _run_prompts(self, prompt: List[str], system_prompt: str,
+                     images: Optional[List[List[Any]]],
+                     audios: Optional[List[List[Any]]], prompt_mode: str,
+                     generation_params: Dict[str, Any],
+                     report: bool) -> List[str]:
+        """
+        Send the prompts of :py:meth:`generate` to the server, as many
+        at a time as it has slots, and return the outputs in input
+        order; with ``report``, call :py:meth:`report_progress` before
+        the first and after each finished prompt.
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        from clams.backends.llamaserver import ContextSizeError
+        if audios is not None:
+            raise ValueError(
+                f"{type(self).__name__} does not support audio input.")
+        if self.server is None:
+            raise RuntimeError(
+                "No model is loaded; call ``load_model`` first.")
+        n = len(images) if images is not None else 1
+        if n == 0:
+            return []
+        params = self.build_request_params(**generation_params)
+        template_kwargs = self.build_template_kwargs(**generation_params)
+        if template_kwargs:
+            params['chat_template_kwargs'] = template_kwargs
+
+        def run_one(i: int) -> str:
+            conversation = self.build_conversation(
+                prompt, system_prompt=system_prompt,
+                images=images[i] if images is not None else None,
+                prompt_mode=prompt_mode)
+            try:
+                return self._chat(conversation, params)
+            except ContextSizeError as e:
+                n_images = len(images[i]) if images is not None else 0
+                slot = getattr(self.server, 'slot_context', None)
+                raise ValueError(
+                    f"A prompt with {n_images} images does not fit in "
+                    f"the context of a server slot "
+                    f"({slot or 'unknown'} tokens). Lower "
+                    f"maxImagesPerPrompt, or give the server a larger "
+                    f"context (see the llama.cpp documentation). Server "
+                    f"message: {e}") from e
+            except Exception as e:
+                self.logger.error(
+                    f"Error processing prompt {i}: {e}", exc_info=True)
+                return ''
+
+        if report:
+            self.report_progress(0, n)
+        outputs = [''] * n
+        slots = getattr(self.server, 'slots', 1)
+        with ThreadPoolExecutor(max_workers=max(1, min(n, slots))) as pool:
+            futures = {pool.submit(run_one, i): i for i in range(n)}
+            try:
+                for done, future in enumerate(as_completed(futures), 1):
+                    outputs[futures[future]] = future.result()
+                    if report:
+                        self.report_progress(done, n)
+            except BaseException:
+                # leave the prompts not yet sent unsent
+                for future in futures:
+                    future.cancel()
+                raise
+        return outputs
+
+    def _chat(self, conversation: Union[List[dict], List[List[dict]]],
+              params: dict) -> str:
+        from clams.backends.llamaserver import to_openai_messages
+        if conversation and isinstance(conversation[0], list):
+            # user-only multi-turn: progressively extending prefixes
+            # with ``content=None`` assistant placeholders
+            replies: List[str] = []
+            for prefix in cast(List[List[dict]], conversation):
+                filled, used = [], 0
+                for message in prefix:
+                    if (message['role'] == 'assistant'
+                            and message['content'] is None):
+                        message = {**message, 'content': replies[used]}
+                        used += 1
+                    filled.append(message)
+                replies.append(self.server.chat(
+                    to_openai_messages(filled), **params))
+            return replies[-1]
+        return self.server.chat(
+            to_openai_messages(cast(List[dict], conversation)), **params)
+
+    @staticmethod
+    def build_request_params(
+            max_new_tokens: int = 512,
+            temperature: float = 0.0,
+            top_p: float = 1.0,
+            top_k: int = 50,
+            **_unused,
+    ) -> dict:
+        """
+        Translate the SDK's promptable-parameter values into
+        chat-completion request fields. ``temperature == 0.0`` gives
+        greedy decoding. ``top_k`` is not part of the OpenAI API, but
+        llama-server (and vLLM) accept it.
+
+        ``cache_prompt`` is off: llama-server's prompt cache reuses the
+        computed prefix of an earlier request, which changes outputs
+        even with greedy decoding, so the same input would not always
+        give the same output. Turn it on in an override when speed on
+        repeated prefixes matters more than reproducibility.
+
+        Subclasses MAY override to add server-specific fields
+        (``repeat_penalty``, ``seed``, ``response_format``, ...). Extra
+        keyword args are ignored, so ``_annotate`` can pass the full
+        generation parameter dict.
+        """
+        return {'max_tokens': max_new_tokens, 'temperature': temperature,
+                'top_p': top_p, 'top_k': top_k, 'cache_prompt': False}
+
+    def build_template_kwargs(self, **generation_params) -> dict:
+        """
+        Extra variables for the server-side chat template, sent as the
+        request's ``chat_template_kwargs``. The base implementation maps
+        the SDK ``useReasoning`` parameter onto ``enable_thinking``, the
+        switch of Gemma 4, Qwen3 and similar templates, so reasoning is
+        off unless requested; templates that do not use the variable
+        ignore it. Override for other template variables.
+        """
+        return {'enable_thinking':
+                bool(generation_params.get('use_reasoning', False))}
 
 
 class ParameterCaster(object):

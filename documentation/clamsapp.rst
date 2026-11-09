@@ -124,6 +124,53 @@ Unlike the data directory, the cache directory is not required to be mounted, bu
    This can include sensitive information such as browser cache, authentication tokens, etc, hence will pose a great security risk.
    It is recommended to create a separate directory to use as a cache directory for CLAMS containers.
 
+.. _clamsapp-envvars:
+
+Passing environment variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some apps need environment variables to run, for example an access token for a gated model, or the address of a model server such as Ollama or vLLM.
+These apps list the variables in the ``env_requirements`` field of their app metadata.
+If one of them is unset or empty, the app stops at startup with an error that names the missing variables.
+To provide them, write a file with one ``NAME=value`` per line, usually named ``.env``.
+
+.. code-block:: bash
+
+   HF_TOKEN=<your token>
+   OLLAMA_HOST=http://host.docker.internal:11434
+
+Then pass the file with ``--env-file`` when you start the container.
+
+.. code-block:: bash
+
+   $ docker run --env-file .env -v /path/to/data/directory:/data -p <PORT>:5000 <IMAGE_NAME>
+
+To set a single variable, use ``-e NAME=value`` in place of ``--env-file``.
+
+.. note::
+
+   Inside a container, ``localhost`` is the container itself.
+   To reach a model server that runs on the host machine, use ``host.docker.internal`` as the host name.
+   On Linux, Docker also needs ``--add-host=host.docker.internal:host-gateway`` in the ``docker run`` command, and Podman uses ``host.containers.internal`` in its place.
+
+When you run the app without a container, load the file into your shell first.
+``set -a`` is needed because ``source`` alone does not export the variables to the app.
+
+.. code-block:: bash
+
+   $ set -a; source .env; set +a
+   $ python app.py
+
+.. note::
+
+   Docker and bash read this file differently, so use the plain ``NAME=value`` form to make one file work for both.
+   Do not add an ``export`` prefix, quotes around the value, or a comment after the value.
+   A comment on its own line is fine.
+
+.. warning::
+
+   Keep the ``.env`` file out of version control.
+
 .. _clamsapp-invoking:
 
 Invoking the app server
@@ -400,7 +447,7 @@ When running in production mode, the following environment variables can be used
      - Logging verbosity level (``debug``, ``info``, ``warning``, ``error``)
      - ``warning``
 
-By default, the number of workers is calculated as ``(CPU cores x 2) + 1``. For GPU-based apps, see `GPU Memory Management <gpu-apps.html>`_ for details on automatic worker scaling and VRAM management.
+By default, the number of workers is calculated as ``(CPU cores x 2) + 1``, and each worker is replaced after one request. An app can fix both in code; see `GPU Memory Management <gpu-apps.html>`_ for the worker calculation, the recycling and the order of precedence between the environment, the app and the ``serve_production()`` call.
 
 ``metadata.py``: Getting app metadata
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

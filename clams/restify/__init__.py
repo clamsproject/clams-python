@@ -7,6 +7,16 @@ from flask_restful import Resource, Api
 from clams.app import ClamsApp
 from clams.envelop import EnvelopeError
 
+#: Names of the optional :class:`.ClamsApp` class attributes that
+#: :meth:`Restifier.serve_production` reads: the gunicorn worker count, and
+#: the number of requests a worker serves before it is replaced. An app
+#: declares them when it holds something that must not be forked or
+#: restarted with the worker, e.g. a model loaded in a child process
+#: (:class:`~clams.app.ClamsGGUFPromptableApp`). See
+#: :meth:`Restifier.serve_production` for their precedence.
+PRODUCTION_WORKERS_ATTR = 'RESTIFIER_PRODUCTION_WORKERS'
+PRODUCTION_MAX_REQUESTS_ATTR = 'RESTIFIER_PRODUCTION_MAX_REQUESTS'
+
 
 class Restifier(object):
     """
@@ -45,6 +55,20 @@ class Restifier(object):
         """
         Runs the CLAMS app as a flask webapp, using a production-ready web server (gunicorn, https://docs.gunicorn.org/en/stable/#).
 
+        Two gunicorn settings are derived rather than fixed, in this order of
+        precedence (first match wins):
+
+        ``workers``
+            the ``workers`` keyword of this call; the
+            ``CLAMS_GUNICORN_WORKERS`` environment variable; the app's
+            :data:`PRODUCTION_WORKERS_ATTR` class attribute; else the smaller
+            of ``(CPU cores x 2) + 1`` and ``total VRAM / est_gpu_mem_typ``
+            of the app metadata.
+        ``max_requests`` (requests a worker serves before it is replaced)
+            the ``max_requests`` keyword of this call; the app's
+            :data:`PRODUCTION_MAX_REQUESTS_ATTR` class attribute; else 1, so
+            that a worker's GPU memory is freed after each request.
+
         :param options: any additional options to pass to the web server.
         """
         import gunicorn.app.base
@@ -55,6 +79,10 @@ class Restifier(object):
             # Allow override via environment variable
             if 'CLAMS_GUNICORN_WORKERS' in os.environ:
                 return int(os.environ['CLAMS_GUNICORN_WORKERS'])
+
+            declared_workers = getattr(self.cla, PRODUCTION_WORKERS_ATTR, None)
+            if declared_workers:
+                return int(declared_workers)
 
             cpu_workers = (multiprocessing.cpu_count() * 2) + 1
 
@@ -93,7 +121,10 @@ class Restifier(object):
                 pass
 
             return cpu_workers
-        
+
+        default_max_requests = getattr(
+            self.cla, PRODUCTION_MAX_REQUESTS_ATTR, 1)
+
         class ProductionApplication(gunicorn.app.base.BaseApplication):
 
             def __init__(self, app, host, port, **options):
@@ -108,9 +139,7 @@ class Restifier(object):
                     # errorlog, however, is redirected to stderr by default since 19.2, so no need to set
                     # log level is warning by default
                     'loglevel': os.environ.get('CLAMS_LOGLEVEL', 'warning').lower(),
-                    # default to 1 to free GPU memory after each request
-                    # developers can override via serve_production(max_requests=N) for single-model apps
-                    'max_requests': 1,
+                    'max_requests': default_max_requests,
                 }
                 self.options.update(options)
                 self.application = app
@@ -126,7 +155,7 @@ class Restifier(object):
                 return self.application
 
         # Log max_requests setting
-        max_req = options.get('max_requests', 1)  # default is 1, meaning workers are killed after each request
+        max_req = options.get('max_requests', default_max_requests)
         if max_req == 0:
             self.cla.logger.info("Worker recycling: disabled (workers persist)")
         else:

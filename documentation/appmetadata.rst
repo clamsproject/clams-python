@@ -222,8 +222,65 @@ section).
 Syntax for Parameter Specification in App Metadata
 --------------------------------------------------
 
-Metadata Schema
-===============
+The ``parameters`` field is a list of objects. Each object must include
+``name``, ``description``, ``type``, and ``multivalued``. The ``type`` must be
+one of ``integer``, ``number``, ``string``, ``boolean``, or ``map``. The
+optional ``choices`` field lists accepted values, and ``default`` sets a
+default value (making the parameter optional). Defaults should be JSON values
+of the declared type; use a JSON array for a multivalued parameter.
+
+.. code-block:: json
+
+   {
+     "parameters": [
+       {
+         "name": "minFrameCount",
+         "description": "Minimum number of frames to process.",
+         "type": "integer",
+         "multivalued": false,
+         "default": 5,
+         "choices": [1, 5, 10]
+       },
+       {
+         "name": "labels",
+         "description": "Labels to include in the output.",
+         "type": "string",
+         "multivalued": true,
+         "default": ["PERSON", "ORG"]
+       }
+     ]
+   }
+
+``boolean`` parameters always use ``"multivalued": false``; ``map`` parameters
+always use ``"multivalued": true`` and represent each key-value pair as a
+colon-separated string (for example, ``"default": ["key1:value1"]``). See
+:ref:`runtime-params-detailed` for how parameter values are parsed and passed
+to the app.
+
+Required Environment Variables
+==============================
+
+Some apps cannot run without a value that comes from the machine they run on.
+Examples are an access token for a gated model on the Hugging Face Hub, which must stay out of the output MMIF, and the address of a model server (such as Ollama or vLLM) that the app sends requests to.
+Declare these with :meth:`~clams.appmetadata.AppMetadata.add_env_requirement`, and read the value from the environment in the app code.
+
+.. code-block:: python
+
+   metadata.add_env_requirement(
+       name='HF_TOKEN',
+       description='token with access to pyannote/speaker-diarization-3.1')
+   metadata.add_env_requirement(
+       name='OLLAMA_HOST',
+       description='URL of the Ollama server that runs the model')
+
+Being listed in ``env_requirements`` means the variable is required.
+Do not list optional settings, variables that have a usable default, or common system variables such as ``PYTHONPATH``.
+
+Do not take a secret as a runtime parameter: the SDK records runtime parameters in the ``metadata`` of every view the app signs, so the value ends up in the output MMIF.
+See :ref:`clamsapp-envvars` for how users pass these variables to an app.
+
+Full Metadata JSON Schema
+=========================
 
 The schema for app metadata is as follows. 
 (You can also download the schema in `JSON Schema <https://json-schema.org/>`_ format from `here <appmetadata.jsonschema>`_.)
@@ -234,5 +291,3 @@ The schema for app metadata is as follows.
    :lift_definitions: True
    :auto_target: True
    :auto_reference: True
-
-

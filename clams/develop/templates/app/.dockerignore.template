@@ -8,4 +8,4 @@ bin/
 build/
 *~
 **/*.pyc
-**/__pyche__
+**/__pycache__

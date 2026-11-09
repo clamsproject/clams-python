@@ -494,9 +494,10 @@ Choose :class:`~clams.app.ClamsHFPromptableApp` over plain
 - doesn't need bespoke pixel-value preprocessing or vision-token
   stitching at inference time.
 
-If your app uses a remote API instead (OpenAI, Anthropic, etc.), or a
-non-HF local backend, inherit from
-:class:`~clams.app.ClamsPromptableApp` directly and implement
+For a model in GGUF format run with llama.cpp, see
+:ref:`gguf-promptable` (experimental). If your app uses a remote API
+instead (OpenAI, Anthropic, etc.), or another local backend, inherit
+from :class:`~clams.app.ClamsPromptableApp` directly and implement
 :meth:`~clams.app.ClamsPromptableApp.generate` yourself.
 
 .. _hf-promptable-declaring:
@@ -600,7 +601,7 @@ Reproducibility: ``model`` refinement and view metadata
 
 The user-facing ``model`` parameter accepts raw HF model ids
 (``org/repo-name``). The SDK's
-:py:meth:`~clams.app.ClamsHFPromptableApp._refine_params` expands the
+:py:meth:`~clams.app.ClamsPromptableApp._refine_params` expands the
 raw value to ``org/repo-name@<revision>`` form (using the dict
 lookup) during parameter refinement. The standard ``sign_view`` flow
 then stamps:
@@ -648,4 +649,142 @@ See each method's docstring for full details.
 
 Apps using the HF backend (with or without the promptable wrapper)
 must install the ``[hf]`` extra: ``pip install clams-python[hf]``.
+
+.. _gguf-promptable:
+
+GGUF Promptable Apps (experimental)
+-----------------------------------
+
+:class:`~clams.app.ClamsGGUFPromptableApp` runs a model in GGUF format
+with `llama.cpp <https://github.com/ggml-org/llama.cpp>`_ instead of
+``transformers``. The app owns a private ``llama-server`` process: it
+downloads the pinned GGUF file (and the ``mmproj`` projector file of a
+vision model) from the Hugging Face Hub, starts the server on a free
+localhost port, sends prompts through the server's OpenAI-compatible
+chat API, and stops the server when the app exits. The app never
+connects to a server it did not start, so model selection stays with
+the app and is recorded in the output MMIF as for an HF app.
+
+This backend is experimental. Its class attributes and the container
+image may change between releases.
+
+When to use
+^^^^^^^^^^^
+
+Choose :class:`~clams.app.ClamsGGUFPromptableApp` when the app should
+run without ``torch``: a quantized model on a small GPU, a GPU that
+current ``torch`` wheels no longer support, or CPU-only inference. The
+same model in GGUF form gives different output than its ``transformers``
+original, so an app that must reproduce an HF app's output stays with
+:class:`~clams.app.ClamsHFPromptableApp`.
+
+Declaring a GGUF promptable app
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The declaration follows :ref:`hf-promptable-declaring`, with these
+differences:
+
+1. ``analyzer_versions`` keys are ``<hub repo>`` or
+   ``<hub repo>:<quantization>`` (e.g.
+   ``ggml-org/gemma-4-E4B-it-GGUF:Q8_0``), and the values are commit
+   hashes of the GGUF repository. The quantization tag picks the model
+   file, and the repository's ``mmproj`` file is picked for vision
+   input.
+2. ``MODEL_FILES`` names the files explicitly for a repository where the
+   tag does not pick exactly one file (several projectors, draft
+   models, shards).
+3. ``metadata.py`` calls
+   :meth:`ClamsGGUFPromptableApp.inject_promptable_parameters
+   <clams.app.ClamsGGUFPromptableApp.inject_promptable_parameters>`.
+
+The ``model`` parameter, family and singleton handling, and the
+``model`` refinement into ``appConfiguration`` work as for HF apps.
+Audio input is not supported yet.
+
+GGUF apps have no ``parallelPrompts`` parameter. ``llama-server``
+decodes at most as many requests together as it has slots, a number
+fixed when the server starts, and
+:meth:`~clams.app.ClamsGGUFPromptableApp.generate_batched` keeps every
+slot busy. The slot count is a server setting (see below), and its
+default, like the way slots share the context, belongs to llama.cpp
+and changes between its releases; see the llama.cpp documentation. The
+startup log reports the slot count and the context of a slot.
+
+We recommend one slot, set in the app's ``LLAMA_ARGS``. The server
+decodes the prompts in its slots together, so with more slots an
+output can change with the other prompts in flight. In our tests on
+Maxwell and Pascal GPUs, more slots were also no faster.
+
+Class-attribute hooks
+^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 22 60 18
+
+   * - Attribute
+     - Meaning
+     - Required
+   * - ``MODEL_FILES``
+     - File names per model id: ``{'<id>': {'model': '<file>' or
+       [shards], 'mmproj': '<file>'}}``. Models not listed are
+       resolved from the repository listing.
+     - no
+   * - ``LLAMA_ARGS``
+     - Default values of llama.cpp's ``LLAMA_ARG_*`` environment
+       variables for what the app's models need, e.g. a larger batch
+       size for the image tokens of a vision model, or the slot count.
+       The environment of the app process takes precedence (see
+       below).
+     - no
+   * - ``RESTIFIER_PRODUCTION_WORKERS``,
+       ``RESTIFIER_PRODUCTION_MAX_REQUESTS``
+     - Read only by :meth:`~clams.restify.Restifier.serve_production`
+       (no effect in the CLI): one gunicorn worker, never recycled, so
+       the server the app owns is neither duplicated nor restarted per
+       request. A singleton app starts its server before gunicorn
+       forks, so all workers share it; a family app starts one server
+       per worker.
+     - no
+
+Server settings
+^^^^^^^^^^^^^^^
+
+The SDK gives ``llama-server`` only the model files, its address and
+the reasoning output format on the command line. Every other setting
+is one of llama.cpp's own ``LLAMA_ARG_*`` environment variables, which
+the server reads for every argument not on its command line. A value
+comes from, in increasing precedence:
+
+1. ``llama-server``'s defaults, which fit the run to the hardware: GPU
+   offload, context size, batch sizes, threads and the split over
+   several GPUs. The server places what fits on the GPUs, keeps the
+   rest in system memory, and sizes the context to the free memory.
+1. The app's ``LLAMA_ARGS``, for what its models need.
+1. The environment of the app process, set by whoever runs the app.
+
+The variables and their defaults belong to llama.cpp and change
+between its releases; see the llama.cpp documentation. The settings in
+effect are logged with their source when the server starts, and the
+context size and slot count when it is ready.
+
+One prompt (system and user text, all its images, and the generated
+tokens) must fit in the context of a server slot. A prompt that does
+not fails the request with an error naming the size, so a caller can
+lower ``maxImagesPerPrompt`` or give the server a larger context.
+
+Installation and containers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The python side needs the ``[llamaserver]`` extra:
+``pip install clams-python[llamaserver]``. The ``llama-server``
+executable is not a python package: outside a container, put it on the
+``PATH`` or name it in the ``LLAMA_SERVER`` environment variable.
+
+The ``clams-python-llamaserver`` container image provides it. The image
+is built on llama.cpp's own CUDA server image, so it has no ``torch``
+and does not derive from the other ``clams-python`` images. Mount a
+volume at ``/cache`` for the downloaded model and for the CUDA kernels
+the driver compiles at the first start on GPUs the image has no machine
+code for.
 
