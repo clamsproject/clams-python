@@ -1,4 +1,20 @@
 
+## releasing 1.9.0 (2026-11-09)
+### Overview
+Adds an experimental llama.cpp backend for promptable apps, lets an app declare the environment variables it cannot run without, and updates `mmif-python` to 1.8.1.
+
+### Additions
+
+* `ClamsGGUFPromptableApp` (experimental): a promptable app base class that runs a pinned GGUF model in its own `llama-server` process, without `torch`. Needs the new `[llamaserver]` extra and a `llama-server` executable. See "HF and GGUF Promptable Apps" in the documentation for how it differs from `ClamsHFPromptableApp` (https://github.com/clamsproject/clams-python/issues/263).
+* `clams-python-llamaserver` container image, built on llama.cpp's CUDA server image.
+* `RESTIFIER_PRODUCTION_WORKERS` and `RESTIFIER_PRODUCTION_MAX_REQUESTS`: optional app class attributes for the gunicorn worker count and recycling in production mode.
+* `env_requirements`: app metadata field listing the environment variables an app cannot run without; the app stops at startup if any is unset (https://github.com/clamsproject/clams-python/issues/304).
+
+### Changes
+
+* `mmif-python` is updated to 1.8.1.
+
+
 ## releasing 1.8.2 (2026-11-01)
 ### Overview
 Updated to mmif-python 1.7.0
