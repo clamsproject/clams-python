@@ -32,14 +32,14 @@ llama.cpp's own ``LLAMA_ARG_*`` environment variables, which
 ``llama-server`` reads for every argument not given on its command
 line. Their values come from, in increasing precedence:
 
-1. ``llama-server``'s defaults, which fit the run to the hardware:
-   they place what fits on the GPUs, keep the rest in system memory,
-   and size the context to the free memory;
+1. ``llama-server``'s defaults;
 1. the ``llama_args`` of :class:`LlamaServer`, for what a model needs
    (e.g. ``{'LLAMA_ARG_UBATCH': '2048'}``);
-1. the environment of the process that starts the server (e.g.
-   ``LLAMA_ARG_CTX_SIZE``, ``LLAMA_ARG_THREADS``,
-   ``LLAMA_ARG_N_GPU_LAYERS`` set by whoever runs the app).
+1. the environment of the process that starts the server, set by
+   whoever runs the app.
+
+The variables and their defaults belong to llama.cpp and change
+between its releases; see the llama.cpp documentation.
 """
 
 import atexit
@@ -284,9 +284,9 @@ def _log_level(line: str) -> int:
     if re.search(r'\b(error|failed|warning|warn)\b', lowered) \
             or _LEVEL_LINE.match(lowered):
         return logging.WARNING
-    # device placement, load, readiness and timing lines
+    # load, readiness and timing lines
     if 'print_timing' in lowered or 'model loaded' in lowered \
-            or 'server is listening' in lowered or 'offloaded' in lowered:
+            or 'server is listening' in lowered:
         return logging.INFO
     return logging.DEBUG
 
@@ -341,8 +341,8 @@ class LlamaServer:
         server reads the whole file at startup).
     :param request_timeout: seconds to wait for one chat completion.
     :param logger: logger receiving the server's output: errors and
-        warnings at WARNING, placement, load and timing lines at INFO,
-        the rest at DEBUG.
+        warnings at WARNING, load and timing lines at INFO, the rest at
+        DEBUG.
     :raises ValueError: if a ``llama_args`` key is not an
         ``LLAMA_ARG_*`` variable, or names the server's address.
     """

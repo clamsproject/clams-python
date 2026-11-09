@@ -14,6 +14,7 @@ import tempfile
 import textwrap
 import types
 import unittest
+import urllib.request
 from unittest import mock
 
 import numpy as np
@@ -31,7 +32,13 @@ FAKE_SERVER = textwrap.dedent('''\
     import json
     import os
     import sys
+    import threading
+    import time
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    # chat requests received, for /requests
+    COUNTS = {{'requests': 0}}
+    LOCK = threading.Lock()
 
     if os.environ.get('FAKE_LLAMA_EXIT'):
         print('error: failed to load model', flush=True)
@@ -69,10 +76,15 @@ FAKE_SERVER = textwrap.dedent('''\
                 slots = setting('--parallel', 'LLAMA_ARG_N_PARALLEL', 1)
                 self._send({{'default_generation_settings': {{
                     'n_ctx': total // slots}}, 'total_slots': slots}})
+            elif self.path == '/requests':
+                self._send(COUNTS)
             else:
                 self.send_error(404)
 
         def do_POST(self):
+            started = time.time()
+            with LOCK:
+                COUNTS['requests'] += 1
             length = int(self.headers['Content-Length'])
             request = json.loads(self.rfile.read(length))
             messages = request.pop('messages')
@@ -90,7 +102,11 @@ FAKE_SERVER = textwrap.dedent('''\
                     'message': 'request exceeds the available context'}}}},
                     status=400)
                 return
+            # optional decode time, longer for prompts with more images
+            time.sleep(images * float(os.environ.get(
+                'FAKE_LLAMA_SECONDS_PER_IMAGE', 0)))
             echo ={{'images': images, 'last_user': content,
+                    'started': started, 'ended': time.time(),
                     'roles': [m['role'] for m in messages],
                     'assistant': [m['content'] for m in messages
                                   if m['role'] == 'assistant'],
@@ -360,8 +376,6 @@ class TestLlamaServer(FakeServerMixin, unittest.TestCase):
                          logging.WARNING)
         self.assertEqual(level('slot print_timing: id 0 | prompt eval'),
                          logging.INFO)
-        self.assertEqual(level('load_tensors: offloaded 49/49 layers to GPU'),
-                         logging.INFO)
         self.assertEqual(level('load_tensors: CPU_Mapped model buffer size'),
                          logging.DEBUG)
 
@@ -536,19 +550,36 @@ class TestGGUFPromptableApp(FakeServerMixin, unittest.TestCase):
         names = {p.name for p in app.metadata.parameters}
         self.assertNotIn('parallelPrompts', names)
         self.assertIn('maxImagesPerPrompt', names)
-        with self.assertRaisesRegex(ValueError, 'LLAMA_ARG_N_PARALLEL'):
+        with self.assertRaisesRegex(ValueError, 'parallel_prompts'):
             app.generate_batched(['hi'], images=[[]], parallel_prompts=2)
 
-    def test_batches_follow_the_server_slots(self):
-        app = self.make_app(LLAMA_ARGS={'LLAMA_ARG_N_PARALLEL': '2'})
+    def test_free_slots_take_the_next_prompt(self):
+        # 2 slots; the first prompt takes three times as long as the
+        # others, so the third must start before the first ends
+        with _environ({'FAKE_LLAMA_SECONDS_PER_IMAGE': '0.3'}):
+            app = self.make_app(LLAMA_ARGS={'LLAMA_ARG_N_PARALLEL': '2'})
         self.assertEqual(app.server.slots, 2)
         progress = []
         app.report_progress = lambda done, total: progress.append(done)
-        images = [[Image.new('RGB', (4, 4))] * k for k in (1, 2, 3)]
+        images = [[Image.new('RGB', (4, 4))] * k for k in (3, 1, 1)]
         outputs = [json.loads(o) for o in app.generate_batched(
             ['describe'], images=images)]
-        self.assertEqual([o['images'] for o in outputs], [1, 2, 3])
-        self.assertEqual(progress, [0, 2, 3])
+        self.assertEqual([o['images'] for o in outputs], [3, 1, 1])
+        self.assertLess(outputs[2]['started'], outputs[0]['ended'])
+        # progress before the first and after each finished prompt
+        self.assertEqual(progress, [0, 1, 2, 3])
+
+    def test_context_error_leaves_queued_prompts_unsent(self):
+        app = self.make_app()  # one slot
+        images = [[Image.new('RGB', (4, 4))] for _ in range(5)]
+        with self.assertRaisesRegex(ValueError, 'does not fit'):
+            app.generate_batched(['TOO_LONG'], images=images)
+        with urllib.request.urlopen(
+                f"{app.server.base_url}/requests") as response:
+            sent = json.load(response)['requests']
+        # the failing prompt, and at most the one the free worker had
+        # already taken before the others were cancelled
+        self.assertLessEqual(sent, 2)
 
     def test_text_only_prompt_runs_once(self):
         app = self.make_app()

@@ -62,13 +62,13 @@ the latest release of each backend, built with CUDA support.
    * - Prompts run together
      - ``parallelPrompts`` runtime parameter, per request; the prompts
        are padded into one batch
-     - the server's slot count (``LLAMA_ARG_N_PARALLEL``), fixed when
-       the server starts; no ``parallelPrompts`` parameter
+     - the server's slot count, fixed when the server starts (one
+       recommended); no ``parallelPrompts`` parameter
    * - Memory for one request
      - grows with ``parallelPrompts`` and the prompt size; too much
        runs the GPU out of memory
-     - fixed when the server starts; the context is split over the
-       slots
+     - fixed when the server starts; how the slots share the context
+       depends on the llama.cpp release
    * - Prompt too large
      - out-of-memory error
      - context-size error (an error view naming the context size)
@@ -97,10 +97,10 @@ Who sets the batch size
 An HF app takes ``parallelPrompts`` with each request and stacks that
 many prompts into one forward pass. A GGUF app sends as many prompts
 at a time as ``llama-server`` has slots, and the server decodes them
-together. The slot count is set once, by whoever runs the app, and
-more slots split the same context into smaller parts. An app moved to
-the GGUF backend must stop reading ``parameters['parallelPrompts']``
-and stop passing ``parallel_prompts`` to
+together. The slot count is a server setting, fixed when the server
+starts; see :ref:`gguf-promptable` for the recommended value. An app
+moved to the GGUF backend must stop reading
+``parameters['parallelPrompts']`` and stop passing ``parallel_prompts`` to
 :meth:`~clams.app.ClamsGGUFPromptableApp.generate_batched`.
 
 Outputs differ between backends
